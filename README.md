@@ -52,7 +52,6 @@ end
 
 ```
 
-
 JavaScript can listen on any channel (and receive notification via polling or long polling):
 
 ```html
