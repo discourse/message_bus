@@ -2,6 +2,8 @@
 
 A reliable, robust messaging bus for Ruby processes and web clients built on Redis.
 
+MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling or long-polling)
+
 
 ## Installation
 
