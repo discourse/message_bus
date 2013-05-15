@@ -57,9 +57,10 @@ class MessageBus::Rack::Middleware
     return [404, {}, ["not found"]] unless client_id
 
     user_id = MessageBus.user_id_lookup.call(env) if MessageBus.user_id_lookup
+    group_ids = MessageBus.group_ids_lookup.call(env) if MessageBus.group_ids_lookup
     site_id = MessageBus.site_id_lookup.call(env) if MessageBus.site_id_lookup
 
-    client = MessageBus::Client.new(client_id: client_id, user_id: user_id, site_id: site_id)
+    client = MessageBus::Client.new(client_id: client_id, user_id: user_id, site_id: site_id, group_ids: group_ids)
 
     connection = env['em.connection']
 

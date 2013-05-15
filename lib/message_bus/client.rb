@@ -1,8 +1,9 @@
 class MessageBus::Client
-  attr_accessor :client_id, :user_id, :connect_time, :subscribed_sets, :site_id, :cleanup_timer, :async_response
+  attr_accessor :client_id, :user_id, :group_ids, :connect_time, :subscribed_sets, :site_id, :cleanup_timer, :async_response
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
+    self.group_ids = opts[:group_ids] || []
     self.site_id = opts[:site_id]
     self.connect_time = Time.now
     @subscriptions = {}
@@ -34,14 +35,24 @@ class MessageBus::Client
     @subscriptions
   end
 
+  def allowed?(msg)
+    allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
+    allowed && (
+      msg.group_ids.nil? ||
+      msg.group_ids.length == 0 ||
+      (
+        msg.group_ids - self.group_ids
+      ).length < msg.group_ids.length
+    )
+  end
+
   def backlog
     r = []
     @subscriptions.each do |k,v|
       next if v.to_i < 0
       messages = MessageBus.backlog(k,v)
       messages.each do |msg|
-        allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
-        r << msg if allowed
+        r << msg if allowed?(msg)
       end
     end
     # stats message for all newly subscribed

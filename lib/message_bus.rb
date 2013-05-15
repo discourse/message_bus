@@ -43,14 +43,6 @@ module MessageBus::Implementation
     @logger = Logger.new(STDOUT)
   end
 
-  def sockets_enabled?
-    @sockets_enabled == false ? false : true
-  end
-
-  def sockets_enabled=(val)
-    @sockets_enabled = val
-  end
-
   def long_polling_enabled?
     @long_polling_enabled == false ? false : true
   end
@@ -94,6 +86,11 @@ module MessageBus::Implementation
     @user_id_lookup
   end
 
+  def group_ids_lookup(&blk)
+    @group_ids_lookup = blk if blk
+    @group_ids_lookup
+  end
+
   def is_admin_lookup(&blk)
     @is_admin_lookup = blk if blk
     @is_admin_lookup
@@ -134,13 +131,16 @@ module MessageBus::Implementation
     return if @off
 
     user_ids = nil
+    group_ids = nil
     if opts
-      user_ids = opts[:user_ids] if opts
+      user_ids = opts[:user_ids]
+      group_ids = opts[:group_ids]
     end
 
     encoded_data = JSON.dump({
       data: data,
-      user_ids: user_ids
+      user_ids: user_ids,
+      group_ids: group_ids
     })
 
     reliable_pub_sub.publish(encode_channel_name(channel), encoded_data)
@@ -208,6 +208,7 @@ module MessageBus::Implementation
     parsed = JSON.parse(msg.data)
     msg.data = parsed["data"]
     msg.user_ids = parsed["user_ids"]
+    msg.group_ids = parsed["group_ids"]
   end
 
   def subscribe_impl(channel, site_id, &blk)

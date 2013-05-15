@@ -64,7 +64,6 @@ describe MessageBus::Rack::Middleware do
 
   describe "long polling" do
     before do
-      MessageBus.sockets_enabled = false
       MessageBus.long_polling_enabled = true
     end
 
@@ -134,7 +133,6 @@ describe MessageBus::Rack::Middleware do
 
   describe "polling" do
     before do
-      MessageBus.sockets_enabled = false
       MessageBus.long_polling_enabled = false
     end
 
@@ -193,6 +191,58 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 0
+    end
+
+    it "should filter by user correctly" do
+      id = MessageBus.publish("/foo", "test", user_ids: [1])
+      MessageBus.user_id_lookup do |env|
+        0
+      end
+
+      client_id = "ABCD"
+      post "/message-bus/#{client_id}", {
+        '/foo' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 0
+
+      MessageBus.user_id_lookup do |env|
+        1
+      end
+
+      post "/message-bus/#{client_id}", {
+        '/foo' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
+    end
+
+    it "should filter by group correctly" do
+      id = MessageBus.publish("/foo", "test", group_ids: [3,4,5])
+      MessageBus.group_ids_lookup do |env|
+        [0,1,2]
+      end
+
+      client_id = "ABCD"
+      post "/message-bus/#{client_id}", {
+        '/foo' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 0
+
+      MessageBus.group_ids_lookup do |env|
+        [1,7,4,100]
+      end
+
+      post "/message-bus/#{client_id}", {
+        '/foo' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
     end
   end
 

@@ -16,13 +16,10 @@ class MessageBus::ConnectionManager
 
       subscription.each do |client_id|
         client = @clients[client_id]
-        if client
-          allowed = !msg.user_ids || msg.user_ids.include?(client.user_id)
-          if allowed
-            client << msg
-            # turns out you can delete from a set while itereating
-            remove_client(client)
-          end
+        if client && client.allowed?(msg)
+          client << msg
+          # turns out you can delete from a set while itereating
+          remove_client(client)
         end
       end
     rescue => e
