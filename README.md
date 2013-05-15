@@ -51,6 +51,26 @@ end
 ```
 
 
+JavaScript can listen on any channel (and receive notification via polling or long polling):
+
+```html
+<script src="message-bus.js" type="text/javascript"></script>
+```
+Note, the message-bus.js file is located in the assets folder.
+
+```javascript
+MessageBus.start(); // call once at startup
+
+// how often do you want the callback to fire in ms
+MessageBus.callbackInterval = 500;
+MessageBus.subscribe("/channel", function(data){
+  // data shipped from server
+}
+
+
+```
+
+
 ## Similar projects
 
 Faye - http://faye.jcoglan.com/
