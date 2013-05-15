@@ -174,6 +174,15 @@ module MessageBus::Implementation
     subscribe_impl(channel, nil, &blk)
   end
 
+  def unsubscribe(channel=nil, &blk)
+    unsubscribe_impl(channel, nil, &blk)
+  end
+
+  def local_unsubscribe(channel=nil, &blk)
+    site_id = MessageBus.site_id_lookup.call if MessageBus.site_id_lookup
+    unsubscribe_impl(channel, site_id, &blk)
+  end
+
   # subscribe only on current site
   def local_subscribe(channel=nil, &blk)
     site_id = MessageBus.site_id_lookup.call if MessageBus.site_id_lookup
@@ -217,6 +226,17 @@ module MessageBus::Implementation
     @subscriptions[site_id][channel] ||=  []
     @subscriptions[site_id][channel] << blk
     ensure_subscriber_thread
+    blk
+  end
+
+  def unsubscribe_impl(channel, site_id, &blk)
+    @mutex.synchronize do
+      if blk
+        @subscriptions[site_id][channel].delete blk
+      else
+        @subscriptions[site_id][channel] = []
+      end
+    end
   end
 
   def ensure_subscriber_thread
@@ -228,20 +248,22 @@ module MessageBus::Implementation
           begin
             decode_message!(msg)
 
-            globals = @subscriptions[nil]
-            locals = @subscriptions[msg.site_id] if msg.site_id
+            @mutex.synchronize do
+              globals = @subscriptions[nil]
+              locals = @subscriptions[msg.site_id] if msg.site_id
 
-            global_globals = globals[nil] if globals
-            local_globals = locals[nil] if locals
+              global_globals = globals[nil] if globals
+              local_globals = locals[nil] if locals
 
-            globals = globals[msg.channel] if globals
-            locals = locals[msg.channel] if locals
+              globals = globals[msg.channel] if globals
+              locals = locals[msg.channel] if locals
 
-            multi_each(globals,locals, global_globals, local_globals) do |c|
-              begin
-                c.call msg
-              rescue => e
-                MessageBus.logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
+              multi_each(globals,locals, global_globals, local_globals) do |c|
+                begin
+                  c.call msg
+                rescue => e
+                  MessageBus.logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
+                end
               end
             end
 

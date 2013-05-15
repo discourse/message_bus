@@ -12,6 +12,10 @@ describe MessageBus do
     MessageBus.redis_config = {}
   end
 
+  after do
+    MessageBus.unsubscribe("/chuck")
+  end
+
   it "should automatically decode hashed messages" do
     data = nil
     MessageBus.subscribe("/chuck") do |msg|
@@ -61,6 +65,7 @@ describe MessageBus do
     @data.should == 'norris'
     @site_id.should == 'magic'
     @channel.should == '/chuck'
+
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
