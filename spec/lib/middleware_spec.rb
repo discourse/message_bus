@@ -221,25 +221,32 @@ describe MessageBus::Rack::Middleware do
 
     it "should filter by client_filter correctly" do
       id = MessageBus.publish("/filter", "test")
+      user_id = 0
+
       MessageBus.user_id_lookup do |env|
-        0
+        user_id
       end
 
       MessageBus.client_filter("/filter") do |user_id, message|
-        user_id == 1
+        if user_id == 0
+          message = message.dup
+          message.data += "_filter"
+          message
+        elsif user_id == 1
+          message
+        end
       end
 
       client_id = "ABCD"
+
       post "/message-bus/#{client_id}", {
         '/filter' => id - 1
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
+      parsed[0]['data'].should == "test_filter"
 
-      MessageBus.client_filter("/filter") do |user_id, message|
-        user_id == 0
-      end
+      user_id = 1
 
       post "/message-bus/#{client_id}", {
         '/filter' => id - 1
@@ -247,6 +254,16 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
+      parsed[0]["data"].should == "test"
+
+      user_id = 2
+
+      post "/message-bus/#{client_id}", {
+        '/filter' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 0
     end
 
     it "should filter by group correctly" do
