@@ -10,6 +10,8 @@ require 'redis'
 
 class MessageBus::ReliablePubSub
 
+  UNSUB_MESSAGE = "$$UNSUBSCRIBE"
+
   class NoMoreRetries < StandardError; end
   class BackLogOutOfOrder < StandardError
     attr_accessor :highest_id
@@ -206,6 +208,15 @@ class MessageBus::ReliablePubSub
     highest_id
   end
 
+  def global_unsubscribe
+    # TODO mutex
+    if @redis_global
+      pub_redis.publish(redis_channel_name, UNSUB_MESSAGE)
+      @redis_global.disconnect
+      @redis_global = nil
+    end
+  end
+
   def global_subscribe(last_id=nil, &blk)
     raise ArgumentError unless block_given?
     highest_id = last_id
@@ -224,19 +235,23 @@ class MessageBus::ReliablePubSub
 
 
     begin
-      redis = new_redis_connection
+      @redis_global = new_redis_connection
 
       if highest_id
         clear_backlog.call(&blk)
       end
 
-      redis.subscribe(redis_channel_name) do |on|
+      @redis_global.subscribe(redis_channel_name) do |on|
         on.subscribe do
           if highest_id
             clear_backlog.call(&blk)
           end
         end
         on.message do |c,m|
+          if m == UNSUB_MESSAGE
+            @redis_global.unsubscribe
+            return
+          end
           m = MessageBus::Message.decode m
 
           # we have 2 options

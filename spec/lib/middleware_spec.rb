@@ -219,6 +219,36 @@ describe MessageBus::Rack::Middleware do
       parsed.length.should == 1
     end
 
+    it "should filter by client_filter correctly" do
+      id = MessageBus.publish("/filter", "test")
+      MessageBus.user_id_lookup do |env|
+        0
+      end
+
+      MessageBus.client_filter("/filter") do |user_id, message|
+        user_id == 1
+      end
+
+      client_id = "ABCD"
+      post "/message-bus/#{client_id}", {
+        '/filter' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 0
+
+      MessageBus.client_filter("/filter") do |user_id, message|
+        user_id == 0
+      end
+
+      post "/message-bus/#{client_id}", {
+        '/filter' => id - 1
+      }
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
+    end
+
     it "should filter by group correctly" do
       id = MessageBus.publish("/foo", "test", group_ids: [3,4,5])
       MessageBus.group_ids_lookup do |env|

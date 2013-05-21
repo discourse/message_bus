@@ -50,6 +50,12 @@ MessageBus.group_ids_lookup do |env|
   # can be nil or []
 end
 
+
+MessageBus.client_filter("/channel") do |user_id, message|
+  # return true if client is allowed to see this message
+  # allows you to inject server side filtering of messages based on arbitrary rules
+end
+
 ```
 
 JavaScript can listen on any channel (and receive notification via polling or long polling):

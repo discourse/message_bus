@@ -37,13 +37,17 @@ class MessageBus::Client
 
   def allowed?(msg)
     allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
-    allowed && (
+    allowed &&= (
       msg.group_ids.nil? ||
       msg.group_ids.length == 0 ||
       (
         msg.group_ids - self.group_ids
       ).length < msg.group_ids.length
     )
+
+    filter = MessageBus.client_filter(msg.channel)
+
+    allowed && (!filter || filter.call(self.user_id, msg))
   end
 
   def backlog

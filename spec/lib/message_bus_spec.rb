@@ -6,22 +6,23 @@ require 'redis'
 describe MessageBus do
 
   before do
-    MessageBus.site_id_lookup do
+    @bus = MessageBus::Instance.new
+    @bus.site_id_lookup do
       "magic"
     end
-    MessageBus.redis_config = {}
+    @bus.redis_config = {}
   end
 
   after do
-    MessageBus.unsubscribe("/chuck")
+    @bus.destroy
   end
 
   it "should automatically decode hashed messages" do
     data = nil
-    MessageBus.subscribe("/chuck") do |msg|
+    @bus.subscribe("/chuck") do |msg|
       data = msg.data
     end
-    MessageBus.publish("/chuck", {:norris => true})
+    @bus.publish("/chuck", {:norris => true})
     wait_for(2000){ data }
 
     data["norris"].should == true
@@ -30,14 +31,14 @@ describe MessageBus do
   it "should get a message if it subscribes to it" do
     user_ids,data,site_id,channel = nil
 
-    MessageBus.subscribe("/chuck") do |msg|
+    @bus.subscribe("/chuck") do |msg|
       data = msg.data
       site_id = msg.site_id
       channel = msg.channel
       user_ids = msg.user_ids
     end
 
-    MessageBus.publish("/chuck", "norris", user_ids: [1,2,3])
+    @bus.publish("/chuck", "norris", user_ids: [1,2,3])
 
     wait_for(2000){data}
 
@@ -52,13 +53,13 @@ describe MessageBus do
   it "should get global messages if it subscribes to them" do
     data,site_id,channel = nil
 
-    MessageBus.subscribe do |msg|
+    @bus.subscribe do |msg|
       data = msg.data
       site_id = msg.site_id
       channel = msg.channel
     end
 
-    MessageBus.publish("/chuck", "norris")
+    @bus.publish("/chuck", "norris")
 
     wait_for(2000){data}
 
@@ -69,11 +70,11 @@ describe MessageBus do
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
-    id = MessageBus.publish("/chuck", "norris")
-    MessageBus.publish("/chuck", "foo")
-    MessageBus.publish("/chuck", "bar")
+    id = @bus.publish("/chuck", "norris")
+    @bus.publish("/chuck", "foo")
+    @bus.publish("/chuck", "bar")
 
-    r = MessageBus.backlog("/chuck", id)
+    r = @bus.backlog("/chuck", id)
 
     r.map{|i| i.data}.to_a.should == ['foo', 'bar']
   end

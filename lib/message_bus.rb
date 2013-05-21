@@ -96,6 +96,12 @@ module MessageBus::Implementation
     @is_admin_lookup
   end
 
+  def client_filter(channel, &blk)
+    @client_filters ||= {}
+    @client_filters[channel] = blk if blk
+    @client_filters[channel]
+  end
+
   def on_connect(&blk)
     @on_connect = blk if blk
     @on_connect
@@ -158,9 +164,9 @@ module MessageBus::Implementation
 
   # encode channel name to include site
   def encode_channel_name(channel)
-    if MessageBus.site_id_lookup
+    if site_id_lookup
       raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
-      "#{channel}#{ENCODE_SITE_TOKEN}#{MessageBus.site_id_lookup.call}"
+      "#{channel}#{ENCODE_SITE_TOKEN}#{site_id_lookup.call}"
     else
       channel
     end
@@ -179,13 +185,13 @@ module MessageBus::Implementation
   end
 
   def local_unsubscribe(channel=nil, &blk)
-    site_id = MessageBus.site_id_lookup.call if MessageBus.site_id_lookup
+    site_id = site_id_lookup.call if site_id_lookup
     unsubscribe_impl(channel, site_id, &blk)
   end
 
   # subscribe only on current site
   def local_subscribe(channel=nil, &blk)
-    site_id = MessageBus.site_id_lookup.call if MessageBus.site_id_lookup
+    site_id = site_id_lookup.call if site_id_lookup
     subscribe_impl(channel, site_id, &blk)
   end
 
@@ -206,6 +212,11 @@ module MessageBus::Implementation
 
   def last_id(channel)
     reliable_pub_sub.last_id(encode_channel_name(channel))
+  end
+
+
+  def destroy
+    reliable_pub_sub.global_unsubscribe
   end
 
   protected
@@ -238,6 +249,7 @@ module MessageBus::Implementation
       end
     end
   end
+
 
   def ensure_subscriber_thread
     @mutex ||= Mutex.new
