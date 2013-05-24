@@ -14,16 +14,34 @@ class MessageBus::ConnectionManager
 
       return unless subscription
 
-      subscription.each do |client_id|
-        client = @clients[client_id]
-        if client && client.allowed?(msg)
-          if copy = client.filter(msg)
-            client << copy
-            # turns out you can delete from a set while itereating
-            remove_client(client)
+      around_filter = MessageBus.around_client_batch(msg.channel)
+
+      work = lambda do
+        subscription.each do |client_id|
+          client = @clients[client_id]
+          if client && client.allowed?(msg)
+            if copy = client.filter(msg)
+              client << copy
+              # turns out you can delete from a set while itereating
+              remove_client(client)
+            end
           end
         end
       end
+
+      if around_filter
+        user_ids = subscription.map do |s|
+          c = @clients[s]
+          c && c.user_id
+        end.compact
+
+        if user_ids && user_ids.length > 0
+          around_filter.call(msg, user_ids, work)
+        end
+      else
+        work.call
+      end
+
     rescue => e
       MessageBus.logger.error "notify clients crash #{e} : #{e.backtrace}"
     end

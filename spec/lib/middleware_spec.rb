@@ -107,6 +107,43 @@ describe MessageBus::Rack::Middleware do
         MessageBus.long_polling_interval = 5000
       end
     end
+
+    it "should support batch filtering" do
+      MessageBus.user_id_lookup do |env|
+        1
+      end
+
+      MessageBus.around_client_batch("/demo") do |message, user_ids, callback|
+        begin
+          Thread.current["test"] = user_ids
+          callback.call
+        ensure
+          Thread.current["test"] = nil
+        end
+      end
+
+      test = nil
+
+      MessageBus.client_filter("/demo") do |user_id, message|
+        test = Thread.current["test"]
+        message
+      end
+
+      client_id = "ABCD"
+
+      id = MessageBus.publish("/demo", "test")
+
+      Thread.new do
+        wait_for(2000) { FakeAsyncMiddleware.in_async? }
+        MessageBus.publish "/demo", "test"
+      end
+
+      post "/message-bus/#{client_id}", {
+        '/demo' => id
+      }
+
+      test.should == [1]
+    end
   end
 
   describe "diagnostics" do
@@ -218,6 +255,7 @@ describe MessageBus::Rack::Middleware do
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
     end
+
 
     it "should filter by client_filter correctly" do
       id = MessageBus.publish("/filter", "test")

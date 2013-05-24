@@ -102,6 +102,12 @@ module MessageBus::Implementation
     @client_filters[channel]
   end
 
+  def around_client_batch(channel, &blk)
+    @around_client_batches ||= {}
+    @around_client_batches[channel] = blk if blk
+    @around_client_batches[channel]
+  end
+
   def on_connect(&blk)
     @on_connect = blk if blk
     @on_connect
