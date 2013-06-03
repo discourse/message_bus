@@ -79,4 +79,35 @@ describe MessageBus do
     r.map{|i| i.data}.to_a.should == ['foo', 'bar']
   end
 
+
+  it "should support forking properly do" do
+    data = nil
+    @bus.subscribe do |msg|
+      data = msg.data
+    end
+
+    @bus.publish("/hello", "world")
+    wait_for(2000){ data }
+
+    if child = Process.fork
+      wait_for(2000) { data == "ready" }
+      @bus.publish("/hello", "world1")
+      wait_for(2000) { data == "got it" }
+      data.should == "got it"
+      Process.wait(child)
+    else
+      @bus.after_fork
+      @bus.publish("/hello", "ready")
+      wait_for(2000) { data == "world1" }
+      if(data=="world1")
+        @bus.publish("/hello", "got it")
+      end
+
+      $stdout.reopen("/dev/null", "w")
+      $stderr.reopen("/dev/null", "w")
+      exit
+    end
+
+  end
+
 end

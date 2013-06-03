@@ -59,6 +59,10 @@ class MessageBus::ReliablePubSub
     ::Redis.new(@redis_config)
   end
 
+  def after_fork
+    pub_redis.client.reconnect
+  end
+
   def redis_channel_name
     db = @redis_config[:db] || 0
     "discourse_#{db}"
@@ -128,9 +132,8 @@ class MessageBus::ReliablePubSub
   end
 
   def last_id(channel)
-    redis = pub_redis
     backlog_id_key = backlog_id_key(channel)
-    redis.get(backlog_id_key).to_i
+    pub_redis.get(backlog_id_key).to_i
   end
 
   def backlog(channel, last_id = nil)

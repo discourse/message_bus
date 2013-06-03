@@ -225,6 +225,11 @@ module MessageBus::Implementation
     reliable_pub_sub.global_unsubscribe
   end
 
+  def after_fork
+    reliable_pub_sub.after_fork
+    ensure_subscriber_thread
+  end
+
   protected
 
   def decode_message!(msg)
@@ -260,7 +265,7 @@ module MessageBus::Implementation
   def ensure_subscriber_thread
     @mutex ||= Mutex.new
     @mutex.synchronize do
-      return if @subscriber_thread
+      return if @subscriber_thread && @subscriber_thread.alive?
       @subscriber_thread = Thread.new do
         reliable_pub_sub.global_subscribe do |msg|
           begin
