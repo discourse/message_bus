@@ -1,5 +1,5 @@
 class MessageBus::Client
-  attr_accessor :client_id, :user_id, :group_ids, :connect_time, :subscribed_sets, :site_id, :cleanup_timer, :async_response
+  attr_accessor :client_id, :user_id, :group_ids, :connect_time, :subscribed_sets, :site_id, :cleanup_timer, :async_response, :io
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
@@ -9,8 +9,12 @@ class MessageBus::Client
     @subscriptions = {}
   end
 
+  def in_async?
+    @async_response || @io
+  end
+
   def close
-    return unless @async_response
+    return unless in_async?
     write_and_close "[]"
   end
 
@@ -82,9 +86,21 @@ class MessageBus::Client
   protected
 
   def write_and_close(data)
-    @async_response << data
-    @async_response.done
-    @async_response = nil
+    if @io
+      @io.write("HTTP/1.1 200 OK\r\n")
+      @io.write("Content-Type: application/json; charset=utf-8\r\n")
+      @io.write("Cache-Control: must-revalidate, private, max-age=0\r\n")
+      @io.write("Content-Length: #{data.length}\r\n")
+      @io.write("Connection: close\r\n")
+      @io.write("\r\n")
+      @io.write(data)
+      @io.close
+      @io = nil
+    else
+      @async_response << data
+      @async_response.done
+      @async_response = nil
+    end
   end
 
   def messages_to_json(msgs)

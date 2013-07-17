@@ -71,27 +71,39 @@ class MessageBus::Rack::Middleware
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] ="application/json; charset=utf-8"
 
+    long_polling = MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
+
     if backlog.length > 0
       [200, headers, [self.class.backlog_to_json(backlog)] ]
-    elsif MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
+    elsif long_polling && env['rack.hijack']
+      io = env['rack.hijack'].call
+      client.io = io
+
+      add_client_with_timeout(client)
+      [418, {}, ["I'm a teapot, undefined in spec"]]
+    elsif long_polling && env['async.callback']
       response = Thin::AsyncResponse.new(env)
       response.headers["Cache-Control"] = "must-revalidate, private, max-age=0"
       response.headers["Content-Type"] ="application/json; charset=utf-8"
       response.status = 200
+
       client.async_response = response
 
-      @@connection_manager.add_client(client)
-
-      client.cleanup_timer = ::EM::Timer.new(MessageBus.long_polling_interval.to_f / 1000) {
-        client.close
-        @@connection_manager.remove_client(client)
-      }
+      add_client_with_timeout(client)
 
       throw :async
     else
       [200, headers, ["[]"]]
     end
+  end
 
+  def add_client_with_timeout(client)
+    @@connection_manager.add_client(client)
+
+    client.cleanup_timer = ::EM::Timer.new(MessageBus.long_polling_interval.to_f / 1000) {
+      client.close
+      @@connection_manager.remove_client(client)
+    }
   end
 end
 

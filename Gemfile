@@ -10,5 +10,6 @@ group :test do
   gem 'guard-rspec'
   gem 'rb-inotify'
   gem 'rack'
+  gem 'http_parser.rb'
   gem "rack-test", require: "rack/test"
 end

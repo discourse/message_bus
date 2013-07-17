@@ -5,55 +5,6 @@ require 'rack/test'
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
 
-  class FakeAsyncMiddleware
-
-    def self.in_async?
-      @@in_async if defined? @@in_async
-    end
-
-    def initialize(app,config={})
-      @app = app
-    end
-
-    def call(env)
-      result = nil
-      EM.run {
-        env['async.callback'] = lambda { |r|
-          # more judo with deferrable body, at this point we just have headers
-          r[2].callback do
-            # even more judo cause rack test does not call each like the spec says
-            body = ""
-            r[2].each do |m|
-              body << m
-            end
-            r[2] = [body]
-            result = r
-          end
-        }
-        catch(:async) {
-          result = @app.call(env)
-        }
-
-        EM::Timer.new(1) { EM.stop }
-
-        defer = lambda {
-          if !result
-            @@in_async = true
-            EM.next_tick do
-              defer.call
-            end
-          else
-            EM.next_tick { EM.stop }
-          end
-        }
-        defer.call
-      }
-
-      @@in_async = false
-      result || [500, {}, ['timeout']]
-    end
-  end
-
   def app
     @app ||= Rack::Builder.new {
       use FakeAsyncMiddleware
@@ -62,7 +13,7 @@ describe MessageBus::Rack::Middleware do
     }.to_app
   end
 
-  describe "long polling" do
+  shared_examples "long polling" do
     before do
       MessageBus.long_polling_enabled = true
     end
@@ -144,6 +95,20 @@ describe MessageBus::Rack::Middleware do
 
       test.should == [1]
     end
+  end
+
+  describe "thin async" do
+    before do
+      FakeAsyncMiddleware.simulate_thin_async
+    end
+    it_behaves_like "long polling"
+  end
+
+  describe "hijack" do
+    before do
+      FakeAsyncMiddleware.simulate_hijack
+    end
+    it_behaves_like "long polling"
   end
 
   describe "diagnostics" do

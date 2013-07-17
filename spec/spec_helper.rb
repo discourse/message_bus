@@ -1,4 +1,5 @@
 require 'thin'
+require 'lib/fake_async_middleware'
 
 RSpec.configure do |config|
   config.color_enabled = true
