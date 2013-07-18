@@ -86,7 +86,16 @@ class MessageBus::Rack::Middleware
       add_client_with_timeout(client)
       [418, {}, ["I'm a teapot, undefined in spec"]]
     elsif long_polling && env['async.callback']
-      response = Thin::AsyncResponse.new(env)
+      response = nil
+      
+      # load extension if needed
+      begin
+        response = Thin::AsyncResponse.new(env)
+      rescue NameError
+        require 'message_bus/rack/thin_ext'
+        response = Thin::AsyncResponse.new(env)
+      end
+
       response.headers["Cache-Control"] = "must-revalidate, private, max-age=0"
       response.headers["Content-Type"] ="application/json; charset=utf-8"
       response.status = 200

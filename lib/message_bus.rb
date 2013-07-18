@@ -10,7 +10,6 @@ require "message_bus/client"
 require "message_bus/connection_manager"
 require "message_bus/message_handler"
 require "message_bus/diagnostics"
-require "message_bus/rack/thin_ext" if defined? Thin
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
 
