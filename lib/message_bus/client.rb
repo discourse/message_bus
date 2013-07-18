@@ -23,8 +23,9 @@ class MessageBus::Client
   end
 
   def subscribe(channel, last_seen_id)
+    last_seen_id = nil if last_seen_id == ""
     last_seen_id ||= MessageBus.last_id(channel)
-    @subscriptions[channel] = last_seen_id
+    @subscriptions[channel] = last_seen_id.to_i
   end
 
   def subscriptions
