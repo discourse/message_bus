@@ -77,6 +77,8 @@ class MessageBus::Rack::Middleware
 
     long_polling = MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
 
+    ensure_reactor
+
     if backlog.length > 0
       [200, headers, [self.class.backlog_to_json(backlog)] ]
     elsif long_polling && env['rack.hijack']
@@ -110,12 +112,14 @@ class MessageBus::Rack::Middleware
     end
   end
 
-  def add_client_with_timeout(client)
+  def ensure_reactor
     # ensure reactor is running 
     if EM.reactor_pid != Process.pid
       Thread.new { EM.run } 
     end
+  end
 
+  def add_client_with_timeout(client)
     @@connection_manager.add_client(client)
 
     client.cleanup_timer = ::EM::Timer.new(MessageBus.long_polling_interval.to_f / 1000) {
