@@ -5,6 +5,10 @@ require 'rack/test'
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
 
+  before do 
+    MessageBus.long_polling_enabled = false
+  end
+
   def app
     @app ||= Rack::Builder.new {
       use FakeAsyncMiddleware

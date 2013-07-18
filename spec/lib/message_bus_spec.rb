@@ -88,7 +88,6 @@ describe MessageBus do
 
     @bus.publish("/hello", "world")
     wait_for(2000){ data }
-
     if child = Process.fork
       wait_for(2000) { data == "ready" }
       @bus.publish("/hello", "world1")

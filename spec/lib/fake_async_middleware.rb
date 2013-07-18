@@ -19,11 +19,21 @@ class FakeAsyncMiddleware
     @app = app
   end
 
+  def simulate_thin_async
+    @@simulate_thin_async && MessageBus.long_polling_enabled?
+  end
+
+  def simulate_hijack
+    @@simulate_hijack && MessageBus.long_polling_enabled?
+  end
+
   def call(env)
-    if @@simulate_thin_async
+    if simulate_thin_async
       call_thin_async(env)
-    else
+    elsif simulate_hijack
       call_rack_hijack(env)
+    else 
+      @app.call(env)
     end
   end
 
@@ -54,7 +64,7 @@ class FakeAsyncMiddleware
       env['rack.hijack_io'] = io
 
       result = @app.call(env)
-
+      
       EM::Timer.new(1) { EM.stop }
 
       defer = lambda {
@@ -70,7 +80,12 @@ class FakeAsyncMiddleware
           EM.next_tick { EM.stop }
         end
       }
-      defer.call
+
+      if !hijacked
+        EM.next_tick { EM.stop }
+      else
+        defer.call
+      end
     }
 
     @@in_async = false
