@@ -8,8 +8,8 @@ group :test do
   gem 'redis'
   gem 'rake'
   gem 'guard-rspec'
-  gem 'rb-inotify'
+  gem 'rb-inotify', require: RUBY_PLATFORM =~ /linux/i ? 'rb-inotify' : false
   gem 'rack'
   gem 'http_parser.rb'
-  gem "rack-test", require: "rack/test"
+  gem 'rack-test', require: 'rack/test'
 end
