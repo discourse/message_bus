@@ -75,9 +75,9 @@ class MessageBus::Rack::Middleware
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] ="application/json; charset=utf-8"
 
-    long_polling = MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
-
     ensure_reactor
+
+    long_polling = MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
 
     if backlog.length > 0
       [200, headers, [self.class.backlog_to_json(backlog)] ]
@@ -88,8 +88,8 @@ class MessageBus::Rack::Middleware
       add_client_with_timeout(client)
       [418, {}, ["I'm a teapot, undefined in spec"]]
     elsif long_polling && env['async.callback']
+
       response = nil
-      
       # load extension if needed
       begin
         response = Thin::AsyncResponse.new(env)

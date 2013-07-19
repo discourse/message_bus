@@ -91,7 +91,7 @@ class MessageBus::Client
       @io.write("HTTP/1.1 200 OK\r\n")
       @io.write("Content-Type: application/json; charset=utf-8\r\n")
       @io.write("Cache-Control: must-revalidate, private, max-age=0\r\n")
-      @io.write("Content-Length: #{data.length}\r\n")
+      @io.write("Content-Length: #{data.bytes.length}\r\n")
       @io.write("Connection: close\r\n")
       @io.write("\r\n")
       @io.write(data)
