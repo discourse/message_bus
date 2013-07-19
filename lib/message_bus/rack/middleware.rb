@@ -116,9 +116,9 @@ class MessageBus::Rack::Middleware
   end
 
   def ensure_reactor
-    # ensure reactor is running 
+    # ensure reactor is running
     if EM.reactor_pid != Process.pid
-      Thread.new { EM.run } 
+      Thread.new { EM.run }
     end
   end
 
