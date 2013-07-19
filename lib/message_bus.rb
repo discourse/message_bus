@@ -51,6 +51,26 @@ module MessageBus::Implementation
     @long_polling_enabled = val
   end
 
+  # The number of simultanuous clients we can service
+  #  will revert to polling if we are out of slots
+  def max_active_clients=(val)
+    @max_active_clients = val
+  end
+
+  def max_active_clients
+    @max_active_clients || 1000
+  end
+
+  # at the moment while passenger is problamatic with rack hijack
+  #  this is default off
+  def rack_hijack_enabled?
+    !!@rack_hijack_enabled
+  end
+
+  def rack_hijack_enabled=(val)
+    @rack_hijack_enabled = val
+  end
+
   def long_polling_interval=(millisecs)
     @long_polling_interval = millisecs
   end

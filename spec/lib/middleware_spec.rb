@@ -41,7 +41,7 @@ describe MessageBus::Rack::Middleware do
 
       Thread.new do
         wait_for(2000) { FakeAsyncMiddleware.in_async? }
-        MessageBus.publish "/foo", "bar"
+        MessageBus.publish "/foo", "םוֹלשָׁ"
       end
 
       post "/message-bus/ABC", '/foo' => nil
@@ -49,7 +49,7 @@ describe MessageBus::Rack::Middleware do
       last_response.should be_ok
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
-      parsed[0]["data"].should == "bar"
+      parsed[0]["data"].should == "םוֹלשָׁ"
     end
 
     it "should timeout within its alloted slot" do
@@ -111,6 +111,7 @@ describe MessageBus::Rack::Middleware do
   describe "hijack" do
     before do
       FakeAsyncMiddleware.simulate_hijack
+      MessageBus.rack_hijack_enabled = true
     end
     it_behaves_like "long polling"
   end

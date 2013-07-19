@@ -76,6 +76,10 @@ class MessageBus::ConnectionManager
     set << client.client_id
   end
 
+  def client_count
+    @clients.length
+  end
+
   def stats
     {
       client_count: @clients.length,

@@ -77,11 +77,14 @@ class MessageBus::Rack::Middleware
 
     ensure_reactor
 
-    long_polling = MessageBus.long_polling_enabled? && env['QUERY_STRING'] !~ /dlp=t/ && EM.reactor_running?
+    long_polling = MessageBus.long_polling_enabled? &&
+                   env['QUERY_STRING'] !~ /dlp=t/ &&
+                   EM.reactor_running? &&
+                   @@connection_manager.client_count < MessageBus.max_active_clients
 
     if backlog.length > 0
       [200, headers, [self.class.backlog_to_json(backlog)] ]
-    elsif long_polling && env['rack.hijack']
+    elsif long_polling && env['rack.hijack'] && MessageBus.rack_hijack_enabled?
       io = env['rack.hijack'].call
       client.io = io
 
