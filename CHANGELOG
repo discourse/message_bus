@@ -1,0 +1,4 @@
+30-09-2013
+
+- Fix failures in Ruby 1.9
+- Set up rack hijack by default in light of passengers new setting

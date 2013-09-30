@@ -61,10 +61,22 @@ module MessageBus::Implementation
     @max_active_clients || 1000
   end
 
-  # at the moment while passenger is problamatic with rack hijack
-  #  this is default off
   def rack_hijack_enabled?
-    !!@rack_hijack_enabled
+    if @rack_hijack_enabled.nil?
+      @rack_hijack_enabled = true
+
+      # without this switch passenger will explode
+      # it will run out of connections after about 10
+      if defined? PhusionPassenger
+        @rack_hijack_enabled = false
+        if PhusionPassenger.respond_to? :advertised_concurrency_level
+          PhusionPassenger.advertised_concurrency_level = 0
+          @rack_hijack_enabled = true
+        end
+      end
+    end
+
+    @rack_hijack_enabled
   end
 
   def rack_hijack_enabled=(val)

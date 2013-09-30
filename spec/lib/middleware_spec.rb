@@ -1,3 +1,5 @@
+# coding: utf-8
+
 require 'spec_helper'
 require 'message_bus'
 require 'rack/test'
@@ -5,7 +7,7 @@ require 'rack/test'
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
 
-  before do 
+  before do
     MessageBus.long_polling_enabled = false
   end
 
