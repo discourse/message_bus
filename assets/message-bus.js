@@ -1,10 +1,22 @@
+/*jshint bitwise: false*/
+
+/**
+  Message Bus functionality.
+
+  @class MessageBus
+  @namespace Discourse
+  @module Discourse
+**/
 window.MessageBus = (function() {
-  var callbacks, clientId, failCount, interval, isHidden, queue, responseCallbacks, uniqueId;
+  // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+  var callbacks, clientId, failCount, interval, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
+  var me;
+
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r, v;
       r = Math.random() * 16 | 0;
-      v = c === 'x' ? r : r & 0x3 | 0x8;
+      v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
   };
@@ -15,8 +27,9 @@ window.MessageBus = (function() {
   queue = [];
   interval = null;
   failCount = 0;
+  baseUrl = "/";
 
-  isHidden = function() {
+  var isHidden = function() {
     if (document.hidden !== void 0) {
       return document.hidden;
     } else if (document.webkitHidden !== void 0) {
@@ -26,43 +39,31 @@ window.MessageBus = (function() {
     } else if (document.mozHidden !== void 0) {
       return document.mozHidden;
     } else {
+      // problamatic fallback
       return !document.hasFocus;
     }
   };
 
-  var processMessages = function(messages) {
-    failCount = 0;
-    $.each(messages,function(idx,message) {
-      gotData = true;
-      $.each(callbacks,function(idx,callback) {
-        if (callback.channel === message.channel) {
-          callback.last_id = message.message_id;
-          callback.func(message.data);
-        }
-        if (message.channel === "/__status") {
-          if (message.data[callback.channel] !== void 0) {
-            callback.last_id = message.data[callback.channel];
-          }
-        }
-      });
-    });
+  shouldLongPoll = function() {
+    return me.alwaysLongPoll || !isHidden();
   };
 
-  return {
-
+  me = {
     enableLongPolling: true,
     callbackInterval: 60000,
     maxPollInterval: 3 * 60 * 1000,
     callbacks: callbacks,
     clientId: clientId,
+    alwaysLongPoll: false,
     stop: false,
+    baseUrl: baseUrl,
 
+    // Start polling
     start: function(opts) {
       var poll,
         _this = this;
-      if (opts === null) {
-        opts = {};
-      }
+      if (!opts) opts = {};
+
       poll = function() {
         var data, gotData;
         if (callbacks.length === 0) {
@@ -70,11 +71,11 @@ window.MessageBus = (function() {
           return;
         }
         data = {};
-        $.each(callbacks, function(idx,c) {
-          return data[c.channel] = c.last_id === void 0 ? -1 : c.last_id;
+        _.each(callbacks, function(callback) {
+          data[callback.channel] = callback.last_id;
         });
         gotData = false;
-        return _this.longPoll = $.ajax("/message-bus/" + clientId + "/poll?" + (isHidden() || !_this.enableLongPolling ? "dlp=t" : ""), {
+        _this.longPoll = $.ajax(baseUrl + "message-bus/" + clientId + "/poll?" + (!shouldLongPoll() || !_this.enableLongPolling ? "dlp=t" : ""), {
           data: data,
           cache: false,
           dataType: 'json',
@@ -83,7 +84,21 @@ window.MessageBus = (function() {
             'X-SILENCE-LOGGER': 'true'
           },
           success: function(messages) {
-            processMessages(messages);
+            failCount = 0;
+            _.each(messages,function(message) {
+              gotData = true;
+              _.each(callbacks, function(callback) {
+                if (callback.channel === message.channel) {
+                  callback.last_id = message.message_id;
+                  callback.func(message.data);
+                }
+                if (message.channel === "/__status") {
+                  if (message.data[callback.channel] !== undefined) {
+                    callback.last_id = message.data[callback.channel];
+                  }
+                }
+              });
+            });
           },
           error: failCount += 1,
           complete: function() {
@@ -93,7 +108,9 @@ window.MessageBus = (function() {
               interval = _this.callbackInterval;
               if (failCount > 2) {
                 interval = interval * failCount;
-              } else if (isHidden()) {
+              } else if (!shouldLongPoll()) {
+                // slowning down stuff a lot when hidden
+                // we will need to add a lot of fine tuning here
                 interval = interval * 4;
               }
               if (interval > _this.maxPollInterval) {
@@ -108,7 +125,11 @@ window.MessageBus = (function() {
       poll();
     },
 
+    // Subscribe to a channel
     subscribe: function(channel, func, lastId) {
+      if (typeof(lastId) !== "number" || lastId < -1){
+        lastId = -1;
+      }
       callbacks.push({
         channel: channel,
         func: func,
@@ -119,13 +140,15 @@ window.MessageBus = (function() {
       }
     },
 
+    // Unsubscribe from a channel
     unsubscribe: function(channel) {
+      // TODO proper globbing
       var glob;
-      if (channel.endsWith("*")) {
+      if (channel.indexOf("*", channel.length - 1) !== -1) {
         channel = channel.substr(0, channel.length - 1);
         glob = true;
       }
-      callbacks = callbacks.filter(function(callback) {
+      callbacks = $.grep(callbacks,function(callback) {
         if (glob) {
           return callback.channel.substr(0, channel.length) !== channel;
         } else {
@@ -137,4 +160,6 @@ window.MessageBus = (function() {
       }
     }
   };
+
+  return me;
 })();
