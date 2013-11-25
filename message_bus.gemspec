@@ -8,9 +8,7 @@ Gem::Specification.new do |gem|
   gem.summary       = %q{}
   gem.homepage      = ""
 
-  # when this is extracted comment it back in, prd has no .git 
-  # gem.files         = `git ls-files`.split($\)
-  gem.files         = Dir['README*','LICENSE','lib/**/*.rb']
+  gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "message_bus"
