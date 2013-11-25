@@ -40,16 +40,16 @@ class MessageBus::Rack::Middleware
 
   def call(env)
 
-    return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus/
+    return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
 
     # special debug/test route
-    if ::MessageBus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'
+    if ::MessageBus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'.freeze
         parsed = Rack::Request.new(env)
-        ::MessageBus.publish parsed["channel"], parsed["data"]
-        return [200,{"Content-Type" => "text/html"},["sent"]]
+        ::MessageBus.publish parsed["channel".freeze], parsed["data".freeze]
+        return [200,{"Content-Type".freeze => "text/html".freeze},["sent"]]
     end
 
-    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
+    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'.freeze
       diags = MessageBus::Rack::Diagnostics.new(@app)
       return diags.call(env)
     end
@@ -62,8 +62,6 @@ class MessageBus::Rack::Middleware
     site_id = MessageBus.site_id_lookup.call(env) if MessageBus.site_id_lookup
 
     client = MessageBus::Client.new(client_id: client_id, user_id: user_id, site_id: site_id, group_ids: group_ids)
-
-    connection = env['em.connection']
 
     request = Rack::Request.new(env)
     request.POST.each do |k,v|
@@ -78,7 +76,7 @@ class MessageBus::Rack::Middleware
     ensure_reactor
 
     long_polling = MessageBus.long_polling_enabled? &&
-                   env['QUERY_STRING'] !~ /dlp=t/ &&
+                   env['QUERY_STRING'] !~ /dlp=t/.freeze &&
                    EM.reactor_running? &&
                    @@connection_manager.client_count < MessageBus.max_active_clients
 
@@ -101,8 +99,8 @@ class MessageBus::Rack::Middleware
         response = Thin::AsyncResponse.new(env)
       end
 
-      response.headers["Cache-Control"] = "must-revalidate, private, max-age=0"
-      response.headers["Content-Type"] ="application/json; charset=utf-8"
+      response.headers["Cache-Control"] = "must-revalidate, private, max-age=0".freeze
+      response.headers["Content-Type"] ="application/json; charset=utf-8".freeze
       response.status = 200
 
       client.async_response = response
