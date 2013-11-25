@@ -49,7 +49,6 @@ class Chat < Sinatra::Base
         });
 
 
-        MessageBus.start();
         MessageBus.subscribe("/message", function(msg){
           $('#messages').append("<p>"+ msg.name + " said: " + msg.data + "</p>");
         }, 0); // last id is zero, so getting backlog

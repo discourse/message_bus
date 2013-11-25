@@ -10,7 +10,7 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, interval, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me;
+  var me, started;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -62,6 +62,10 @@ window.MessageBus = (function() {
     start: function(opts) {
       var poll,
         _this = this;
+
+      if (started) return;
+      started = true;
+
       if (!opts) opts = {};
 
       poll = function() {
@@ -127,6 +131,11 @@ window.MessageBus = (function() {
 
     // Subscribe to a channel
     subscribe: function(channel, func, lastId) {
+
+      if(!started){
+        me.start();
+      }
+
       if (typeof(lastId) !== "number" || lastId < -1){
         lastId = -1;
       }
