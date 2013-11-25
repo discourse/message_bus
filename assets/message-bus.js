@@ -71,7 +71,7 @@ window.MessageBus = (function() {
           return;
         }
         data = {};
-        _.each(callbacks, function(callback) {
+        $.each(callbacks, function(_,callback) {
           data[callback.channel] = callback.last_id;
         });
         gotData = false;
@@ -85,9 +85,9 @@ window.MessageBus = (function() {
           },
           success: function(messages) {
             failCount = 0;
-            _.each(messages,function(message) {
+            $.each(messages,function(_,message) {
               gotData = true;
-              _.each(callbacks, function(callback) {
+              $.each(callbacks, function(_,callback) {
                 if (callback.channel === message.channel) {
                   callback.last_id = message.message_id;
                   callback.func(message.data);
