@@ -4,7 +4,7 @@ require File.expand_path('../lib/message_bus/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Sam Saffron"]
   gem.email         = ["sam.saffron@gmail.com"]
-  gem.description   = %q{A message bus built on websockets}
+  gem.description   = %q{A message bus for rack}
   gem.summary       = %q{}
   gem.homepage      = ""
 
@@ -15,7 +15,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = MessageBus::VERSION
   gem.add_runtime_dependency 'rack', '>= 1.1.3'
-  gem.add_runtime_dependency 'thin'
   gem.add_runtime_dependency 'eventmachine'
   gem.add_runtime_dependency 'redis'
 end
