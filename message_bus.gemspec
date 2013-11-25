@@ -15,7 +15,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = MessageBus::VERSION
   gem.add_runtime_dependency 'rack', '>= 1.1.3'
-  gem.add_runtime_dependency 'thin'
   gem.add_runtime_dependency 'eventmachine'
   gem.add_runtime_dependency 'redis'
 end
