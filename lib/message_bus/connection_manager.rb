@@ -21,7 +21,11 @@ class MessageBus::ConnectionManager
           client = @clients[client_id]
           if client && client.allowed?(msg)
             if copy = client.filter(msg)
-              client << copy
+              begin
+                client << copy
+              rescue
+                # pipe may be broken, move on
+              end
               # turns out you can delete from a set while itereating
               remove_client(client)
             end
@@ -60,7 +64,7 @@ class MessageBus::ConnectionManager
     @subscriptions[c.site_id].each do |k, set|
       set.delete c.client_id
     end
-    c.cleanup_timer.cancel
+    c.cleanup_timer.cancel if c.cleanup_timer
   end
 
   def lookup_client(client_id)

@@ -12,7 +12,11 @@ class MessageBus::Rack::Middleware
       MessageBus.subscribe do |msg|
         if EM.reactor_running?
           EM.next_tick do
-            @@connection_manager.notify_clients(msg) if @@connection_manager
+            begin
+              @@connection_manager.notify_clients(msg) if @@connection_manager
+            rescue
+              MessageBus.logger.warn "Failed to notify clients: #{$!} #{$!.backtrace}"
+            end
           end
         end
       end
@@ -80,6 +84,7 @@ class MessageBus::Rack::Middleware
                    EM.reactor_running? &&
                    @@connection_manager.client_count < MessageBus.max_active_clients
 
+    #STDERR.puts "LONG POLLING  lp enabled #{MessageBus.long_polling_enabled?}, reactor #{EM.reactor_running?} count: #{@@connection_manager.client_count} ,  active #{MessageBus.max_active_clients} #{long_polling}"
     if backlog.length > 0
       [200, headers, [self.class.backlog_to_json(backlog)] ]
     elsif long_polling && env['rack.hijack'] && MessageBus.rack_hijack_enabled?
@@ -124,8 +129,13 @@ class MessageBus::Rack::Middleware
     @@connection_manager.add_client(client)
 
     client.cleanup_timer = ::EM::Timer.new(MessageBus.long_polling_interval.to_f / 1000) {
-      client.close
-      @@connection_manager.remove_client(client)
+      begin
+        client.cleanup_timer = nil
+        client.ensure_closed!
+        @@connection_manager.remove_client(client)
+      rescue
+        MessageBus.logger.warn "Failed to clean up client properly: #{$!} #{$!.backtrace}"
+      end
     }
   end
 end

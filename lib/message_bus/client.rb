@@ -13,6 +13,15 @@ class MessageBus::Client
     @async_response || @io
   end
 
+  def ensure_closed!
+    return unless in_async?
+    write_and_close "[]"
+  rescue
+    # we may have a dead socket, just nil the @io
+    @io = nil
+    @async_response = nil
+  end
+
   def close
     return unless in_async?
     write_and_close "[]"
