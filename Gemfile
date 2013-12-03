@@ -11,5 +11,6 @@ group :test do
   gem 'rb-inotify', require: RUBY_PLATFORM =~ /linux/i ? 'rb-inotify' : false
   gem 'rack'
   gem 'http_parser.rb'
+  gem 'thin'
   gem 'rack-test', require: 'rack/test'
 end
