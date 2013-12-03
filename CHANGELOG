@@ -1,3 +1,8 @@
+12-03-2013
+- Version 0.9.3
+- Remove thin dependency
+- Improve robustness under failure conditions
+
 30-09-2013
 
 - Fix failures in Ruby 1.9
