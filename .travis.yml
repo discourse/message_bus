@@ -4,3 +4,5 @@ rvm:
   - 2.0.0
 gemfile:
   - Gemfile
+services:
+    - redis-server
