@@ -9,7 +9,7 @@
 **/
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-  var callbacks, clientId, failCount, interval, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
+  var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
   var me, started, stopped, longPoller, pollTimeout;
 
   uniqueId = function() {
@@ -99,9 +99,15 @@ window.MessageBus = (function() {
     return me.alwaysLongPoll || !isHidden();
   };
 
+  var totalAjaxFailures = 0;
+  var totalAjaxCalls = 0;
+  var lastAjax;
+
   longPoller = function(poll,data){
     var gotData = false;
-    var lastAjax = new Date();
+    var aborted = false;
+    lastAjax = new Date();
+    totalAjaxCalls += 1;
 
     return $.ajax(baseUrl + "message-bus/" + clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""), {
       data: data,
@@ -118,7 +124,14 @@ window.MessageBus = (function() {
           $.each(callbacks, function(_,callback) {
             if (callback.channel === message.channel) {
               callback.last_id = message.message_id;
-              callback.func(message.data);
+              try {
+                callback.func(message.data);
+              }
+              catch(e){
+                if(console.log) {
+                  console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.message);
+                }
+              }
             }
             if (message.channel === "/__status") {
               if (message.data[callback.channel] !== undefined) {
@@ -128,30 +141,45 @@ window.MessageBus = (function() {
           });
         });
       },
-      error: failCount += 1,
-      complete: function() {
-        if (gotData) {
-          pollTimeout = setTimeout(poll, 100);
+      error: function(xhr, textStatus, err) {
+        if(textStatus === "abort") {
+          aborted = true;
         } else {
-          interval = me.callbackInterval;
-          if (failCount > 2) {
-            interval = interval * failCount;
-          } else if (!shouldLongPoll()) {
-            // slowning down stuff a lot when hidden
-            // we will need to add a lot of fine tuning here
-            interval = interval * 4;
-          }
-          if (interval > me.maxPollInterval) {
-            interval = me.maxPollInterval;
-          }
-
-          interval -= (new Date() - lastAjax);
-          if (interval < 100) {
-            interval = 100;
-          }
-
-          pollTimeout = setTimeout(poll, interval);
+          failCount += 1;
+          totalAjaxFailures += 1;
         }
+      },
+      complete: function() {
+        var interval;
+        try {
+          if (gotData || aborted) {
+            interval = 100;
+          } else {
+            interval = me.callbackInterval;
+            if (failCount > 2) {
+              interval = interval * failCount;
+            } else if (!shouldLongPoll()) {
+              // slowing down stuff a lot when hidden
+              // we will need to fine tune this
+              interval = interval * 4;
+            }
+            if (interval > me.maxPollInterval) {
+              interval = me.maxPollInterval;
+            }
+
+            interval -= (new Date() - lastAjax);
+
+            if (interval < 100) {
+              interval = 100;
+            }
+          }
+        } catch(e) {
+          if(console.log && e.message) {
+            console.log("MESSAGE BUS FAIL: " + e.message);
+          }
+        }
+
+        pollTimeout = setTimeout(poll, interval);
         me.longPoll = null;
       }
     });
@@ -165,6 +193,14 @@ window.MessageBus = (function() {
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
+
+    diagnostics: function(){
+      console.log("Stopped: " + stopped + " Started: " + started);
+      console.log("Current callbacks");
+      console.log(callbacks);
+      console.log("Total ajax calls: " + totalAjaxCalls + " Recent failure count: " + failCount + " Total failures: " + totalAjaxFailures);
+      console.log("Last ajax call: " + (new Date() - lastAjax) / 1000  + " seconds ago") ;
+    },
 
     stop: function() {
       stopped = true;

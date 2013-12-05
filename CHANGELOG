@@ -1,4 +1,9 @@
-12-03-2013
+05-12-2013
+- Version 0.9.3.1
+- Add MessageBus.diagnostics() for diagnosing bus issues client side
+- Add more robustness to JavaScript, if callbacks used to fail they would halt the chain
+
+03-12-2013
 - Version 0.9.3
 - Remove thin dependency
 - Improve robustness under failure conditions
