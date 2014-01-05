@@ -119,6 +119,7 @@ window.MessageBus = (function() {
       },
       success: function(messages) {
         failCount = 0;
+        if (messages === null) return; // server unexpectedly closed connection
         $.each(messages,function(_,message) {
           gotData = true;
           $.each(callbacks, function(_,callback) {
