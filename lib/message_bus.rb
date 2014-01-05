@@ -88,7 +88,7 @@ module MessageBus::Implementation
   end
 
   def long_polling_interval
-    @long_polling_interval || 30 * 1000
+    @long_polling_interval || 29 * 1000
   end
 
   def off

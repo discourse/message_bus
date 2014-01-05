@@ -59,7 +59,7 @@ describe MessageBus::Rack::Middleware do
         MessageBus.long_polling_interval = 10
         s = Time.now.to_f * 1000
         post "/message-bus/ABC", '/foo' => nil
-        (Time.now.to_f * 1000 - s).should < 30
+        (Time.now.to_f * 1000 - s).should < 29
       ensure
         MessageBus.long_polling_interval = 5000
       end
