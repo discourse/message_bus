@@ -23,7 +23,8 @@ end
 describe MessageBus::ConnectionManager do
 
   before do
-    @manager = MessageBus::ConnectionManager.new
+    @bus = MessageBus
+    @manager = MessageBus::ConnectionManager.new(@bus)
     @client = MessageBus::Client.new(client_id: "xyz", user_id: 1, site_id: 10)
     @resp = FakeAsync.new
     @client.async_response = @resp

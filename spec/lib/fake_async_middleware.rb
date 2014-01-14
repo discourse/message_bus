@@ -1,38 +1,47 @@
 require 'http/parser'
 class FakeAsyncMiddleware
 
-  def self.simulate_thin_async
-    @@simulate_thin_async = true
-    @@simulate_hijack = false
-  end
-
-  def self.simulate_hijack
-    @@simulate_thin_async = false
-    @@simulate_hijack = true
-  end
-
-  def self.in_async?
-    @@in_async if defined? @@in_async
-  end
-
   def initialize(app,config={})
     @app = app
+    @bus = config[:message_bus] || MessageBus
+    @simulate_thin_async = false
+    @simulate_hijack = false
+    @in_async = false
+  end
+
+  def app
+    @app
   end
 
   def simulate_thin_async
-    @@simulate_thin_async && MessageBus.long_polling_enabled?
+    @simulate_thin_async = true
+    @simulate_hijack = false
   end
 
   def simulate_hijack
-    @@simulate_hijack && MessageBus.long_polling_enabled?
+    @simulate_thin_async = false
+    @simulate_hijack = true
+  end
+
+  def in_async?
+    @in_async
+  end
+
+
+  def simulate_thin_async?
+    @simulate_thin_async && @bus.long_polling_enabled?
+  end
+
+  def simulate_hijack?
+    @simulate_hijack && @bus.long_polling_enabled?
   end
 
   def call(env)
-    if simulate_thin_async
+    if simulate_thin_async?
       call_thin_async(env)
-    elsif simulate_hijack
+    elsif simulate_hijack?
       call_rack_hijack(env)
-    else 
+    else
       @app.call(env)
     end
   end
@@ -64,12 +73,12 @@ class FakeAsyncMiddleware
       env['rack.hijack_io'] = io
 
       result = @app.call(env)
-      
+
       EM::Timer.new(1) { EM.stop }
 
       defer = lambda {
         if !io || !io.closed?
-          @@in_async = true
+          @in_async = true
           EM.next_tick do
             defer.call
           end
@@ -88,7 +97,7 @@ class FakeAsyncMiddleware
       end
     }
 
-    @@in_async = false
+    @in_async = false
     result || [500, {}, ['timeout']]
 
   end
@@ -116,7 +125,7 @@ class FakeAsyncMiddleware
 
       defer = lambda {
         if !result
-          @@in_async = true
+          @in_async = true
           EM.next_tick do
             defer.call
           end
@@ -127,7 +136,7 @@ class FakeAsyncMiddleware
       defer.call
     }
 
-    @@in_async = false
+    @in_async = false
     result || [500, {}, ['timeout']]
   end
 end

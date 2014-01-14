@@ -9,6 +9,7 @@ require 'redis'
 
 
 class MessageBus::ReliablePubSub
+  attr_reader :subscribed
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -212,7 +213,6 @@ class MessageBus::ReliablePubSub
   end
 
   def global_unsubscribe
-    # TODO mutex
     if @redis_global
       pub_redis.publish(redis_channel_name, UNSUB_MESSAGE)
       @redis_global.disconnect
@@ -249,7 +249,13 @@ class MessageBus::ReliablePubSub
           if highest_id
             clear_backlog.call(&blk)
           end
+          @subscribed = true
         end
+
+        on.unsubscribe do
+          @subscribed = false
+        end
+
         on.message do |c,m|
           if m == UNSUB_MESSAGE
             @redis_global.unsubscribe

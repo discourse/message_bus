@@ -14,6 +14,7 @@ describe MessageBus do
   end
 
   after do
+    @bus.reset!
     @bus.destroy
   end
 
@@ -79,6 +80,65 @@ describe MessageBus do
     r.map{|i| i.data}.to_a.should == ['foo', 'bar']
   end
 
+  it "allows you to look up last_message" do
+    @bus.publish("/bob", "dylan")
+    @bus.publish("/bob", "marley")
+    @bus.last_message("/bob").data.should == "marley"
+    @bus.last_message("/nothing").should == nil
+  end
+
+  context "global subscriptions" do
+    before do
+      seq = 0
+      @bus.site_id_lookup do
+        (seq+=1).to_s
+      end
+    end
+
+    it "can get last_message" do
+      @bus.publish("/global/test", "test")
+      @bus.last_message("/global/test").data.should == "test"
+    end
+
+    it "can subscribe globally" do
+
+      data = nil
+      @bus.subscribe do |message|
+        data = message.data
+      end
+
+      @bus.publish("/global/test", "test")
+      wait_for(1000){ data }
+
+      data.should == "test"
+    end
+
+    it "can subscribe to channel" do
+
+      data = nil
+      @bus.subscribe("/global/test") do |message|
+        data = message.data
+      end
+
+      @bus.publish("/global/test", "test")
+      wait_for(1000){ data }
+
+      data.should == "test"
+    end
+
+    it "should exception if publishing restricted messages to user" do
+      lambda do
+        @bus.publish("/global/test", "test", user_ids: [1])
+      end.should raise_error(MessageBus::InvalidMessage)
+    end
+
+    it "should exception if publishing restricted messages to group" do
+      lambda do
+        @bus.publish("/global/test", "test", user_ids: [1])
+      end.should raise_error(MessageBus::InvalidMessage)
+    end
+
+  end
 
   it "should support forking properly do" do
     data = nil

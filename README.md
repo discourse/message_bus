@@ -60,6 +60,23 @@ end
 
 ```
 
+### Multisite support
+
+MessageBus can be used in an environment that hosts multiple sites by multiplexing channels. To use this mode
+
+```
+# define a site_id lookup method
+MessageBus.site_id_lookup do
+  some_method_that_returns_site_id_string
+end
+
+# you may post messages just to this site
+MessageBus.publish "/channel", "some message"
+
+# you may publish messages to ALL sites using the /global/ prefix
+MessageBus.publish "/global/channel", "will go to all sites"
+```
+
 JavaScript can listen on any channel (and receive notification via polling or long polling):
 
 ```html

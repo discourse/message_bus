@@ -6,6 +6,7 @@ class MessageBus::Client
     self.group_ids = opts[:group_ids] || []
     self.site_id = opts[:site_id]
     self.connect_time = Time.now
+    @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
   end
 
@@ -33,7 +34,7 @@ class MessageBus::Client
 
   def subscribe(channel, last_seen_id)
     last_seen_id = nil if last_seen_id == ""
-    last_seen_id ||= MessageBus.last_id(channel)
+    last_seen_id ||= @bus.last_id(channel)
     @subscriptions[channel] = last_seen_id.to_i
   end
 
@@ -61,7 +62,7 @@ class MessageBus::Client
   end
 
   def filter(msg)
-    filter = MessageBus.client_filter(msg.channel)
+    filter = @bus.client_filter(msg.channel)
 
     if filter
       filter.call(self.user_id, msg)
@@ -74,7 +75,7 @@ class MessageBus::Client
     r = []
     @subscriptions.each do |k,v|
       next if v.to_i < 0
-      messages = MessageBus.backlog(k,v)
+      messages = @bus.backlog(k,v)
       messages.each do |msg|
         r << msg if allowed?(msg)
       end
@@ -84,7 +85,7 @@ class MessageBus::Client
     @subscriptions.each do |k,v|
       if v.to_i == -1
         status_message ||= {}
-        status_message[k] = MessageBus.last_id(k)
+        status_message[k] = @bus.last_id(k)
       end
     end
     r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message

@@ -3,10 +3,11 @@ module MessageBus::Rack; end
 class MessageBus::Rack::Diagnostics
   def initialize(app, config = {})
     @app = app
+    @bus = config[:message_bus] || MessageBus
   end
 
   def js_asset(name)
-    return generate_script_tag(name) unless MessageBus.cache_assets
+    return generate_script_tag(name) unless @bus.cache_assets
     @@asset_cache ||= {}
     @@asset_cache[name] ||= generate_script_tag(name)
     @@asset_cache[name]
@@ -65,21 +66,21 @@ HTML
 
     route = env['PATH_INFO'].split('/message-bus/_diagnostics')[1]
 
-    if MessageBus.is_admin_lookup.nil? || !MessageBus.is_admin_lookup.call(env)
+    if @bus.is_admin_lookup.nil? || !@bus.is_admin_lookup.call(env)
       return [403, {}, ['not allowed']]
     end
 
     return index unless route
 
     if route == '/discover'
-      user_id =  MessageBus.user_id_lookup.call(env)
-      MessageBus.publish('/_diagnostics/discover', user_id: user_id)
+      user_id = @bus.user_id_lookup.call(env)
+      @bus.publish('/_diagnostics/discover', user_id: user_id)
       return [200, {}, ['ok']]
     end
 
     if route =~ /^\/hup\//
       hostname, pid = route.split('/hup/')[1].split('/')
-      MessageBus.publish('/_diagnostics/hup', {hostname: hostname, pid: pid.to_i})
+      @bus.publish('/_diagnostics/hup', {hostname: hostname, pid: pid.to_i})
       return [200, {}, ['ok']]
     end
 

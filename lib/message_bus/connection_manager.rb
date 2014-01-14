@@ -2,9 +2,10 @@ require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
 
-  def initialize
+  def initialize(bus = nil)
     @clients = {}
     @subscriptions = {}
+    @bus = bus || MessageBus
   end
 
   def notify_clients(msg)
@@ -14,7 +15,7 @@ class MessageBus::ConnectionManager
 
       return unless subscription
 
-      around_filter = MessageBus.around_client_batch(msg.channel)
+      around_filter = @bus.around_client_batch(msg.channel)
 
       work = lambda do
         subscription.each do |client_id|

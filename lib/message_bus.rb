@@ -12,6 +12,7 @@ require "message_bus/message_handler"
 require "message_bus/diagnostics"
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
+require "monitor.rb"
 
 # we still need to take care of the logger
 if defined?(::Rails)
@@ -19,7 +20,19 @@ if defined?(::Rails)
 end
 
 module MessageBus; end
+class MessageBus::InvalidMessage < Exception; end
+class MessageBus::BusDestroyed < Exception; end
+
 module MessageBus::Implementation
+
+  # Like Mutex but safe for recursive calls
+  class Synchronizer
+    include MonitorMixin
+  end
+
+  def initialize
+    @mutex = Synchronizer.new
+  end
 
   def cache_assets=(val)
     @cache_assets = val
@@ -164,7 +177,10 @@ module MessageBus::Implementation
   end
 
   def reliable_pub_sub
-    @reliable_pub_sub ||= MessageBus::ReliablePubSub.new redis_config
+    @mutex.synchronize do
+      return nil if @destroyed
+      @reliable_pub_sub ||= MessageBus::ReliablePubSub.new redis_config
+    end
   end
 
   def enable_diagnostics
@@ -173,6 +189,9 @@ module MessageBus::Implementation
 
   def publish(channel, data, opts = nil)
     return if @off
+    @mutex.synchronize do
+      raise ::MessageBus::BusDestroyed if @destroyed
+    end
 
     user_ids = nil
     group_ids = nil
@@ -180,6 +199,8 @@ module MessageBus::Implementation
       user_ids = opts[:user_ids]
       group_ids = opts[:group_ids]
     end
+
+    raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
 
     encoded_data = JSON.dump({
       data: data,
@@ -202,7 +223,7 @@ module MessageBus::Implementation
 
   # encode channel name to include site
   def encode_channel_name(channel)
-    if site_id_lookup
+    if site_id_lookup && !global?(channel)
       raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
       "#{channel}#{ENCODE_SITE_TOKEN}#{site_id_lookup.call}"
     else
@@ -229,7 +250,7 @@ module MessageBus::Implementation
 
   # subscribe only on current site
   def local_subscribe(channel=nil, &blk)
-    site_id = site_id_lookup.call if site_id_lookup
+    site_id = site_id_lookup.call if site_id_lookup && ! global?(channel)
     subscribe_impl(channel, site_id, &blk)
   end
 
@@ -238,7 +259,7 @@ module MessageBus::Implementation
       if channel
         reliable_pub_sub.backlog(encode_channel_name(channel), last_id)
       else
-        reliable_pub_sub.global_backlog(encode_channel_name(channel), last_id)
+        reliable_pub_sub.global_backlog(last_id)
       end
 
     old.each{ |m|
@@ -247,14 +268,26 @@ module MessageBus::Implementation
     old
   end
 
-
   def last_id(channel)
     reliable_pub_sub.last_id(encode_channel_name(channel))
   end
 
+  def last_message(channel)
+    if last_id = last_id(channel)
+      messages = backlog(channel, last_id-1)
+      if messages
+        messages[0]
+      end
+    end
+  end
 
   def destroy
-    reliable_pub_sub.global_unsubscribe
+    @mutex.synchronize do
+      @subscriptions ||= {}
+      reliable_pub_sub.global_unsubscribe
+      @destroyed = true
+    end
+    @subscriber_thread.join if @subscriber_thread
   end
 
   def after_fork
@@ -262,7 +295,20 @@ module MessageBus::Implementation
     ensure_subscriber_thread
   end
 
+  def listening?
+    @subscriber_thread && @subscriber_thread.alive?
+  end
+
+  # will reset all keys
+  def reset!
+    reliable_pub_sub.reset!
+  end
+
   protected
+
+  def global?(channel)
+    channel && channel.start_with?('/global/'.freeze)
+  end
 
   def decode_message!(msg)
     channel, site_id = decode_channel_name(msg.channel)
@@ -275,15 +321,27 @@ module MessageBus::Implementation
   end
 
   def subscribe_impl(channel, site_id, &blk)
+
+    raise MessageBus::BusDestroyed if @destroyed
+
     @subscriptions ||= {}
     @subscriptions[site_id] ||= {}
     @subscriptions[site_id][channel] ||=  []
     @subscriptions[site_id][channel] << blk
     ensure_subscriber_thread
+
+    attempts = 100
+    while attempts > 0 && !reliable_pub_sub.subscribed
+      sleep 0.001
+      attempts-=1
+    end
+
+    raise MessageBus::BusDestroyed if @destroyed
     blk
   end
 
   def unsubscribe_impl(channel, site_id, &blk)
+
     @mutex.synchronize do
       if blk
         @subscriptions[site_id][channel].delete blk
@@ -291,42 +349,50 @@ module MessageBus::Implementation
         @subscriptions[site_id][channel] = []
       end
     end
+
   end
 
 
   def ensure_subscriber_thread
-    @mutex ||= Mutex.new
     @mutex.synchronize do
-      return if @subscriber_thread && @subscriber_thread.alive?
-      @subscriber_thread = Thread.new do
-        reliable_pub_sub.global_subscribe do |msg|
-          begin
-            decode_message!(msg)
+      return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
+      @subscriber_thread = new_subscriber_thread
+    end
+  end
 
-            @mutex.synchronize do
-              globals = @subscriptions[nil]
-              locals = @subscriptions[msg.site_id] if msg.site_id
+  def new_subscriber_thread
+    Thread.new do
+      global_subscribe_thread unless @destroyed
+    end
+  end
 
-              global_globals = globals[nil] if globals
-              local_globals = locals[nil] if locals
+  def global_subscribe_thread
+    reliable_pub_sub.global_subscribe do |msg|
+      begin
+        decode_message!(msg)
+        globals, locals, local_globals, global_globals = nil
 
-              globals = globals[msg.channel] if globals
-              locals = locals[msg.channel] if locals
+        @mutex.synchronize do
+          raise MessageBus::BusDestroyed if @destroyed
+          globals = @subscriptions[nil]
+          locals = @subscriptions[msg.site_id] if msg.site_id
 
-              multi_each(globals,locals, global_globals, local_globals) do |c|
-                begin
-                  c.call msg
-                rescue => e
-                  MessageBus.logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
-                end
-              end
-            end
+          global_globals = globals[nil] if globals
+          local_globals = locals[nil] if locals
 
-          rescue => e
-            MessageBus.logger.warn "failed to process message #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
-          end
-
+          globals = globals[msg.channel] if globals
+          locals = locals[msg.channel] if locals
         end
+
+        multi_each(globals,locals, global_globals, local_globals) do |c|
+          begin
+            c.call msg
+          rescue => e
+            MessageBus.logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
+          end
+        end
+      rescue => e
+        MessageBus.logger.warn "failed to process message #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
       end
     end
   end
@@ -341,6 +407,7 @@ end
 
 module MessageBus
   extend MessageBus::Implementation
+  initialize
 end
 
 # allows for multiple buses per app

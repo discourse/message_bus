@@ -1,3 +1,11 @@
+13-01-2014
+- Version 0.9.4
+- Added support for /global/ channel to publish messages across a multisite
+- Cleaned up test harness so it uses local bus as opposed to global
+- Fix bug where we could subscribe to a channel but miss starting messages
+- Added method for destroying a local MessageBus instance
+- ensure_reactor could say the reactor is running, but it was not, on first call
+
 06-12-2013
 - Version 0.9.3.2
 - Fix permissions in gem
