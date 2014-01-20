@@ -6,7 +6,14 @@ class MessageBus::Rails::Engine < ::Rails::Engine; end
 class MessageBus::Rails::Railtie < ::Rails::Railtie
   initializer "message_bus.configure_init" do |app|
     MessageBus::MessageHandler.load_handlers("#{Rails.root}/app/message_handlers")
-    app.middleware.insert_after(ActiveRecord::QueryCache, MessageBus::Rack::Middleware)
+
+    # We want MessageBus to show up after the session middleware, but depending on how
+    # the Rails app is configured that might be ActionDispatch::Session::CookieStore, or potentially
+    # ActionDispatch::Session::ActiveRecordStore.
+    #
+    # To handle either case, we insert it before ActionDispatch::Flash.
+    #
+    app.middleware.insert_before(ActionDispatch::Flash, MessageBus::Rack::Middleware)
     MessageBus.logger = Rails.logger
   end
 end

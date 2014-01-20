@@ -91,7 +91,7 @@ MessageBus.start(); // call once at startup
 MessageBus.callbackInterval = 500;
 MessageBus.subscribe("/channel", function(data){
   // data shipped from server
-}
+});
 
 
 ```
