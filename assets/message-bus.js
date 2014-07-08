@@ -109,7 +109,7 @@ window.MessageBus = (function() {
     lastAjax = new Date();
     totalAjaxCalls += 1;
 
-    return $.ajax(baseUrl + "message-bus/" + clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""), {
+    return $.ajax(me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""), {
       data: data,
       cache: false,
       dataType: 'json',
