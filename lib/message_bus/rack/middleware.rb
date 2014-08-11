@@ -73,6 +73,9 @@ class MessageBus::Rack::Middleware
     group_ids = @bus.group_ids_lookup.call(env) if @bus.group_ids_lookup
     site_id = @bus.site_id_lookup.call(env) if @bus.site_id_lookup
 
+    # close db connection as early as possible
+    close_db_connection!
+
     client = MessageBus::Client.new(message_bus: @bus, client_id: client_id, user_id: user_id, site_id: site_id, group_ids: group_ids)
 
     request = Rack::Request.new(env)
@@ -121,6 +124,16 @@ class MessageBus::Rack::Middleware
       throw :async
     else
       [200, headers, ["[]"]]
+    end
+  end
+
+  def close_db_connection!
+    # IMPORTANT
+    # ConnectionManagement in Rails puts a BodyProxy around stuff
+    #  this means connections are not returned until rack.async is
+    #  closed
+    if defined? ActiveRecord::Base.clear_active_connections!
+      ActiveRecord::Base.clear_active_connections!
     end
   end
 

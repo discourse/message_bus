@@ -1,3 +1,7 @@
+11-08-2014
+- Version 0.9.5
+- Fix: release db connection a lot earlier for long polling (rails defer closes)
+
 13-01-2014
 - Version 0.9.4
 - Added support for /global/ channel to publish messages across a multisite
