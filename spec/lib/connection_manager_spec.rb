@@ -6,6 +6,7 @@ class FakeAsync
   attr_accessor :cleanup_timer
 
   def <<(val)
+    sleep 0.01 # simulate IO
     @sent ||= ""
     @sent << val
   end
@@ -79,6 +80,39 @@ describe MessageBus::ConnectionManager do
     @manager.notify_clients(m)
     @resp.sent.should == nil
   end
+end
 
+describe MessageBus::ConnectionManager, "notifying and subscribing concurrently" do
+
+  it "is thread-safe" do
+    @bus = MessageBus
+    @manager = MessageBus::ConnectionManager.new(@bus)
+
+    client_threads = 10.times.map do |id|
+      Thread.new do
+        expect {
+          @client = MessageBus::Client.new(client_id: "xyz_#{id}", site_id: 10)
+          @resp = FakeAsync.new
+          @client.async_response = @resp
+          @client.subscribe("test", -1)
+          @manager.add_client(@client)
+          @client.cleanup_timer = FakeTimer.new
+        }.not_to raise_error
+      end
+    end
+
+    subscriber_threads = 10.times.map do |id|
+      Thread.new do
+        expect {
+          m = MessageBus::Message.new(1,id,"test","data_#{id}")
+          m.site_id = 10
+          @manager.notify_clients(m)
+        }.not_to raise_error
+      end
+    end
+
+    client_threads.each(&:join)
+    subscriber_threads.each(&:join)
+  end
 
 end
