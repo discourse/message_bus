@@ -2,6 +2,31 @@ require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
 
+  class SynchronizedSet < Set
+
+    def initialize
+      super
+      @mutex = Mutex.new
+    end
+
+    alias_method :parent_add, :"<<"
+    def <<(element)
+      @mutex.synchronize do
+        parent_add element
+      end
+    end
+
+    alias_method :parent_each, :each
+    def each(&block)
+      @mutex.synchronize do
+        parent_each(&block)
+      end
+    end
+
+    private :parent_add, :parent_each
+
+  end
+
   def initialize(bus = nil)
     @clients = {}
     @subscriptions = {}
@@ -75,7 +100,7 @@ class MessageBus::ConnectionManager
   def subscribe_client(client,channel)
     set = @subscriptions[client.site_id][channel]
     unless set
-      set = Set.new
+      set = SynchronizedSet.new
       @subscriptions[client.site_id][channel] = set
     end
     set << client.client_id

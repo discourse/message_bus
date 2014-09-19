@@ -31,18 +31,18 @@ describe MessageBus::Client do
 
       it "denies users that are not members of group" do
         @client.group_ids = [77,0,10]
-        @client.allowed?(@message).should be_false
+        @client.allowed?(@message).should == false
       end
 
       it "allows users that are members of group" do
         @client.group_ids = [1,2,3]
-        @client.allowed?(@message).should be_true
+        @client.allowed?(@message).should == true
       end
 
       it "allows all users if groups not set" do
         @message.group_ids = nil
         @client.group_ids = [77,0,10]
-        @client.allowed?(@message).should be_true
+        @client.allowed?(@message).should == true
       end
     end
   end
