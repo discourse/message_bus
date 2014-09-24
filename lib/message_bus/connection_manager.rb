@@ -1,29 +1,27 @@
 require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
+  require 'monitor'
 
-  class SynchronizedSet < Set
+  class SynchronizedSet
+    include MonitorMixin
 
     def initialize
       super
-      @mutex = Mutex.new
+      @set = Set.new
     end
 
-    alias_method :parent_add, :"<<"
-    def <<(element)
-      @mutex.synchronize do
-        parent_add element
+    def self.synchronize(methods)
+      methods.each do |method|
+        define_method method do |*args, &blk|
+          synchronize do
+            @set.send method,*args,&blk
+          end
+        end
       end
     end
 
-    alias_method :parent_each, :each
-    def each(&block)
-      @mutex.synchronize do
-        parent_each(&block)
-      end
-    end
-
-    private :parent_add, :parent_each
+    synchronize(Set.new.methods - Object.new.methods)
 
   end
 
