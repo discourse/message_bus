@@ -1,6 +1,15 @@
 require 'thin'
 require 'lib/fake_async_middleware'
 
+RSpec.configure do |config|
+  config.expect_with :rspec do |c|
+    c.syntax = [:should, :expect]
+  end
+  config.mock_with :rspec do |mocks|
+    mocks.syntax = :should
+  end
+end
+
 def wait_for(timeout_milliseconds)
   timeout = (timeout_milliseconds + 0.0) / 1000
   finish = Time.now + timeout
