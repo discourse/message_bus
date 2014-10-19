@@ -9,7 +9,7 @@
 **/
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-  var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
+  var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl, initVisibilityTracking;
   var me, started, stopped, longPoller, pollTimeout;
 
   uniqueId = function() {
@@ -29,9 +29,8 @@ window.MessageBus = (function() {
   failCount = 0;
   baseUrl = "/";
 
-  /* TODO: The plan is to force a long poll as soon as page becomes visible
   // MIT based off https://github.com/mathiasbynens/jquery-visibility/blob/master/jquery-visibility.js
-  initVisibilityTracking =  function(window, document, $, undefined) {
+  initVisibilityTracking = function(window, document, $, poll) {
     var prefix;
     var property;
     // In Opera, `'onfocusin' in document == true`, hence the extra `hasFocus` check to detect IE-like behavior
@@ -71,12 +70,19 @@ window.MessageBus = (function() {
                       originalEvent.relatedTarget === undefined
               )
       ) {
-          visibilityChanged(property && document[property] || /^(?:blur|focusout)$/.test(type) ? 'hide' : 'show');
+          if (property && document[property] || /^(?:blur|focusout)$/.test(type)) {
+            // Page hidden, don't need to do anything.
+          } else {
+            // Page became visible. Force a long poll.
+            if (!me.longPoll) {
+              clearTimeout(pollTimeout);
+              pollTimeout = setTimeout(poll, 0);
+            }
+          }
       }
     });
 
   };
-  */
 
   var hiddenProperty;
 
@@ -236,6 +242,9 @@ window.MessageBus = (function() {
         });
         me.longPoll = longPoller(poll,data);
       };
+
+      initVisibilityTracking(window, document, jQuery, poll);
+
       poll();
     },
 
