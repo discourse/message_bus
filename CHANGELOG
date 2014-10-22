@@ -1,3 +1,8 @@
+22-09-2014
+- Version 1.0.0
+- Feature: add backgroundCallbackInterval - interval to send polls when page is in the background
+- Feature: issue a long poll as soon as page moves into the foreground
+
 11-08-2014
 - Version 0.9.5
 - Fix: release db connection a lot earlier for long polling (rails defer closes)

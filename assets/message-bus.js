@@ -29,55 +29,6 @@ window.MessageBus = (function() {
   failCount = 0;
   baseUrl = "/";
 
-  /* TODO: The plan is to force a long poll as soon as page becomes visible
-  // MIT based off https://github.com/mathiasbynens/jquery-visibility/blob/master/jquery-visibility.js
-  initVisibilityTracking =  function(window, document, $, undefined) {
-    var prefix;
-    var property;
-    // In Opera, `'onfocusin' in document == true`, hence the extra `hasFocus` check to detect IE-like behavior
-    var eventName = 'onfocusin' in document && 'hasFocus' in document ? 'focusin focusout' : 'focus blur';
-    var prefixes = ['webkit', 'o', 'ms', 'moz', ''];
-    var $event = $.event;
-
-    while ((prefix = prefixes.pop()) !== undefined) {
-      property = (prefix ? prefix + 'H': 'h') + 'idden';
-      var supportsVisibility = typeof document[property] === 'boolean';
-      if (supportsVisibility) {
-        eventName = prefix + 'visibilitychange';
-        break;
-      }
-    }
-
-    $(/blur$/.test(eventName) ? window : document).on(eventName, function(event) {
-      var type = event.type;
-      var originalEvent = event.originalEvent;
-
-      // Avoid errors from triggered native events for which `originalEvent` is
-      // not available.
-      if (!originalEvent) {
-              return;
-      }
-
-      var toElement = originalEvent.toElement;
-
-      // If it's a `{focusin,focusout}` event (IE), `fromElement` and `toElement`
-      // should both be `null` or `undefined`; else, the page visibility hasn't
-      // changed, but the user just clicked somewhere in the doc. In IE9, we need
-      // to check the `relatedTarget` property instead.
-      if (
-              !/^focus./.test(type) || (
-                      toElement === undefined &&
-                      originalEvent.fromElement === undefined &&
-                      originalEvent.relatedTarget === undefined
-              )
-      ) {
-          visibilityChanged(property && document[property] || /^(?:blur|focusout)$/.test(type) ? 'hide' : 'show');
-      }
-    });
-
-  };
-  */
-
   var hiddenProperty;
 
   $.each(["","webkit","ms","moz","ms"], function(index, prefix){
@@ -160,9 +111,7 @@ window.MessageBus = (function() {
             if (failCount > 2) {
               interval = interval * failCount;
             } else if (!shouldLongPoll()) {
-              // slowing down stuff a lot when hidden
-              // we will need to fine tune this
-              interval = interval * 4;
+              interval = me.backgroundCallbackInterval;
             }
             if (interval > me.maxPollInterval) {
               interval = me.maxPollInterval;
@@ -180,7 +129,7 @@ window.MessageBus = (function() {
           }
         }
 
-        pollTimeout = setTimeout(poll, interval);
+        pollTimeout = setTimeout(function(){pollTimeout=null; poll();}, interval);
         me.longPoll = null;
       }
     });
@@ -189,6 +138,7 @@ window.MessageBus = (function() {
   me = {
     enableLongPolling: true,
     callbackInterval: 15000,
+    backgroundCallbackInterval: 60000,
     maxPollInterval: 3 * 60 * 1000,
     callbacks: callbacks,
     clientId: clientId,
@@ -210,7 +160,7 @@ window.MessageBus = (function() {
 
     // Start polling
     start: function(opts) {
-      var poll;
+      var poll, delayPollTimeout;
 
       if (started) return;
       started = true;
@@ -226,7 +176,9 @@ window.MessageBus = (function() {
         }
 
         if (callbacks.length === 0) {
-          setTimeout(poll, 500);
+          if(!delayPollTimeout) {
+            delayPollTimeout = setTimeout(function(){ delayPollTimeout = null; poll();}, 500);
+          }
           return;
         }
 
@@ -234,8 +186,22 @@ window.MessageBus = (function() {
         $.each(callbacks, function(_,callback) {
           data[callback.channel] = callback.last_id;
         });
+
         me.longPoll = longPoller(poll,data);
       };
+
+
+      // monitor visibility, issue a new long poll when the page shows
+      if(document.addEventListener && 'hidden' in document){
+        me.visibilityEvent = document.addEventListener('visibilitychange', function(){
+          if(!document.hidden && !me.longPoll && pollTimeout){
+            clearTimeout(pollTimeout);
+            pollTimeout = null;
+            poll();
+          }
+        });
+      }
+
       poll();
     },
 

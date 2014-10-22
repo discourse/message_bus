@@ -1,3 +1,3 @@
 module MessageBus
-  VERSION = "0.9.6"
+  VERSION = "1.0.0"
 end
