@@ -235,7 +235,7 @@ window.MessageBus = (function() {
         glob = true;
       }
       callbacks = $.grep(callbacks,function(callback) {
-        var funcMismatch = (typeof(func) !== 'function') || (callback.func !== func);
+        var funcMismatch = callback.func !== func;
         if (glob) {
           return (callback.channel.substr(0, channel.length) !== channel) || funcMismatch;
         } else {
