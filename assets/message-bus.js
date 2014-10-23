@@ -59,8 +59,8 @@ window.MessageBus = (function() {
     var aborted = false;
     lastAjax = new Date();
     totalAjaxCalls += 1;
-    
-    return $.ajax({
+
+    return me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""),
       data: data,
       cache: false,
@@ -145,6 +145,9 @@ window.MessageBus = (function() {
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
+    // TODO we can make the dependency on $ and jQuery conditional
+    // all we really need is an implementation of ajax
+    ajax: $.ajax,
 
     diagnostics: function(){
       console.log("Stopped: " + stopped + " Started: " + started);
