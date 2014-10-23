@@ -1,3 +1,8 @@
+23-09-2014
+- Version 1.0.1
+- Feature: $.ajax dependency can be passed in.
+- Feature: unsubscribe accepts a second param for the function to unsubscribe.
+
 22-09-2014
 - Version 1.0.0
 - Feature: add backgroundCallbackInterval - interval to send polls when page is in the background
