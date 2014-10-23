@@ -230,7 +230,7 @@ window.MessageBus = (function() {
     },
 
     // Unsubscribe from a channel
-    unsubscribe: function(channel) {
+    unsubscribe: function(channel, func) {
       // TODO proper globbing
       var glob;
       if (channel.indexOf("*", channel.length - 1) !== -1) {
@@ -238,12 +238,21 @@ window.MessageBus = (function() {
         glob = true;
       }
       callbacks = $.grep(callbacks,function(callback) {
+        var keep;
+
         if (glob) {
-          return callback.channel.substr(0, channel.length) !== channel;
+          keep = callback.channel.substr(0, channel.length) !== channel;
         } else {
-          return callback.channel !== channel;
+          keep = callback.channel !== channel;
         }
+
+        if(!keep && func && callback.func !== func){
+          keep = true;
+        }
+
+        return keep;
       });
+
       if (me.longPoll) {
         return me.longPoll.abort();
       }
