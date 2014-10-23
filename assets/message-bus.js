@@ -227,7 +227,7 @@ window.MessageBus = (function() {
     },
 
     // Unsubscribe from a channel
-    unsubscribe: function(channel) {
+    unsubscribe: function(channel, func) {
       // TODO proper globbing
       var glob;
       if (channel.indexOf("*", channel.length - 1) !== -1) {
@@ -235,10 +235,11 @@ window.MessageBus = (function() {
         glob = true;
       }
       callbacks = $.grep(callbacks,function(callback) {
+        var funcMismatch = callback.func !== func;
         if (glob) {
-          return callback.channel.substr(0, channel.length) !== channel;
+          return (callback.channel.substr(0, channel.length) !== channel) || funcMismatch;
         } else {
-          return callback.channel !== channel;
+          return (callback.channel !== channel) || funcMismatch;
         }
       });
       if (me.longPoll) {
