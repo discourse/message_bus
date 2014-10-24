@@ -141,12 +141,9 @@ module MessageBus::Implementation
     @is_admin_lookup
   end
 
-  def access_control_allow_origin=(origin)
-    @access_control_allow_origin = origin
-  end
-
-  def access_control_allow_origin
-    @access_control_allow_origin
+  def access_control_allow_origin_lookup(&blk)
+    @access_control_allow_origin_lookup = blk if blk
+    @access_control_allow_origin_lookup
   end
 
   def client_filter(channel, &blk)

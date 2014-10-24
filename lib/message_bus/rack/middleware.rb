@@ -87,7 +87,7 @@ class MessageBus::Rack::Middleware
     headers = {}
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] ="application/json; charset=utf-8"
-    headers["Access-Control-Allow-Origin"] = @bus.access_control_allow_origin if @bus.access_control_allow_origin
+    headers["Access-Control-Allow-Origin"] = @bus.access_control_allow_origin_lookup.call(env) if @bus.access_control_allow_origin_lookup
 
     ensure_reactor
 

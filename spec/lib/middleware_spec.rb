@@ -163,7 +163,9 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should include access control headers" do
-      @bus.access_control_allow_origin = "http://rainbows.com"
+      @bus.access_control_allow_origin_lookup do |env|
+        "http://rainbows.com"
+      end
 
       client_id = "ABCD"
 
