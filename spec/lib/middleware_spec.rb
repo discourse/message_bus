@@ -55,6 +55,10 @@ describe MessageBus::Rack::Middleware do
       middleware = @async_middleware
       bus = @bus
 
+      @bus.extra_response_headers_lookup do |env|
+        {"FOO" => "BAR"}
+      end
+
       Thread.new do
         wait_for(2000) {middleware.in_async?}
         bus.publish "/foo", "םוֹלשָׁ"
@@ -66,6 +70,8 @@ describe MessageBus::Rack::Middleware do
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
       parsed[0]["data"].should == "םוֹלשָׁ"
+
+      last_response.headers["FOO"].should == "BAR"
     end
 
     it "should timeout within its alloted slot" do

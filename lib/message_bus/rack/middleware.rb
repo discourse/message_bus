@@ -85,8 +85,12 @@ class MessageBus::Rack::Middleware
 
     backlog = client.backlog
     headers = {}
+
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
-    headers["Content-Type"] ="application/json; charset=utf-8"
+    headers["Content-Type"] = "application/json; charset=utf-8"
+    headers["Pragma"] = "no-cache"
+    headers["Expires"] = "0"
+
     if @bus.extra_response_headers_lookup
       @bus.extra_response_headers_lookup.call(env).each do |k,v|
         headers[k] = v
@@ -109,6 +113,7 @@ class MessageBus::Rack::Middleware
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
       io = env['rack.hijack'].call
       client.io = io
+      client.headers = headers
 
       add_client_with_timeout(client)
       [418, {}, ["I'm a teapot, undefined in spec"]]

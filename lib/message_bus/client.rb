@@ -1,5 +1,8 @@
 class MessageBus::Client
-  attr_accessor :client_id, :user_id, :group_ids, :connect_time, :subscribed_sets, :site_id, :cleanup_timer, :async_response, :io
+  attr_accessor :client_id, :user_id, :group_ids, :connect_time,
+                :subscribed_sets, :site_id, :cleanup_timer,
+                :async_response, :io, :headers
+
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
@@ -99,8 +102,9 @@ class MessageBus::Client
   def write_and_close(data)
     if @io
       @io.write("HTTP/1.1 200 OK\r\n")
-      @io.write("Content-Type: application/json; charset=utf-8\r\n")
-      @io.write("Cache-Control: must-revalidate, private, max-age=0\r\n")
+      @headers.each do |k,v|
+        @io.write("#{k}: #{v}\r\n")
+      end
       @io.write("Content-Length: #{data.bytes.to_a.length}\r\n")
       @io.write("Connection: close\r\n")
       @io.write("\r\n")
