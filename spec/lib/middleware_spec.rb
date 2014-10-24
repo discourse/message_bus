@@ -163,8 +163,8 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should include access control headers" do
-      @bus.access_control_allow_origin_lookup do |env|
-        "http://rainbows.com"
+      @bus.extra_response_headers_lookup do |env|
+        {"FOO" => "BAR"}
       end
 
       client_id = "ABCD"
@@ -175,7 +175,7 @@ describe MessageBus::Rack::Middleware do
         '/bar' => nil
       }
 
-      last_response.headers["Access-Control-Allow-Origin"].should == "http://rainbows.com"
+      last_response.headers["FOO"].should == "BAR"
     end
 
     it "should respond with a 200 to a subscribe" do
