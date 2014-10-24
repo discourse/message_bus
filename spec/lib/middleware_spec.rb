@@ -162,6 +162,20 @@ describe MessageBus::Rack::Middleware do
       @bus.long_polling_enabled = false
     end
 
+    it "should include access control headers" do
+      @bus.access_control_allow_origin = "http://rainbows.com"
+
+      client_id = "ABCD"
+
+      # client always keeps a list of channels with last message id they got on each
+      post "/message-bus/#{client_id}", {
+        '/foo' => nil,
+        '/bar' => nil
+      }
+
+      last_response.headers["Access-Control-Allow-Origin"].should == "http://rainbows.com"
+    end
+
     it "should respond with a 200 to a subscribe" do
       client_id = "ABCD"
 

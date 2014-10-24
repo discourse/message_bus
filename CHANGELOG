@@ -1,4 +1,8 @@
 23-09-2014
+- Version 1.0.2
+- Feature: MessageBus.access_control_allow_origin to control origin header
+
+23-09-2014
 - Version 1.0.1
 - Feature: $.ajax dependency can be passed in.
 - Feature: unsubscribe accepts a second param for the function to unsubscribe.

@@ -87,6 +87,7 @@ class MessageBus::Rack::Middleware
     headers = {}
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] ="application/json; charset=utf-8"
+    headers["Access-Control-Allow-Origin"] = @bus.access_control_allow_origin if @bus.access_control_allow_origin
 
     ensure_reactor
 
@@ -113,8 +114,9 @@ class MessageBus::Rack::Middleware
         response = Thin::AsyncResponse.new(env)
       end
 
-      response.headers["Cache-Control"] = "must-revalidate, private, max-age=0".freeze
-      response.headers["Content-Type"] ="application/json; charset=utf-8".freeze
+      headers.each do |k,v|
+        response.headers[k] = v
+      end
       response.status = 200
 
       client.async_response = response
