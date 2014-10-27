@@ -237,21 +237,15 @@ window.MessageBus = (function() {
         channel = channel.substr(0, channel.length - 1);
         glob = true;
       }
-      callbacks = $.grep(callbacks,function(callback) {
-        var keep;
+      callbacks = $.grep(callbacks, function(callback) {
+        var channelMatch = glob ?
+          callback.channel.substr(0, channel.length) === channel :
+          callback.channel === channel;
 
-        if (glob) {
-          keep = callback.channel.substr(0, channel.length) !== channel;
-        } else {
-          keep = callback.channel !== channel;
-        }
+          var funcMatch = (!func || callback.func === func);
 
-        if(!keep && func && callback.func !== func){
-          keep = true;
-        }
-
-        return keep;
-      });
+          return channelMatch && funcMatch;
+      }, true);
 
       if (me.longPoll) {
         return me.longPoll.abort();
