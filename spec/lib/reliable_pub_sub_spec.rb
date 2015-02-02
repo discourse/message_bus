@@ -34,6 +34,15 @@ describe MessageBus::ReliablePubSub do
     ]
   end
 
+  it "should truncate global backlog correctly" do
+    @bus.max_global_backlog_size = 2
+    @bus.publish "/foo", "1"
+    @bus.publish "/bar", "2"
+    @bus.publish "/baz", "3"
+
+    @bus.global_backlog.length.should == 2
+  end
+
   it "should be able to grab a message by id" do
     id1 = @bus.publish "/foo", "bar"
     id2 = @bus.publish "/foo", "baz"

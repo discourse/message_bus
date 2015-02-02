@@ -126,7 +126,7 @@ class MessageBus::ReliablePubSub
     end
 
     if global_id > @max_global_backlog_size
-      redis.zremrangebyscore global_backlog_key, 1, backlog_id - @max_backlog_size
+      redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
     end
 
     backlog_id
