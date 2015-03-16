@@ -10,7 +10,7 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me, started, stopped, longPoller, pollTimeout;
+  var me, started, stopped, longPoller, pollTimeout, paused, later;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -28,6 +28,8 @@ window.MessageBus = (function() {
   interval = null;
   failCount = 0;
   baseUrl = "/";
+  paused = false;
+  later = [];
 
   var hiddenProperty;
 
@@ -54,6 +56,35 @@ window.MessageBus = (function() {
   var totalAjaxCalls = 0;
   var lastAjax;
 
+  var processMessages = function(messages) {
+    var gotDate = false;
+    if (!messages) return false; // server unexpectedly closed connection
+
+    $.each(messages,function(_,message) {
+      gotData = true;
+      $.each(callbacks, function(_,callback) {
+        if (callback.channel === message.channel) {
+          callback.last_id = message.message_id;
+          try {
+            callback.func(message.data);
+          }
+          catch(e){
+            if(console.log) {
+              console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.message);
+            }
+          }
+        }
+        if (message.channel === "/__status") {
+          if (message.data[callback.channel] !== undefined) {
+            callback.last_id = message.data[callback.channel];
+          }
+        }
+      });
+    });
+
+    return gotData;
+  };
+
   longPoller = function(poll,data){
     var gotData = false;
     var aborted = false;
@@ -71,28 +102,15 @@ window.MessageBus = (function() {
       },
       success: function(messages) {
         failCount = 0;
-        if (messages === null) return; // server unexpectedly closed connection
-        $.each(messages,function(_,message) {
-          gotData = true;
-          $.each(callbacks, function(_,callback) {
-            if (callback.channel === message.channel) {
-              callback.last_id = message.message_id;
-              try {
-                callback.func(message.data);
-              }
-              catch(e){
-                if(console.log) {
-                  console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.message);
-                }
-              }
-            }
-            if (message.channel === "/__status") {
-              if (message.data[callback.channel] !== undefined) {
-                callback.last_id = message.data[callback.channel];
-              }
-            }
-          });
-        });
+        if (paused) {
+          if (messages) {
+            $.each(messages, function(_,message) {
+              later.push(messages);
+            });
+          }
+        } else {
+          gotData = processMessages(messages);
+        }
       },
       error: function(xhr, textStatus, err) {
         if(textStatus === "abort") {
@@ -155,6 +173,16 @@ window.MessageBus = (function() {
       console.log(callbacks);
       console.log("Total ajax calls: " + totalAjaxCalls + " Recent failure count: " + failCount + " Total failures: " + totalAjaxFailures);
       console.log("Last ajax call: " + (new Date() - lastAjax) / 1000  + " seconds ago") ;
+    },
+
+    pause: function() {
+      paused = true;
+    },
+
+    resume: function() {
+      paused = false;
+      processMessages(later);
+      later = [];
     },
 
     stop: function() {
