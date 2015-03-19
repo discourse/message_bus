@@ -1,3 +1,7 @@
+20-03-2015
+- Version 1.0.8
+- Fix: aggressive short polling in background
+
 16-03-2015
 - Version 1.0.7
 - Feature: added pause and resume methods

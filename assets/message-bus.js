@@ -57,7 +57,7 @@ window.MessageBus = (function() {
   var lastAjax;
 
   var processMessages = function(messages) {
-    var gotDate = false;
+    var gotData = false;
     if (!messages) return false; // server unexpectedly closed connection
 
     $.each(messages,function(_,message) {
