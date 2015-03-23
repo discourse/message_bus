@@ -1,3 +1,7 @@
+23-03-2015
+- Version 1.0.9
+- Fix: inherit off StandardError not Exception for all exceptions raised
+
 20-03-2015
 - Version 1.0.8
 - Fix: aggressive short polling in background
