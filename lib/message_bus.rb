@@ -20,8 +20,8 @@ if defined?(::Rails)
 end
 
 module MessageBus; end
-class MessageBus::InvalidMessage < Exception; end
-class MessageBus::BusDestroyed < Exception; end
+class MessageBus::InvalidMessage < StandardError; end
+class MessageBus::BusDestroyed < StandardError; end
 
 module MessageBus::Implementation
 
