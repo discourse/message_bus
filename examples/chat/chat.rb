@@ -31,6 +31,7 @@ class Chat < Sinatra::Base
     <div id='panel'>
       <form>
         <textarea cols=80 rows=2></textarea>
+        <button id="send">send</button>
       </form>
     </div>
     <div id='your-name'>Enter your name: <input type='text'/>
@@ -49,16 +50,28 @@ class Chat < Sinatra::Base
           }
         });
 
+        var safe = function(html){
+           return String(html).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
 
         MessageBus.subscribe("/message", function(msg){
-          $('#messages').append("<p>"+ escape(msg.name) + " said: " + escape(msg.data) + "</p>");
+          $('#messages').append("<p>"+ safe(msg.name) + " said: " + safe(msg.data) + "</p>");
         }, 0); // last id is zero, so getting backlog
 
+        var submit = function(){
+          var val = $('form textarea').val().trim();
+          if (val.length === 0) {
+            return;
+          }
+          $.post("/message", { data: val, name: name} );
+          $('textarea').val("");
+        };
+
+        $('#send').click(function(){submit(); return false;});
 
         $('textarea').keyup(function(e){
           if(e.keyCode == 13) {
-            $.post("/message", { data: $('form textarea').val(), name: name} );
-            $('textarea').val("");
+            submit();
           }
         });
 
