@@ -27,12 +27,13 @@ class Chat < Sinatra::Base
     <style>
         #panel { position: fixed; bottom: 0; background-color: #FFFFFF; }
         #messages { padding-bottom: 40px; }
+        .hidden { display: none; }
     </style>
   </head>
   <body>
     <p>This is a trivial chat demo, it is implemented as a <a href="https://github.com/SamSaffron/message_bus/blob/master/examples/chat/chat.rb">Sinatra app</a>. The <a href="https://github.com/SamSaffron/message_bus">message_bus</a> can easily be added to any Rails/Rack app. <small>This app can be deployed with <a href="https://github.com/discourse/discourse_docker">Discourse Docker</a> using <a href="https://github.com/SamSaffron/message_bus/blob/master/examples/chat/docker_container/chat.yml">this template</a>.</small></p>
-    <div id='messages'></div>
-    <div id='panel'>
+    <div id='messages' class="hidden"></div>
+    <div id='panel' class="hidden">
       <form>
         <textarea cols=80 rows=2></textarea>
         <button id="send">send</button>
@@ -44,13 +45,14 @@ class Chat < Sinatra::Base
       $(function() {
         var name;
 
-        $('#messages, #panel').hide();
+        $('#messages, #panel').addClass('hidden');
 
         $('#your-name input').keyup(function(e){
           if(e.keyCode == 13) {
             name = $(this).val();
-            $('#your-name').hide();
-            $('#messages, #panel').show();
+            $('#your-name').addClass('hidden');
+            $('#messages, #panel').removeClass('hidden');
+            $('#send').text("send (" + name + ")");
           }
         });
 
