@@ -9,8 +9,7 @@ templates:
   - "templates/redis.template.yml"
 
 expose:
-  - "8081:80"
-  - "2228:22"
+  - "80:80"
 
 volumes:
   - volume:
@@ -30,6 +29,9 @@ hooks:
     - exec:
         cmd:
           - gem install unicorn
+          - gem install redis
+          - gem install sinatra
+          - gem install eventmachine
     - file:
        path: /etc/service/unicorn/run
        chmod: "+x"
