@@ -38,7 +38,7 @@ hooks:
          exec 2>&1
          # redis
          cd $home/examples/chat
-         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 unicorn -p 8080 -e production
+         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 unicorn -p 8080 -E production
     - exec: rm /etc/nginx/sites-enabled/default
     - replace:
         filename: /etc/nginx/nginx.conf
@@ -55,7 +55,7 @@ hooks:
             gzip on;
             gzip_types application/json text/css application/x-javascript;
             gzip_min_length 1000;
-            server_name logster.info;
+            server_name chat.samsaffron.com;
             keepalive_timeout 65;
             location / {
               try_files $uri @chat;
