@@ -26,7 +26,7 @@ class Chat < Sinatra::Base
     <script src="/message-bus.js"></script>
   </head>
   <body>
-    <p>Chat Demo</p>
+    <p>This is a trivial chat demo, it is implemented as a <a href="https://github.com/SamSaffron/message_bus/blob/master/examples/chat/chat.rb">Sinatra app</a>. The <a href="https://github.com/SamSaffron/message_bus">message_bus</a> can easily be added to any Rails/Rack app.</p>
     <div id='messages'></div>
     <div id='panel'>
       <form>
