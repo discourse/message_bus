@@ -1,0 +1,9 @@
+#!/bin/bash
+
+result=`cd /root/logster && git pull | grep "Already up-to-date"`
+
+if [ -z "$result" ]; then
+   echo "updating..."
+   cd /var/docker && ./launcher bootstrap logster && ./launcher destroy logster && ./launcher start logster
+fi
+
