@@ -24,6 +24,10 @@ class Chat < Sinatra::Base
   <head>
     <script src="/jquery-1.8.2.js"></script>
     <script src="/message-bus.js"></script>
+    <style>
+        #panel { position: fixed; bottom: 0; background-color: #FFFFFF; }
+        #messages { padding-bottom: 40px; }
+    </style>
   </head>
   <body>
     <p>This is a trivial chat demo, it is implemented as a <a href="https://github.com/SamSaffron/message_bus/blob/master/examples/chat/chat.rb">Sinatra app</a>. The <a href="https://github.com/SamSaffron/message_bus">message_bus</a> can easily be added to any Rails/Rack app. <small>This app can be deployed with <a href="https://github.com/discourse/discourse_docker">Discourse Docker</a> using <a href="https://github.com/SamSaffron/message_bus/blob/master/examples/chat/docker_container/chat.yml">this template</a>.</small></p>
@@ -56,6 +60,7 @@ class Chat < Sinatra::Base
 
         MessageBus.subscribe("/message", function(msg){
           $('#messages').append("<p>"+ safe(msg.name) + " said: " + safe(msg.data) + "</p>");
+          $(document.body).scrollTop(document.body.scrollHeight);
         }, 0); // last id is zero, so getting backlog
 
         var submit = function(){
