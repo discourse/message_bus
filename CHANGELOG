@@ -1,3 +1,6 @@
+V.NEXT
+- Feature: no longer depends on EventMachine (only used for Thin backend)
+
 23-03-2015
 - Version 1.0.9
 - Fix: inherit off StandardError not Exception for all exceptions raised

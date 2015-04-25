@@ -54,7 +54,7 @@ end
 MessageBus.client_filter("/channel") do |user_id, message|
   # return message if client is allowed to see this message
   # allows you to inject server side filtering of messages based on arbitrary rules
-  # also allows you to override the message a client will see
+  # also allows you to override the message a clients will see
   # be sure to .dup the message if you wish to change it
 end
 
@@ -95,7 +95,6 @@ MessageBus.subscribe("/channel", function(data){
 
 
 ```
-
 
 ## Similar projects
 

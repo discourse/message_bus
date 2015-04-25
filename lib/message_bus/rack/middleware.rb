@@ -5,22 +5,33 @@ class MessageBus::Rack::Middleware
 
   def start_listener
     unless @started_listener
+      require 'message_bus/timer_thread'
 
-      require 'eventmachine'
-      require 'message_bus/em_ext'
+      @timer_thread = MessageBus::TimerThread.new
+      @timer_thread.on_error do |e|
+        @bus.logger.warn "Failed to process job: #{e} #{e.backtrace}"
+      end
+
+      thin = defined?(Thin::Server) && ObjectSpace.each_object(Thin::Server).to_a.first
+      thin_running = thin && thin.running?
 
       @subscription = @bus.subscribe do |msg|
-        if EM.reactor_running?
-          EM.next_tick do
-            begin
-              @connection_manager.notify_clients(msg) if @connection_manager
-            rescue
-              @bus.logger.warn "Failed to notify clients: #{$!} #{$!.backtrace}"
-            end
+        run = proc do
+          begin
+            @connection_manager.notify_clients(msg) if @connection_manager
+          rescue
+            @bus.logger.warn "Failed to notify clients: #{$!} #{$!.backtrace}"
           end
         end
+
+        if thin_running
+          EM.next_tick(&run)
+        else
+          @timer_thread.queue(&run)
+        end
+
+        @started_listener = true
       end
-      @started_listener = true
     end
   end
 
@@ -34,6 +45,7 @@ class MessageBus::Rack::Middleware
   def stop_listener
     if @subscription
       @bus.unsubscribe(&@subscription)
+      @timer_thread.stop if @timer_thread
       @started_listener = false
     end
   end
@@ -101,11 +113,8 @@ class MessageBus::Rack::Middleware
       return [200, headers, ["OK"]]
     end
 
-    ensure_reactor
-
     long_polling = @bus.long_polling_enabled? &&
                    env['QUERY_STRING'] !~ /dlp=t/.freeze &&
-                   EM.reactor_running? &&
                    @connection_manager.client_count < @bus.max_active_clients
 
     if backlog.length > 0
@@ -152,22 +161,10 @@ class MessageBus::Rack::Middleware
     end
   end
 
-  def ensure_reactor
-    # ensure reactor is running
-    if EM.reactor_pid != Process.pid
-      Thread.new { EM.run }
-      i = 100
-      while !EM.reactor_running? && i > 0
-        sleep 0.001
-        i -= 1
-      end
-    end
-  end
-
   def add_client_with_timeout(client)
     @connection_manager.add_client(client)
 
-    client.cleanup_timer = ::EM::Timer.new( @bus.long_polling_interval.to_f / 1000) {
+    client.cleanup_timer = @timer_thread.queue( @bus.long_polling_interval.to_f / 1000) {
       begin
         client.cleanup_timer = nil
         client.ensure_closed!
