@@ -18,7 +18,6 @@ end
 
 # use Rack::MiniProfiler
 MessageBus.long_polling_interval = 1000 * 2
-MessageBus.rack_hijack_enabled = true
-MessageBus.max_active_clients = 3
+MessageBus.max_active_clients = 10000
 use MessageBus::Rack::Middleware
 run lambda { |env| [200, {"Content-Type" => "text/html"}, ["Howdy"]]  }
