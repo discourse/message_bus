@@ -1,8 +1,5 @@
-# require 'thin'
-# require 'eventmachine'
-# require 'rack'
-# require 'redis'
-
+require "monitor"
+require "set"
 require "message_bus/version"
 require "message_bus/message"
 require "message_bus/reliable_pub_sub"
@@ -12,7 +9,6 @@ require "message_bus/message_handler"
 require "message_bus/diagnostics"
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
-require "monitor.rb"
 
 # we still need to take care of the logger
 if defined?(::Rails)
@@ -367,7 +363,11 @@ module MessageBus::Implementation
 
   def new_subscriber_thread
     Thread.new do
-      global_subscribe_thread unless @destroyed
+      begin
+        global_subscribe_thread unless @destroyed
+      rescue => e
+        MessageBus.logger.warn "Unexpected error in subscriber thread #{e}"
+      end
     end
   end
 

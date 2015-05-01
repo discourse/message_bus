@@ -1,5 +1,7 @@
-V.NEXT
+01-05-2015
+- Version: 1.0.10
 - Feature: no longer depends on EventMachine (only used for Thin backend)
+- Feature: realiable pub sub will queue messages in memory if redis is readonly, configurable
 
 23-03-2015
 - Version 1.0.9

@@ -160,7 +160,12 @@ class MessageBus::ReliablePubSub
         @in_memory_backlog.delete_at(0) unless try_again
       end
 
-      sleep 0.005 if try_again
+      if try_again
+        sleep 0.005
+        # in case we are not connected to the correct server
+        # which can happen when sharing ips
+        pub_redis.client.reconnect
+      end
     end
   ensure
     @lock.synchronize do
