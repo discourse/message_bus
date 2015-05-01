@@ -10,6 +10,8 @@ require 'redis'
 
 class MessageBus::ReliablePubSub
   attr_reader :subscribed
+  attr_accessor :max_publish_retries, :max_publish_wait, :max_backlog_size,
+                :max_global_backlog_size, :max_in_memory_publish_backlog
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -22,38 +24,18 @@ class MessageBus::ReliablePubSub
     end
   end
 
-  def max_publish_retries=(val)
-    @max_publish_retries = val
-  end
-
-  def max_publish_retries
-    @max_publish_retries ||= 10
-  end
-
-  def max_publish_wait=(ms)
-    @max_publish_wait = ms
-  end
-
-  def max_publish_wait
-    @max_publish_wait ||= 500
-  end
-
   # max_backlog_size is per multiplexed channel
   def initialize(redis_config = {}, max_backlog_size = 1000)
     @redis_config = redis_config
     @max_backlog_size = 1000
-    # we can store a ton here ...
+    # we can store a lot of messages, since only one queue
     @max_global_backlog_size = 100000
-  end
-
-  # amount of global backlog we can spin through
-  def max_global_backlog_size=(val)
-    @max_global_backlog_size = val
-  end
-
-  # per channel backlog size
-  def max_backlog_size=(val)
-    @max_backlog_size = val
+    @max_publish_retries = 10
+    @max_publish_wait = 500 #ms
+    @max_in_memory_publish_backlog = 1000
+    @in_memory_backlog = []
+    @lock = Mutex.new
+    @flush_backlog_thread = nil
   end
 
   def new_redis_connection
@@ -97,7 +79,7 @@ class MessageBus::ReliablePubSub
     end
   end
 
-  def publish(channel, data)
+  def publish(channel, data, queue_in_memory=true)
     redis = pub_redis
     backlog_id_key = backlog_id_key(channel)
     backlog_key = backlog_key(channel)
@@ -130,6 +112,60 @@ class MessageBus::ReliablePubSub
     end
 
     backlog_id
+
+  rescue Redis::CommandError => e
+    if queue_in_memory &&
+          e.message =~ /^READONLY/
+
+      @lock.synchronize do
+        @in_memory_backlog << [channel,data]
+        if @in_memory_backlog.length > @max_in_memory_publish_backlog
+          @in_memory_backlog.delete_at(0)
+          MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full")
+        end
+      end
+
+      if @flush_backlog_thread == nil
+        @lock.synchronize do
+          if @flush_backlog_thread == nil
+            @flush_backlog_thread = Thread.new{ensure_backlog_flushed}
+          end
+        end
+      end
+      nil
+    else
+      raise
+    end
+  end
+
+  def ensure_backlog_flushed
+    while true
+      try_again = false
+
+      @lock.synchronize do
+        break if @in_memory_backlog.length == 0
+
+        begin
+          publish(*@in_memory_backlog[0],false)
+        rescue Redis::CommandError => e
+          if e.message =~ /^READONLY/
+            try_again = true
+          else
+            MessageBus.logger.warn("Dropping undeliverable message #{e}")
+          end
+        rescue => e
+          MessageBus.logger.warn("Dropping undeliverable message #{e}")
+        end
+
+        @in_memory_backlog.delete_at(0) unless try_again
+      end
+
+      sleep 0.005 if try_again
+    end
+  ensure
+    @lock.synchronize do
+      @flush_backlog_thread = nil
+    end
   end
 
   def last_id(channel)

@@ -12,6 +12,31 @@ describe MessageBus::ReliablePubSub do
     @bus.reset!
   end
 
+  context "readonly" do
+    before do
+      @bus.pub_redis.slaveof "127.0.0.80", "666"
+    end
+
+    after do
+      @bus.pub_redis.slaveof "no", "one"
+    end
+
+    it "should be able to store messages in memory for a period while in read only" do
+      @bus.max_in_memory_publish_backlog = 2
+
+      3.times do
+        result = @bus.publish "/foo", "bar"
+        result.should == nil
+      end
+
+      @bus.pub_redis.slaveof "no", "one"
+      sleep 0.01
+
+      @bus.backlog("/foo", 0).map(&:data).should == ["bar","bar"]
+
+    end
+  end
+
   it "should be able to access the backlog" do
     @bus.publish "/foo", "bar"
     @bus.publish "/foo", "baz"
