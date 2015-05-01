@@ -1,5 +1,7 @@
 class MessageBus::TimerThread
 
+  attr_reader :jobs
+
   class Cancelable
     NOOP = proc{}
 

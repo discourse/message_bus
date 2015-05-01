@@ -6,7 +6,13 @@ describe MessageBus::Client do
   describe "subscriptions" do
 
     before do
-      @client = MessageBus::Client.new :client_id => 'abc'
+      @bus = MessageBus::Instance.new
+      @client = MessageBus::Client.new client_id: 'abc', message_bus: @bus
+    end
+
+    after do
+      @bus.reset!
+      @bus.destroy
     end
 
     it "should provide a list of subscriptions" do
@@ -16,7 +22,7 @@ describe MessageBus::Client do
 
     it "should provide backlog for subscribed channel" do
       @client.subscribe('/hello', nil)
-      MessageBus.publish '/hello', 'world'
+      @bus.publish '/hello', 'world'
       log = @client.backlog
       log.length.should == 1
       log[0].channel.should == '/hello'

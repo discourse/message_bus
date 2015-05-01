@@ -147,7 +147,9 @@ describe MessageBus do
     end
 
     @bus.publish("/hello", "world")
+
     wait_for(2000){ data }
+
     if child = Process.fork
       wait_for(2000) { data == "ready" }
       @bus.publish("/hello", "world1")
@@ -164,7 +166,10 @@ describe MessageBus do
 
       $stdout.reopen("/dev/null", "w")
       $stderr.reopen("/dev/null", "w")
-      exit
+     
+      # having some issues with exit here
+      # TODO find and fix
+      Process.kill "KILL", Process.pid
     end
 
   end

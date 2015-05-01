@@ -8,8 +8,6 @@ describe MessageBus::ReliablePubSub do
   end
 
   def work_it
-    Signal.trap("HUP") { exit }
-
     bus = new_bus
     $stdout.reopen("/dev/null", "w")
     $stderr.reopen("/dev/null", "w")
@@ -29,7 +27,6 @@ describe MessageBus::ReliablePubSub do
   end
 
   it 'gets every response from child processes' do
-    pid = nil
     Redis.new(:db => 10).flushdb
     begin
       pids = (1..10).map{spawn_child}
@@ -51,7 +48,7 @@ describe MessageBus::ReliablePubSub do
     ensure
       if pids
         pids.each do |pid|
-          Process.kill("HUP", pid)
+          Process.kill("KILL", pid)
           Process.wait(pid)
         end
       end

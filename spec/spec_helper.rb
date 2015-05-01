@@ -8,6 +8,11 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.syntax = :should
   end
+
+  # to debug hanging tests
+  # config.before :each do |x|
+  #   p x.metadata[:location]
+  # end
 end
 
 def wait_for(timeout_milliseconds)
