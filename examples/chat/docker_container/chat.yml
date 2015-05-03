@@ -31,7 +31,6 @@ hooks:
           - gem install unicorn
           - gem install redis
           - gem install sinatra
-          - gem install eventmachine
     - file:
        path: /etc/service/unicorn/run
        chmod: "+x"
