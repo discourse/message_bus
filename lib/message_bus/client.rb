@@ -99,15 +99,28 @@ class MessageBus::Client
 
   protected
 
+
+  # heavily optimised to avoid all uneeded allocations
+  NEWLINE="\r\n".freeze
+  COLON_SPACE = ": ".freeze
+  HTTP_11 = "HTTP/1.1 200 OK\r\n".freeze
+  CONTENT_LENGTH = "Content-Length: ".freeze
+  CONNECTION_CLOSE = "Connection: close\r\n".freeze
+
   def write_and_close(data)
     if @io
-      @io.write("HTTP/1.1 200 OK\r\n")
+      @io.write(HTTP_11)
       @headers.each do |k,v|
-        @io.write("#{k}: #{v}\r\n")
+        @io.write(k)
+        @io.write(COLON_SPACE)
+        @io.write(v)
+        @io.write(NEWLINE)
       end
-      @io.write("Content-Length: #{data.bytes.to_a.length}\r\n")
-      @io.write("Connection: close\r\n")
-      @io.write("\r\n")
+      @io.write(CONTENT_LENGTH)
+      @io.write(data.bytes.to_a.length)
+      @io.write(NEWLINE)
+      @io.write(CONNECTION_CLOSE)
+      @io.write(NEWLINE)
       @io.write(data)
       @io.close
       @io = nil

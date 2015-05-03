@@ -48,7 +48,7 @@ class MessageBus::TimerThread
       end
     end
 
-    if @thread.status == "sleep"
+    if @thread.status == "sleep".freeze
       @thread.wakeup
     end
 
