@@ -18,6 +18,26 @@ describe MessageBus do
     @bus.destroy
   end
 
+  it "should recover from a redis flush" do
+
+    data = nil
+    @bus.subscribe("/chuck") do |msg|
+      data = msg.data
+    end
+    @bus.publish("/chuck", {:norris => true})
+    @bus.publish("/chuck", {:norris => true})
+    @bus.publish("/chuck", {:norris => true})
+
+    @bus.reliable_pub_sub.pub_redis.flushall
+
+    @bus.publish("/chuck", {:yeager => true})
+
+    wait_for(2000){ data["yeager"]}
+
+    data["yeager"].should == true
+
+  end
+
   it "should automatically decode hashed messages" do
     data = nil
     @bus.subscribe("/chuck") do |msg|

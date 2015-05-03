@@ -2,6 +2,7 @@
 - Version: 1.0.10
 - Feature: no longer depends on EventMachine (only used for Thin backend)
 - Feature: realiable pub sub will queue messages in memory if redis is readonly, configurable
+- Fix: if redis is flushed we will continue to deliver messages
 
 23-03-2015
 - Version 1.0.9
@@ -72,6 +73,5 @@
 - Improve robustness under failure conditions
 
 30-09-2013
-
 - Fix failures in Ruby 1.9
 - Set up rack hijack by default in light of passengers new setting

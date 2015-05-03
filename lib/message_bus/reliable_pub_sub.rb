@@ -238,6 +238,10 @@ class MessageBus::ReliablePubSub
   end
 
   def process_global_backlog(highest_id, raise_error, &blk)
+    if highest_id > pub_redis.get(global_id_key).to_i
+      highest_id = 0
+    end
+
     global_backlog(highest_id).each do |old|
       if highest_id + 1 == old.global_id
         yield old
@@ -250,6 +254,7 @@ class MessageBus::ReliablePubSub
         end
       end
     end
+
     highest_id
   end
 
@@ -304,10 +309,11 @@ class MessageBus::ReliablePubSub
           end
           m = MessageBus::Message.decode m
 
-          # we have 2 options
+          # we have 3 options
           #
           # 1. message came in the correct order GREAT, just deal with it
           # 2. message came in the incorrect order COMPLICATED, wait a tiny bit and clear backlog
+          # 3. message came in the incorrect order and is lowest than current highest id, reset
 
           if highest_id.nil? || m.global_id == highest_id + 1
             highest_id = m.global_id
