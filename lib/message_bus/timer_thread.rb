@@ -64,7 +64,7 @@ class MessageBus::TimerThread
   def do_work
     while !@stopped
       if @next && @next <= Time.new.to_f
-        _,blk = @jobs.shift
+        _,blk = @mutex.synchronize { @jobs.shift }
         begin
           blk.call
         rescue => e

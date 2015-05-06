@@ -25,7 +25,7 @@ describe MessageBus::TimerThread do
     items.map do |i|
       # threading introduces a delay meaning we need to wait a long time
       Thread.new do
-        @timer.queue(i/5.0) do
+        @timer.queue(i/500.0) do
           failed = true if counter != i
           counter += 1
         end

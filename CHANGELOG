@@ -1,3 +1,7 @@
+06-05-2015
+- Version 1.0.11
+- Fix: race condition in TimerThread
+
 01-05-2015
 - Version: 1.0.10
 - Feature: no longer depends on EventMachine (only used for Thin backend)
