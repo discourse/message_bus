@@ -47,6 +47,10 @@ describe MessageBus::ReliablePubSub do
     ]
   end
 
+  it "should initialize with max_backlog_size" do
+    MessageBus::ReliablePubSub.new({},2000).max_backlog_size.should == 2000
+  end
+
   it "should truncate channels correctly" do
     @bus.max_backlog_size = 2
     4.times do |t|
