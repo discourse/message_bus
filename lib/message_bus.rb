@@ -177,6 +177,10 @@ module MessageBus::Implementation
       end
   end
 
+  def reliable_pub_sub=(pub_sub)
+    @reliable_pub_sub = pub_sub
+  end
+
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
