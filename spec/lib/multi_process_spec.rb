@@ -1,10 +1,10 @@
 require 'spec_helper'
 require 'message_bus'
 
-describe MessageBus::ReliablePubSub do
+describe MessageBus::Redis::ReliablePubSub do
 
   def new_bus
-    MessageBus::ReliablePubSub.new(:db => 10)
+    MessageBus::Redis::ReliablePubSub.new(:db => 10)
   end
 
   def work_it
@@ -31,7 +31,7 @@ describe MessageBus::ReliablePubSub do
     begin
       pids = (1..10).map{spawn_child}
       responses = []
-      bus = MessageBus::ReliablePubSub.new(:db => 10)
+      bus = MessageBus::Redis::ReliablePubSub.new(:db => 10)
       Thread.new do
         bus.subscribe("/response", 0) do |msg|
           responses << msg if pids.include? msg.data.to_i
