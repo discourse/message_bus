@@ -117,6 +117,14 @@ module MessageBus::Implementation
     @redis_config ||= {}
   end
 
+  def max_backlog_size=(backlog_size)
+    @max_backlog_size = backlog_size
+  end
+
+  def max_backlog_size
+    @max_backlog_size ||= 1000
+  end
+
   def site_id_lookup(&blk)
     @site_id_lookup = blk if blk
     @site_id_lookup
@@ -180,7 +188,7 @@ module MessageBus::Implementation
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
-      @reliable_pub_sub ||= MessageBus::ReliablePubSub.new redis_config
+      @reliable_pub_sub ||= MessageBus::ReliablePubSub.new redis_config, max_backlog_size
     end
   end
 
