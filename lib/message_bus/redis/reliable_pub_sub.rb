@@ -7,8 +7,8 @@ require 'redis'
 # ids are all sequencially increasing numbers starting at 0
 #
 
-
-class MessageBus::ReliablePubSub
+module MessageBus::Redis; end
+class MessageBus::Redis::ReliablePubSub
   attr_reader :subscribed
   attr_accessor :max_publish_retries, :max_publish_wait, :max_backlog_size,
                 :max_global_backlog_size, :max_in_memory_publish_backlog

@@ -1,10 +1,10 @@
 require 'spec_helper'
 require 'message_bus'
 
-describe MessageBus::ReliablePubSub do
+describe MessageBus::Redis::ReliablePubSub do
 
   def new_test_bus
-    MessageBus::ReliablePubSub.new(:db => 10)
+    MessageBus::Redis::ReliablePubSub.new(:db => 10)
   end
 
   before do
@@ -48,7 +48,7 @@ describe MessageBus::ReliablePubSub do
   end
 
   it "should initialize with max_backlog_size" do
-    MessageBus::ReliablePubSub.new({},2000).max_backlog_size.should == 2000
+    MessageBus::Redis::ReliablePubSub.new({},2000).max_backlog_size.should == 2000
   end
 
   it "should truncate channels correctly" do

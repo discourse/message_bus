@@ -2,13 +2,13 @@ require "monitor"
 require "set"
 require "message_bus/version"
 require "message_bus/message"
-require "message_bus/reliable_pub_sub"
 require "message_bus/client"
 require "message_bus/connection_manager"
 require "message_bus/message_handler"
 require "message_bus/diagnostics"
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
+require "message_bus/redis/reliable_pub_sub"
 
 # we still need to take care of the logger
 if defined?(::Rails)
@@ -177,10 +177,14 @@ module MessageBus::Implementation
       end
   end
 
+  def reliable_pub_sub=(pub_sub)
+    @reliable_pub_sub = pub_sub
+  end
+
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
-      @reliable_pub_sub ||= MessageBus::ReliablePubSub.new redis_config
+      @reliable_pub_sub ||= MessageBus::Redis::ReliablePubSub.new redis_config
     end
   end
 
