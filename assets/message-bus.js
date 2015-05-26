@@ -10,7 +10,7 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me, started, stopped, longPoller, pollTimeout, paused, later;
+  var me, started, stopped, longPoller, pollTimeout, paused, later, ajaxOverrides;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -30,6 +30,7 @@ window.MessageBus = (function() {
   baseUrl = "/";
   paused = false;
   later = [];
+  ajaxOverrides = {};
 
   var hiddenProperty;
 
@@ -91,7 +92,7 @@ window.MessageBus = (function() {
     lastAjax = new Date();
     totalAjaxCalls += 1;
 
-    return me.ajax({
+    var ajaxSettings = {
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""),
       data: data,
       cache: false,
@@ -151,7 +152,15 @@ window.MessageBus = (function() {
         pollTimeout = setTimeout(function(){pollTimeout=null; poll();}, interval);
         me.longPoll = null;
       }
-    });
+    }
+
+    for (var property in me.ajaxOverrides) {
+      if(me.ajaxOverrides.hasOwnProperty(property)) {
+        ajaxSettings[property] = me.ajaxOverrides[property];
+      }
+    }
+
+    return me.ajax(ajaxSettings);
   };
 
   me = {
