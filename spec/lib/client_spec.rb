@@ -29,6 +29,16 @@ describe MessageBus::Client do
       log[0].data.should == 'world'
     end
 
+    it "allows only client_id in list if message contains client_ids" do
+      @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+      @message.client_ids = ["1","2"]
+      @client.client_id = "2"
+      @client.allowed?(@message).should == true
+
+      @client.client_id = "3"
+      @client.allowed?(@message).should == false
+    end
+
     context "targetted at group" do
       before do
         @message = MessageBus::Message.new(1,2,'/test', 'hello')
@@ -50,6 +60,7 @@ describe MessageBus::Client do
         @client.group_ids = [77,0,10]
         @client.allowed?(@message).should == true
       end
+
     end
   end
 

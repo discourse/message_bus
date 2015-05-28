@@ -18,6 +18,21 @@ describe MessageBus do
     @bus.destroy
   end
 
+  it "can transmit client_ids" do
+    client_ids = nil
+
+    @bus.subscribe("/chuck") do |msg|
+      client_ids = msg.client_ids
+    end
+
+    @bus.publish("/chuck", {:yeager => true}, client_ids: ['a','b'])
+
+    wait_for(2000){ client_ids}
+
+    client_ids.should == ['a', 'b']
+
+  end
+
   it "should recover from a redis flush" do
 
     data = nil

@@ -1,3 +1,7 @@
+28-05-2015
+- Version 1.0.12
+- Feature: Support client_id targetted message
+
 06-05-2015
 - Version 1.0.11
 - Fix: race condition in TimerThread

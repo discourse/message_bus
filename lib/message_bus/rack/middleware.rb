@@ -88,7 +88,8 @@ class MessageBus::Rack::Middleware
     # close db connection as early as possible
     close_db_connection!
 
-    client = MessageBus::Client.new(message_bus: @bus, client_id: client_id, user_id: user_id, site_id: site_id, group_ids: group_ids)
+    client = MessageBus::Client.new(message_bus: @bus, client_id: client_id,
+                                    user_id: user_id, site_id: site_id, group_ids: group_ids)
 
     request = Rack::Request.new(env)
     request.POST.each do |k,v|

@@ -200,9 +200,12 @@ module MessageBus::Implementation
 
     user_ids = nil
     group_ids = nil
+    client_ids = nil
+
     if opts
       user_ids = opts[:user_ids]
       group_ids = opts[:group_ids]
+      client_ids = opts[:client_ids]
     end
 
     raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
@@ -210,7 +213,8 @@ module MessageBus::Implementation
     encoded_data = JSON.dump({
       data: data,
       user_ids: user_ids,
-      group_ids: group_ids
+      group_ids: group_ids,
+      client_ids: client_ids
     })
 
     reliable_pub_sub.publish(encode_channel_name(channel), encoded_data)
@@ -323,6 +327,7 @@ module MessageBus::Implementation
     msg.data = parsed["data"]
     msg.user_ids = parsed["user_ids"]
     msg.group_ids = parsed["group_ids"]
+    msg.client_ids = parsed["client_ids"]
   end
 
   def subscribe_impl(channel, site_id, &blk)

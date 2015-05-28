@@ -55,6 +55,7 @@ class MessageBus::Client
 
   def allowed?(msg)
     allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
+    allowed &&= !msg.client_ids || msg.client_ids.include?(self.client_id)
     allowed && (
       msg.group_ids.nil? ||
       msg.group_ids.length == 0 ||
