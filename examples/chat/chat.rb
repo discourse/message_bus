@@ -53,7 +53,7 @@ class Chat < Sinatra::Base
       name = "#{params["name"]}#{i}"
       i += 1
     end
-    MessageBus.publish '/presence', {enter: params["name"]}
+    MessageBus.publish '/presence', {enter: name}
     {users: $online.keys, name: name}.to_json
   end
 
