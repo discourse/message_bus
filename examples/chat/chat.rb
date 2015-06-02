@@ -5,9 +5,8 @@ require 'sinatra/base'
 require 'set'
 require 'json'
 
-$redis = Redis.new
-
 $online = Hash.new
+
 MessageBus.subscribe "/presence" do |msg|
   if user = msg.data["enter"]
      $online[user] = Time.now
