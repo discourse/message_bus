@@ -16,6 +16,30 @@ MessageBus.subscribe "/presence" do |msg|
   end
 end
 
+MessageBus.user_id_lookup do |env|
+  name = env["HTTP_X_NAME"]
+  $online[name] = Time.now if name
+  name
+end
+
+def expire_old_sessions
+  $online.each do |name,time|
+    if (Time.now - (5*60)) > time
+       puts "forcing leave for #{name} session timed out"
+       MessageBus.publish "/presence", {leave: name}
+    end
+  end
+rescue => e
+  # need to make $online thread safe
+  p e
+end
+Thread.new do
+  while true
+    expire_old_sessions
+    sleep 1
+  end
+end
+
 class Chat < Sinatra::Base
 
   set :public_folder,  File.expand_path('../../../assets',__FILE__)
@@ -34,6 +58,7 @@ class Chat < Sinatra::Base
   end
 
   post '/leave' do
+    #puts "Got leave for #{params["name"]}"
     MessageBus.publish '/presence', {leave: params["name"]}
   end
 
@@ -54,6 +79,9 @@ class Chat < Sinatra::Base
     <script src="/message-bus.js"></script>
     <style>
         #panel { position: fixed; bottom: 0; background-color: #FFFFFF; }
+        #panel form { margin-bottom: 4px; }
+        #panel button, #panel textarea { height: 40px }
+        #panel button { width: 100px; vertical-align: top; }
         #messages { padding-bottom: 40px; }
         .hidden { display: none; }
         #users {
@@ -62,6 +90,7 @@ class Chat < Sinatra::Base
          padding: 5px;
         }
         #users ul li {  margin: 0; padding: 0; }
+        #users ul li.me { font-weight: bold; }
         #users ul { list-style: none; margin 0; padding: 0; }
         body { padding-right: 160px; }
     </style>
@@ -85,11 +114,20 @@ class Chat < Sinatra::Base
       $(function() {
         var name;
 
+        MessageBus.ajax = function(args){
+          args["headers"]["X-NAME"] = name;
+          return $.ajax(args);
+        };
+
         var enter = function(name, opts) {
            if (opts && opts.check) {
              var found = false;
              $('#users ul li').each(function(){
                 found = found || ($(this).text().trim() === name.trim());
+                if (found && opts.me) {
+                  $(this).remove();
+                  found = false;
+                }
                 return !found;
              });
              if (found) { return; }
@@ -97,7 +135,12 @@ class Chat < Sinatra::Base
 
            var li = $('<li></li>');
            li.text(name);
-           $('#users ul').append(li);
+           if (opts && opts.me) {
+             li.addClass("me");
+             $('#users ul').prepend(li);
+           } else {
+             $('#users ul').append(li);
+           }
         };
 
         $('#messages, #panel').addClass('hidden');
@@ -110,8 +153,7 @@ class Chat < Sinatra::Base
                 enter(name);
               });
               name = data.name;
-              $('#send').text("send (" + name + ")");
-              enter(name, {check: true});
+              enter(name, {check: true, me: true});
             });
             $('#your-name').addClass('hidden');
             $('#messages, #panel, #users').removeClass('hidden');
