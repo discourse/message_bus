@@ -157,6 +157,7 @@ class Chat < Sinatra::Base
             });
             $('#your-name').addClass('hidden');
             $('#messages, #panel, #users').removeClass('hidden');
+            $(document.body).scrollTop(document.body.scrollHeight);
 
             window.onbeforeunload = function(){
               $.post("/leave", { name: name });
