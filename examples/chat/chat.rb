@@ -18,7 +18,12 @@ end
 
 MessageBus.user_id_lookup do |env|
   name = env["HTTP_X_NAME"]
-  $online[name] = Time.now if name
+  if name
+    unless $online[name]
+      MessageBus.publish "/presence", {enter: name}
+    end
+    $online[name] = Time.now
+  end
   name
 end
 
