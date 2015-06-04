@@ -162,6 +162,7 @@ window.MessageBus = (function() {
     callbacks: callbacks,
     clientId: clientId,
     alwaysLongPoll: false,
+    longPoller: longPoller,
     baseUrl: baseUrl,
     // TODO we can make the dependency on $ and jQuery conditional
     // all we really need is an implementation of ajax
@@ -219,7 +220,7 @@ window.MessageBus = (function() {
           data[callback.channel] = callback.last_id;
         });
 
-        me.longPoll = longPoller(poll,data);
+        me.longPoll = me.longPoller(poll,data);
       };
 
 
