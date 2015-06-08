@@ -1,3 +1,8 @@
+08-06-2015
+- Version 1.0.13
+- Fix: on global subscribe reconnect replay missed messages
+- Feature: keepalive tests for global subscribe, catches hung redis connections
+
 28-05-2015
 - Version 1.0.12
 - Feature: Support client_id targetted message
