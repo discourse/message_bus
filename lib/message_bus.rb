@@ -9,6 +9,7 @@ require "message_bus/diagnostics"
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
 require "message_bus/redis/reliable_pub_sub"
+require "message_bus/timer_thread"
 
 # we still need to take care of the logger
 if defined?(::Rails)
@@ -384,19 +385,45 @@ module MessageBus::Implementation
     end
   end
 
+  KEEPALIVE_INTERVAL = 60
+
   def new_subscriber_thread
-    Thread.new do
+    thread = Thread.new do
       begin
         global_subscribe_thread unless @destroyed
       rescue => e
         MessageBus.logger.warn "Unexpected error in subscriber thread #{e}"
       end
     end
+    blk = proc do
+      if !@destroyed && thread.alive?
+        publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
+        if Time.now - (@last_message || Time.now) > KEEPALIVE_INTERVAL*2
+          MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting thread"
+          # No other clean way to remove this thread, its listening on a socket
+          #   no data is arriving
+          #
+          # In production we see this kind of situation ... sometimes ... when there is
+          # a VRRP failover, or weird networking condition
+          thread.kill
+          sleep 1
+          ensure_subscriber_thread
+        else
+          timer.queue(KEEPALIVE_INTERVAL, &blk)
+        end
+      end
+    end
+    timer.queue(KEEPALIVE_INTERVAL, &blk)
+
+    thread
   end
 
   def global_subscribe_thread
-    reliable_pub_sub.global_subscribe do |msg|
+    # pretend we just got a message
+    @last_message = Time.now
+    reliable_pub_sub.global_subscribe(@global_id) do |msg|
       begin
+        @last_message = Time.now
         decode_message!(msg)
         globals, locals, local_globals, global_globals = nil
 
@@ -423,6 +450,7 @@ module MessageBus::Implementation
       rescue => e
         MessageBus.logger.warn "failed to process message #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
       end
+      @global_id = msg.global_id
     end
   end
 
