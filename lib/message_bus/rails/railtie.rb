@@ -11,9 +11,9 @@ class MessageBus::Rails::Railtie < ::Rails::Railtie
     # the Rails app is configured that might be ActionDispatch::Session::CookieStore, or potentially
     # ActionDispatch::Session::ActiveRecordStore.
     #
-    # To handle either case, we insert it before ActionDispatch::Flash.
+    # To handle either case, we insert it at the end of the middleware stack.
     #
-    app.middleware.insert_before(ActionDispatch::Flash, MessageBus::Rack::Middleware)
+    app.middleware.use(MessageBus::Rack::Middleware)
     MessageBus.logger = Rails.logger
   end
 end
