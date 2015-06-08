@@ -52,6 +52,7 @@ describe MessageBus::Redis::ReliablePubSub do
           Process.wait(pid)
         end
       end
+      bus.global_unsubscribe
     end
   end
 end

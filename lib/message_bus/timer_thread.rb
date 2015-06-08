@@ -13,6 +13,14 @@ class MessageBus::TimerThread
     end
   end
 
+  class CancelableEvery
+    attr_accessor :cancelled, :current
+    def cancel
+      current.cancel if current
+      @cancelled = true
+    end
+  end
+
   def initialize
     @stopped = false
     @jobs = []
@@ -24,6 +32,27 @@ class MessageBus::TimerThread
 
   def stop
     @stopped = true
+    running = true
+    while running
+      @mutex.synchronize do
+        running = @thread && @thread.alive?
+        @thread.wakeup if running
+      end
+      sleep 0
+    end
+  end
+
+  def every(delay, &block)
+    result = CancelableEvery.new
+    do_work = proc do
+      begin
+        block.call
+      ensure
+        result.current = queue(delay, &do_work)
+      end
+    end
+    result.current = queue(delay,&do_work)
+    result
   end
 
   # queue a block to run after a certain delay (in seconds)

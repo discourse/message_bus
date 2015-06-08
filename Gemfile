@@ -7,6 +7,7 @@ group :test do
   gem 'rspec'
   gem 'redis'
   gem 'rake'
+  gem 'rbtrace'
   gem 'guard-rspec'
   gem 'rb-inotify', require: RUBY_PLATFORM =~ /linux/i ? 'rb-inotify' : false
   gem 'rack'

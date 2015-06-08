@@ -5,12 +5,6 @@ class MessageBus::Rack::Middleware
 
   def start_listener
     unless @started_listener
-      require 'message_bus/timer_thread'
-
-      @timer_thread = MessageBus::TimerThread.new
-      @timer_thread.on_error do |e|
-        @bus.logger.warn "Failed to process job: #{e} #{e.backtrace}"
-      end
 
       thin = defined?(Thin::Server) && ObjectSpace.each_object(Thin::Server).to_a.first
       thin_running = thin && thin.running?
@@ -27,7 +21,7 @@ class MessageBus::Rack::Middleware
         if thin_running
           EM.next_tick(&run)
         else
-          @timer_thread.queue(&run)
+          MessageBus.timer.queue(&run)
         end
 
         @started_listener = true
@@ -45,7 +39,6 @@ class MessageBus::Rack::Middleware
   def stop_listener
     if @subscription
       @bus.unsubscribe(&@subscription)
-      @timer_thread.stop if @timer_thread
       @started_listener = false
     end
   end
@@ -165,7 +158,7 @@ class MessageBus::Rack::Middleware
   def add_client_with_timeout(client)
     @connection_manager.add_client(client)
 
-    client.cleanup_timer = @timer_thread.queue( @bus.long_polling_interval.to_f / 1000) {
+    client.cleanup_timer = MessageBus.timer.queue( @bus.long_polling_interval.to_f / 1000) {
       begin
         client.cleanup_timer = nil
         client.ensure_closed!

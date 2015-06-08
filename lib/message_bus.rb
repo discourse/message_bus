@@ -297,11 +297,14 @@ module MessageBus::Implementation
       @destroyed = true
     end
     @subscriber_thread.join if @subscriber_thread
+    timer.stop
   end
 
   def after_fork
     reliable_pub_sub.after_fork
     ensure_subscriber_thread
+    # will ensure timer is running
+    timer.queue{}
   end
 
   def listening?
@@ -311,6 +314,17 @@ module MessageBus::Implementation
   # will reset all keys
   def reset!
     reliable_pub_sub.reset!
+  end
+
+  def timer
+    return @timer_thread if @timer_thread
+    @timer_thread ||= begin
+      t = MessageBus::TimerThread.new
+      t.on_error do |e|
+        logger.warn "Failed to process job: #{e} #{e.backtrace}"
+      end
+      t
+    end
   end
 
   protected
@@ -388,6 +402,7 @@ module MessageBus::Implementation
 
         @mutex.synchronize do
           raise MessageBus::BusDestroyed if @destroyed
+          @last_message_time = Time.now
           globals = @subscriptions[nil]
           locals = @subscriptions[msg.site_id] if msg.site_id
 
