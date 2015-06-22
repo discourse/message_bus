@@ -48,7 +48,7 @@ class MessageBus::Redis::ReliablePubSub
 
   def redis_channel_name
     db = @redis_config[:db] || 0
-    "discourse_#{db}"
+    "_message_bus_#{db}"
   end
 
   # redis connection used for publishing messages
