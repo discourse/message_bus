@@ -67,7 +67,7 @@ end
 
 MessageBus can be used in an environment that hosts multiple sites by multiplexing channels. To use this mode
 
-```
+```ruby
 # define a site_id lookup method
 MessageBus.site_id_lookup do
   some_method_that_returns_site_id_string
