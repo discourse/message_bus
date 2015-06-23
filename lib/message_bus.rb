@@ -328,6 +328,17 @@ module MessageBus::Implementation
     end
   end
 
+  # set to 0 to disable, anything higher and
+  # a keepalive will run every N seconds, if it fails
+  # process is killed
+  def keepalive_interval=(interval)
+    @keepalive_interval = interval
+  end
+
+  def keepalive_interval
+    @keepalive_interval || 60
+  end
+
   protected
 
   def global?(channel)
@@ -385,9 +396,10 @@ module MessageBus::Implementation
     end
   end
 
-  KEEPALIVE_INTERVAL = 60
+  MIN_KEEPALIVE = 20
 
   def new_subscriber_thread
+
     thread = Thread.new do
       begin
         global_subscribe_thread unless @destroyed
@@ -395,25 +407,36 @@ module MessageBus::Implementation
         MessageBus.logger.warn "Unexpected error in subscriber thread #{e}"
       end
     end
+
     blk = proc do
       if !@destroyed && thread.alive?
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
-        if Time.now - (@last_message || Time.now) > KEEPALIVE_INTERVAL*2
-          MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting thread"
+        if (Time.now - (@last_message || Time.now)) > keepalive_interval*2
+          MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting process"
           # No other clean way to remove this thread, its listening on a socket
           #   no data is arriving
           #
           # In production we see this kind of situation ... sometimes ... when there is
           # a VRRP failover, or weird networking condition
-          thread.kill
-          sleep 1
-          ensure_subscriber_thread
+          pid = Process.pid
+
+          # do the best we can to terminate self cleanly
+          fork do
+            Process.kill('TERM', pid)
+            sleep 10
+            Process.kill('KILL', pid)
+          end
+
+          sleep 10
+          Process.kill('KILL', pid)
+
         else
-          timer.queue(KEEPALIVE_INTERVAL, &blk)
+          timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
         end
       end
     end
-    timer.queue(KEEPALIVE_INTERVAL, &blk)
+
+    timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
 
     thread
   end
@@ -421,7 +444,7 @@ module MessageBus::Implementation
   def global_subscribe_thread
     # pretend we just got a message
     @last_message = Time.now
-    reliable_pub_sub.global_subscribe(@global_id) do |msg|
+    reliable_pub_sub.global_subscribe do |msg|
       begin
         @last_message = Time.now
         decode_message!(msg)
@@ -429,7 +452,6 @@ module MessageBus::Implementation
 
         @mutex.synchronize do
           raise MessageBus::BusDestroyed if @destroyed
-          @last_message_time = Time.now
           globals = @subscriptions[nil]
           locals = @subscriptions[msg.site_id] if msg.site_id
 

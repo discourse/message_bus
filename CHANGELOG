@@ -1,4 +1,9 @@
 08-06-2015
+- Version 1.0.14
+- Fix: we can not use Thread#kill best keepalive can do is terminate process cleanly
+- Feature: you can opt-out of keepalive with MessageBus.keepalive_timeout = 0
+
+08-06-2015
 - Version 1.0.13
 - Fix: on global subscribe reconnect replay missed messages
 - Feature: keepalive tests for global subscribe, catches hung redis connections
