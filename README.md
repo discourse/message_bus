@@ -99,6 +99,18 @@ MessageBus.subscribe("/channel", function(data){
 
 ```
 
+## Configuration
+
+### Redis
+
+You can configure redis setting in `config/initializers/message_bus.rb`, like
+
+```ruby
+MessageBus.redis_config = { url: "redis://:p4ssw0rd@10.0.1.1:6380/15" }
+```
+The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
+
+
 ## Similar projects
 
 Faye - http://faye.jcoglan.com/
