@@ -11,7 +11,8 @@ module MessageBus::Redis; end
 class MessageBus::Redis::ReliablePubSub
   attr_reader :subscribed
   attr_accessor :max_publish_retries, :max_publish_wait, :max_backlog_size,
-                :max_global_backlog_size, :max_in_memory_publish_backlog
+                :max_global_backlog_size, :max_in_memory_publish_backlog,
+                :max_backlog_age
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -35,6 +36,8 @@ class MessageBus::Redis::ReliablePubSub
     @in_memory_backlog = []
     @lock = Mutex.new
     @flush_backlog_thread = nil
+    # after 7 days inactive backlogs will be removed
+    @max_backlog_age = 604800
   end
 
   def new_redis_connection
@@ -97,17 +100,24 @@ class MessageBus::Redis::ReliablePubSub
     msg = MessageBus::Message.new global_id, backlog_id, channel, data
     payload = msg.encode
 
-    redis.zadd backlog_key, backlog_id, payload
-    redis.zadd global_backlog_key, global_id, backlog_id.to_s << "|" << channel
+    redis.multi do |m|
 
-    redis.publish redis_channel_name, payload
+      redis.zadd backlog_key, backlog_id, payload
+      redis.expire backlog_key, @max_backlog_age
 
-    if backlog_id > @max_backlog_size
-      redis.zremrangebyscore backlog_key, 1, backlog_id - @max_backlog_size
-    end
+      redis.zadd global_backlog_key, global_id, backlog_id.to_s << "|" << channel
+      redis.expire global_backlog_key, @max_backlog_age
 
-    if global_id > @max_global_backlog_size
-      redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
+      redis.publish redis_channel_name, payload
+
+      if backlog_id > @max_backlog_size
+        redis.zremrangebyscore backlog_key, 1, backlog_id - @max_backlog_size
+      end
+
+      if global_id > @max_global_backlog_size
+        redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
+      end
+
     end
 
     backlog_id

@@ -37,6 +37,13 @@ describe MessageBus::Redis::ReliablePubSub do
     end
   end
 
+  it "can set backlog age" do
+    @bus.max_backlog_age = 100
+    @bus.publish "/foo", "bar"
+    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).should be <= 100
+    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).should be > 0
+  end
+
   it "should be able to access the backlog" do
     @bus.publish "/foo", "bar"
     @bus.publish "/foo", "baz"
