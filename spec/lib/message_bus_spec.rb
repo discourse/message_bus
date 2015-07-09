@@ -115,6 +115,15 @@ describe MessageBus do
     r.map{|i| i.data}.to_a.should == ['foo', 'bar']
   end
 
+  it "should correctly get full backlog of a channel" do
+    @bus.publish("/chuck", "norris")
+    @bus.publish("/chuck", "foo")
+    @bus.publish("/chuckles", "bar")
+
+    @bus.backlog("/chuck").map{|i| i.data}.to_a.should == ['norris', 'foo']
+
+  end
+
   it "allows you to look up last_message" do
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")
@@ -201,7 +210,7 @@ describe MessageBus do
 
       $stdout.reopen("/dev/null", "w")
       $stderr.reopen("/dev/null", "w")
-     
+
       # having some issues with exit here
       # TODO find and fix
       Process.kill "KILL", Process.pid

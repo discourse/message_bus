@@ -264,7 +264,11 @@ module MessageBus::Implementation
     subscribe_impl(channel, site_id, &blk)
   end
 
-  def backlog(channel=nil, last_id)
+  def global_backlog(last_id=nil)
+    backlog(nil, last_id)
+  end
+
+  def backlog(channel=nil, last_id=nil)
     old =
       if channel
         reliable_pub_sub.backlog(encode_channel_name(channel), last_id)
