@@ -412,10 +412,16 @@ module MessageBus::Implementation
       end
     end
 
+    # adjust for possible race condition
+    @last_message = Time.now
+
     blk = proc do
-      if !@destroyed && thread.alive?
+      if !@destroyed && thread.alive? && keepalive_interval > MIN_KEEPALIVE
+
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
-        if (Time.now - (@last_message || Time.now)) > keepalive_interval*2
+        # going for x3 keepalives missed for a restart, need to ensure this only very rarely happens
+        # note: after_fork will sort out a bad @last_message date, but thread will be dead anyway
+        if (Time.now - (@last_message || Time.now)) > keepalive_interval*3
           MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting process"
           # No other clean way to remove this thread, its listening on a socket
           #   no data is arriving

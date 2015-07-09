@@ -1,4 +1,8 @@
 09-07-2015
+- Version 1.0.16
+- Fix: correct edge cases around keepalive checks on bus
+
+09-07-2015
 - Version 1.0.15
 - Feature: MessageBus.reliable_pub_sub.max_backlog_age (in secs) configurable (default to 7 days)
 - Fix: API for MessageBus.backlog("/bla") was returning global backlog by mistake
