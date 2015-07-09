@@ -1,3 +1,9 @@
+09-07-2015
+- Version 1.0.15
+- Feature: MessageBus.reliable_pub_sub.max_backlog_age (in secs) configurable (default to 7 days)
+- Fix: API for MessageBus.backlog("/bla") was returning global backlog by mistake
+- Change: Max global backlog size reduced to 2000 elements
+
 08-06-2015
 - Version 1.0.14
 - Fix: we can not use Thread#kill best keepalive can do is terminate process cleanly
