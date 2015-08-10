@@ -110,6 +110,40 @@ MessageBus.redis_config = { url: "redis://:p4ssw0rd@10.0.1.1:6380/15" }
 ```
 The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
 
+### Forking/threading app servers
+
+If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis in your app server config:
+
+#### Passenger
+```ruby
+# Rails: config/application.rb or config.ru
+if defined?(PhusionPassenger)
+  PhusionPassenger.on_event(:starting_worker_process) do |forked|
+    if forked
+      # We're in smart spawning mode.
+      MessageBus.after_fork
+    else
+      # We're in conservative spawning mode. We don't need to do anything.
+    end
+  end
+end
+```
+
+#### Puma
+```ruby
+# path/to/your/config/puma.rb
+on_worker_boot do
+  MessageBus.after_fork
+end
+```
+
+#### Unicorn
+```ruby
+# path/to/your/config/unicorn.rb
+after_fork do |server, worker|
+  MessageBus.after_fork
+end
+```
 
 ## Similar projects
 
