@@ -85,7 +85,14 @@ class MessageBus::Rack::Middleware
                                     user_id: user_id, site_id: site_id, group_ids: group_ids)
 
     request = Rack::Request.new(env)
-    request.POST.each do |k,v|
+
+    post_data = if request.form_data?
+      request.POST
+    else
+      JSON.parse env['rack.input'].read
+    end
+
+    post_data.each do |k,v|
       client.subscribe(k, v)
     end
 

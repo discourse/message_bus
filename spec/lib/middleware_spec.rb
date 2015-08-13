@@ -124,6 +124,16 @@ describe MessageBus::Rack::Middleware do
 
       test.should == [1]
     end
+
+    it "should support json post data" do
+      header "Content-Type", "application/json"
+      post "/message-bus/ABC", {'/foo' => -1}.to_json
+      last_response.should be_ok
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
+      parsed[0]["channel"].should == "/__status"
+      parsed[0]["data"]["/foo"].should == @bus.last_id("/foo")
+    end
   end
 
   describe "thin async" do
@@ -376,6 +386,20 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
+    end
+
+    it "should support json post data" do
+
+      @bus.publish('foo', 'bar')
+
+      header "Content-Type", "application/json"
+      post "/message-bus/ABCD", { '/foo' => -1}.to_json
+      last_response.should be_ok
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
+      parsed[0]["channel"].should == "/__status"
+      parsed[0]["data"]["/foo"].should ==@bus.last_id("/foo")
+
     end
   end
 
