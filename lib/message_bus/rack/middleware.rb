@@ -89,7 +89,7 @@ class MessageBus::Rack::Middleware
       client.subscribe(k, v)
     end
 
-    backlog = client.backlog
+    backlog = client.backlog(allow_flush: true)
     headers = {}
 
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
