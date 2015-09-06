@@ -36,9 +36,14 @@ class MessageBus::Client
   end
 
   def subscribe(channel, last_seen_id)
+    bus_last_id = @bus.last_id(channel)
     last_seen_id = nil if last_seen_id == ""
-    last_seen_id ||= @bus.last_id(channel)
-    @subscriptions[channel] = last_seen_id.to_i
+    last_seen_id ||= bus_last_id
+    last_seen_id = last_seen_id.to_i
+    @subscriptions[channel] = last_seen_id
+    if last_seen_id > bus_last_id
+      @over_position = true
+    end
   end
 
   def subscriptions
@@ -75,7 +80,11 @@ class MessageBus::Client
     end
   end
 
-  def backlog
+  def backlog(opts={})
+    if @over_position && opts[:allow_flush]
+      return [MessageBus::Message.new(-1, -1, '/__flush', nil)]
+    end
+
     r = []
     @subscriptions.each do |k,v|
       next if v.to_i < 0

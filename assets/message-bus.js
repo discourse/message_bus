@@ -60,16 +60,15 @@ window.MessageBus = (function() {
     var gotData = false;
     if (!messages) return false; // server unexpectedly closed connection
 
-    $.each(messages,function(_,message) {
+    $.each(messages, function(_,message) {
       gotData = true;
-      $.each(callbacks, function(_,callback) {
+      $.each(callbacks, function(_, callback) {
         if (callback.channel === message.channel) {
           callback.last_id = message.message_id;
           try {
             callback.func(message.data);
-          }
-          catch(e){
-            if(console.log) {
+          } catch(e) {
+            if (console.log) {
               console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.message);
             }
           }
@@ -78,6 +77,9 @@ window.MessageBus = (function() {
           if (message.data[callback.channel] !== undefined) {
             callback.last_id = message.data[callback.channel];
           }
+        }
+        if (message.channel === "/__flush") {
+          callback.last_id = -1;
         }
       });
     });
