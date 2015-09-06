@@ -81,10 +81,6 @@ class MessageBus::Client
   end
 
   def backlog(opts={})
-    if @over_position && opts[:allow_flush]
-      return [MessageBus::Message.new(-1, -1, '/__flush', nil)]
-    end
-
     r = []
     @subscriptions.each do |k,v|
       next if v.to_i < 0
@@ -93,10 +89,16 @@ class MessageBus::Client
         r << msg if allowed?(msg)
       end
     end
+
+    if @over_position && opts[:allow_flush]
+      r = [MessageBus::Message.new(-1, -1, '/__flush', nil)]
+      flushing = true
+    end
+
     # stats message for all newly subscribed
     status_message = nil
     @subscriptions.each do |k,v|
-      if v.to_i == -1
+      if v.to_i == -1 || flushing
         status_message ||= {}
         status_message[k] = @bus.last_id(k)
       end
