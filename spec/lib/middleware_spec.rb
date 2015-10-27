@@ -74,6 +74,32 @@ describe MessageBus::Rack::Middleware do
       last_response.headers["FOO"].should == "BAR"
     end
 
+    it "should allow delivery of messages to clients that overlap subscriptions" do
+      middleware = @async_middleware
+      bus = @bus
+      bus.long_polling_interval = 1000
+
+      client_id = 'ABC'
+
+      post "/message-bus/#{client_id}", '/initial-channel' => nil
+
+      Thread.new do
+        wait_for(1500) {middleware.in_async?}
+        bus.publish "/foo", "םוֹלשָׁ"
+      end
+
+      post "/message-bus/ABC", {
+        "/initial-channel" => nil,
+        "/foo" => nil
+      }
+
+      last_response.should be_ok
+      parsed = JSON.parse(last_response.body)
+      parsed.length.should == 1
+      parsed[0]["data"].should == "םוֹלשָׁ"
+
+    end
+
     it "should timeout within its alloted slot" do
       begin
         @bus.long_polling_interval = 10
