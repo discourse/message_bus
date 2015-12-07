@@ -174,7 +174,7 @@ window.MessageBus = (function() {
     baseUrl: baseUrl,
     // TODO we can make the dependency on $ and jQuery conditional
     // all we really need is an implementation of ajax
-    ajax: $.ajax,
+    ajax: ($ && $.ajax),
 
     diagnostics: function(){
       console.log("Stopped: " + stopped + " Started: " + started);
@@ -200,14 +200,12 @@ window.MessageBus = (function() {
     },
 
     // Start polling
-    start: function(opts) {
+    start: function() {
       var poll, delayPollTimeout;
 
       if (started) return;
       started = true;
       stopped = false;
-
-      if (!opts) opts = {};
 
       poll = function() {
         var data;
