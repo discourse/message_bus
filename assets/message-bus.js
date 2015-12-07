@@ -33,12 +33,17 @@ window.MessageBus = (function() {
 
   var hiddenProperty;
 
-  $.each(["","webkit","ms","moz","ms"], function(index, prefix){
-    var check = prefix + (prefix === "" ? "hidden" : "Hidden");
-    if(document[check] !== undefined ){
-      hiddenProperty = check;
+
+  (function(){
+    var prefixes = ["","webkit","ms","moz","ms"];
+    for(var i=0; i<prefixes.length; i++) {
+      var prefix = prefixes[i];
+      var check = prefix + (prefix === "" ? "hidden" : "Hidden");
+      if(document[check] !== undefined ){
+        hiddenProperty = check;
+      }
     }
-  });
+  })();
 
   var isHidden = function() {
     if (hiddenProperty !== undefined){
@@ -60,9 +65,12 @@ window.MessageBus = (function() {
     var gotData = false;
     if (!messages) return false; // server unexpectedly closed connection
 
-    $.each(messages,function(_,message) {
+
+    for (var i=0; i<messages.length; i++) {
+      var message = messages[i];
       gotData = true;
-      $.each(callbacks, function(_,callback) {
+      for (var j=0; j<callbacks.length; j++) {
+        var callback = callbacks[j];
         if (callback.channel === message.channel) {
           callback.last_id = message.message_id;
           try {
@@ -79,8 +87,8 @@ window.MessageBus = (function() {
             callback.last_id = message.data[callback.channel];
           }
         }
-      });
-    });
+      }
+    }
 
     return gotData;
   };
@@ -104,9 +112,9 @@ window.MessageBus = (function() {
         failCount = 0;
         if (paused) {
           if (messages) {
-            $.each(messages, function(_,message) {
-              later.push(messages);
-            });
+            for (var i=0; i<messages.length; i++) {
+              later.push(messages[i]);
+            }
           }
         } else {
           gotData = processMessages(messages);
@@ -215,9 +223,9 @@ window.MessageBus = (function() {
         }
 
         data = {};
-        $.each(callbacks, function(_,callback) {
-          data[callback.channel] = callback.last_id;
-        });
+        for (var i=0;i<callbacks.length;i++) {
+          data[callbacks[i].channel] = callbacks[i].last_id;
+        }
 
         me.longPoll = longPoller(poll,data);
       };
@@ -265,7 +273,12 @@ window.MessageBus = (function() {
         channel = channel.substr(0, channel.length - 1);
         glob = true;
       }
-      callbacks = $.grep(callbacks,function(callback) {
+
+      var filtered = [];
+
+      for (var i=0; i<callbacks.length; i++) {
+
+        callback = callbacks[i];
         var keep;
 
         if (glob) {
@@ -278,8 +291,12 @@ window.MessageBus = (function() {
           keep = true;
         }
 
-        return keep;
-      });
+        if (keep) {
+          filtered.push(callback);
+        }
+      }
+
+      callbacks = filtered;
 
       if (me.longPoll) {
         return me.longPoll.abort();
