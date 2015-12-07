@@ -1,3 +1,10 @@
+07-12-2015
+
+- Version 1.1.0
+- Fix: keep track of client sequence on server, abandon old subscribes
+- Fix: rare concurrency issue when subscribing concurrently
+- Fature: remove most jQuery dependency from message-bus.js
+
 09-07-2015
 - Version 1.0.16
 - Fix: correct edge cases around keepalive checks on bus
