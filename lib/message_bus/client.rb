@@ -1,16 +1,26 @@
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
-                :async_response, :io, :headers
+                :async_response, :io, :headers, :seq
 
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
     self.group_ids = opts[:group_ids] || []
     self.site_id = opts[:site_id]
+    self.seq = opts[:seq].to_i
     self.connect_time = Time.now
     @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
+  end
+
+  def cancel
+    if cleanup_timer
+      # concurrency may nil cleanup timer
+      cleanup_timer.cancel rescue nil
+      self.cleanup_timer = nil
+    end
+    ensure_closed!
   end
 
   def in_async?

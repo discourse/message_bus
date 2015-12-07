@@ -98,6 +98,7 @@ window.MessageBus = (function() {
     var aborted = false;
     lastAjax = new Date();
     totalAjaxCalls += 1;
+    data.__seq = totalAjaxCalls;
 
     return me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""),

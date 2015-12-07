@@ -84,6 +84,18 @@ end
 
 describe MessageBus::ConnectionManager, "notifying and subscribing concurrently" do
 
+  it "does not subscribe incorrect clients" do
+    manager = MessageBus::ConnectionManager.new
+
+    client1 = MessageBus::Client.new(client_id: "a", seq: 1)
+    client2 = MessageBus::Client.new(client_id: "a", seq: 2)
+
+    manager.add_client(client2)
+    manager.add_client(client1)
+
+    manager.lookup_client("a").should == client2
+  end
+
   it "is thread-safe" do
     @bus = MessageBus
     @manager = MessageBus::ConnectionManager.new(@bus)

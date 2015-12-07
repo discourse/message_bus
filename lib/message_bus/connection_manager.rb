@@ -2,117 +2,124 @@ require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
   require 'monitor'
+  include MonitorMixin
 
-  class SynchronizedSet
-    include MonitorMixin
-
-    def initialize
-      super
-      @set = Set.new
-    end
-
-    def self.synchronize(methods)
-      methods.each do |method|
-        define_method method do |*args, &blk|
-          synchronize do
-            @set.send method,*args,&blk
-          end
-        end
-      end
-    end
-
-    synchronize(Set.new.methods - Object.new.methods)
-
-  end
-
-  def initialize(bus = nil)
+  def initialize(bus=nil)
     @clients = {}
     @subscriptions = {}
     @bus = bus || MessageBus
+    mon_initialize
   end
 
   def notify_clients(msg)
-    begin
-      site_subs = @subscriptions[msg.site_id]
-      subscription = site_subs[msg.channel] if site_subs
+    synchronize do
+      begin
+        site_subs = @subscriptions[msg.site_id]
+        subscription = site_subs[msg.channel] if site_subs
 
-      return unless subscription
+        return unless subscription
 
-      around_filter = @bus.around_client_batch(msg.channel)
+        around_filter = @bus.around_client_batch(msg.channel)
 
-      work = lambda do
-        subscription.each do |client_id|
-          client = @clients[client_id]
-          if client && client.allowed?(msg)
-            if copy = client.filter(msg)
-              begin
-                client << copy
-              rescue
-                # pipe may be broken, move on
+        work = lambda do
+          subscription.each do |client_id|
+            client = @clients[client_id]
+            if client && client.allowed?(msg)
+              if copy = client.filter(msg)
+                begin
+                  client << copy
+                rescue
+                  # pipe may be broken, move on
+                end
+                # turns out you can delete from a set while itereating
+                remove_client(client)
               end
-              # turns out you can delete from a set while itereating
-              remove_client(client)
             end
           end
         end
-      end
 
-      if around_filter
-        user_ids = subscription.map do |s|
-          c = @clients[s]
-          c && c.user_id
-        end.compact
+        if around_filter
+          user_ids = subscription.map do |s|
+            c = @clients[s]
+            c && c.user_id
+          end.compact
 
-        if user_ids && user_ids.length > 0
-          around_filter.call(msg, user_ids, work)
+          if user_ids && user_ids.length > 0
+            around_filter.call(msg, user_ids, work)
+          end
+        else
+          work.call
         end
-      else
-        work.call
-      end
 
-    rescue => e
-      MessageBus.logger.error "notify clients crash #{e} : #{e.backtrace}"
+      rescue => e
+        MessageBus.logger.error "notify clients crash #{e} : #{e.backtrace}"
+      end
     end
   end
 
   def add_client(client)
-    @clients[client.client_id] = client
-    @subscriptions[client.site_id] ||= {}
-    client.subscriptions.each do |k,v|
-      subscribe_client(client, k)
+    synchronize do
+      existing = @clients[client.client_id]
+      if existing && existing.seq > client.seq
+        client.cancel
+      else
+        if existing
+          remove_client(existing)
+          existing.cancel
+        end
+
+        @clients[client.client_id] = client
+        @subscriptions[client.site_id] ||= {}
+        client.subscriptions.each do |k,v|
+          subscribe_client(client, k)
+        end
+      end
     end
   end
 
   def remove_client(c)
-    @clients.delete c.client_id
-    @subscriptions[c.site_id].each do |k, set|
-      set.delete c.client_id
+    synchronize do
+      @clients.delete c.client_id
+      @subscriptions[c.site_id].each do |k, set|
+        set.delete c.client_id
+      end
+      if c.cleanup_timer
+        # concurrency may cause this to fail
+        c.cleanup_timer.cancel rescue nil
+      end
     end
-    c.cleanup_timer.cancel if c.cleanup_timer
   end
 
   def lookup_client(client_id)
-    @clients[client_id]
+    synchronize do
+      @clients[client_id]
+    end
   end
 
   def subscribe_client(client,channel)
-    set = @subscriptions[client.site_id][channel]
-    unless set
-      set = SynchronizedSet.new
-      @subscriptions[client.site_id][channel] = set
+    synchronize do
+      set = @subscriptions[client.site_id][channel]
+      unless set
+        set = Set.new
+        @subscriptions[client.site_id][channel] = set
+      end
+      set << client.client_id
     end
-    set << client.client_id
   end
 
   def client_count
-    @clients.length
+    synchronize do
+      @clients.length
+    end
   end
 
   def stats
-    {
-      client_count: @clients.length,
-      subscriptions: @subscriptions
-    }
+    synchronize do
+      {
+        client_count: @clients.length,
+        subscriptions: @subscriptions
+      }
+    end
   end
 
 end

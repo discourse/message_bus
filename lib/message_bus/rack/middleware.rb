@@ -86,7 +86,11 @@ class MessageBus::Rack::Middleware
 
     request = Rack::Request.new(env)
     request.POST.each do |k,v|
-      client.subscribe(k, v)
+      if k == "__seq".freeze
+        client.seq = v.to_i
+      else
+        client.subscribe(k, v)
+      end
     end
 
     backlog = client.backlog
