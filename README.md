@@ -4,6 +4,10 @@ A reliable, robust messaging bus for Ruby processes and web clients built on Red
 
 MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling or long-polling)
 
+Long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web server can run MessageBus (Thin, Puma, Unicorn) and handle a large amount of concurrent connections that wait on messages.
+
+MessageBus is implemented as Rack middleware and can be used by and Rails / Sinatra or pure Rack application.
+
 
 ## Installation
 
@@ -78,7 +82,13 @@ MessageBus.publish "/channel", "some message"
 
 # you may publish messages to ALL sites using the /global/ prefix
 MessageBus.publish "/global/channel", "will go to all sites"
+
 ```
+
+### Client support
+
+MessageBus ships a simple ~300 line JavaScript library which provides an API to interact with the server.
+
 
 JavaScript can listen on any channel (and receive notification via polling or long polling):
 
@@ -96,8 +106,40 @@ MessageBus.subscribe("/channel", function(data){
   // data shipped from server
 });
 
-
 ```
+
+**Client settings**:
+
+
+All client settings are settable via `MessageBus.OPTION`
+
+Setting|Default|
+----|---|---|
+enableLongPolling|true|Allow long-polling (provided it is enable by the server)
+callbackInterval|15000|Safeguard to ensure background polling does not exceed this interval (in milliseconds)
+backgroundCallbackInterval|60000|Interval to poll when long polling is disabled (either explicitly or due to browser being in backgroud)
+maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
+alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
+baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
+ajax|$.ajax|The only dependency on jQuery, you may set up a custom ajax function here
+
+**API**:
+
+`MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus
+
+`MessageBus.pause()` : Pause all MessageBus activity
+
+`MessageBus.resume()` : Resume MessageBus activity
+
+`MessageBus.stop()` : Stop all MessageBus activity
+
+`MessageBus.start()` : Must be called to startup the MessageBus poller
+
+`MessageBus.subscribe(channel,func,lastId)` : Subscribe to a channel, optionally you may specify the id of the last message you received in the channel.
+
+`MessageBus.unsubscribe(channel,func)` : Unsubscribe callback from a particular channel
+
+
 
 ## Configuration
 
@@ -145,14 +187,13 @@ after_fork do |server, worker|
 end
 ```
 
-## Similar projects
+## Want to help?
 
-Faye - http://faye.jcoglan.com/
+If you are looking to contribute to this project here are some ideas
 
-## Contributing
+- Build an in-memory storage backend to ease testing and for very simple deployments
+- Build a PostgreSQL backend using NOTIFY and LISTEN
+- Improve general documentation
+- Port the test suite to MiniTest
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+
