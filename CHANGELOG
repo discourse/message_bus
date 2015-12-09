@@ -1,3 +1,10 @@
+09-12-2015
+
+- Version 1.1.1
+- Fix: In multisite config there was no way to specify site for last_id or backlog
+   to resolve overrides were added to #last_id and #backlog, MessageBus::Client now
+   uses the new overrides
+
 07-12-2015
 
 - Version 1.1.0

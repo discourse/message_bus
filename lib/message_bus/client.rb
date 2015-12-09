@@ -89,7 +89,7 @@ class MessageBus::Client
     r = []
     @subscriptions.each do |k,v|
       next if v.to_i < 0
-      messages = @bus.backlog(k,v)
+      messages = @bus.backlog(k, v, site_id)
       messages.each do |msg|
         r << msg if allowed?(msg)
       end
@@ -99,7 +99,7 @@ class MessageBus::Client
     @subscriptions.each do |k,v|
       if v.to_i == -1
         status_message ||= {}
-        status_message[k] = @bus.last_id(k)
+        status_message[k] = @bus.last_id(k, site_id)
       end
     end
     r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message

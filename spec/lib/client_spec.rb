@@ -15,6 +15,31 @@ describe MessageBus::Client do
       @bus.destroy
     end
 
+    it "does not bleed data accross sites" do
+      @client.site_id = "test"
+
+      @client.subscribe('/hello', nil)
+      @bus.publish '/hello', 'world'
+      log = @client.backlog
+      log.length.should == 0
+    end
+
+    it "does not bleed status accross sites" do
+      @client.site_id = "test"
+
+      @client.subscribe('/hello', -1)
+      @bus.publish '/hello', 'world'
+      log = @client.backlog
+      log[0].data.should == {"/hello" => 0}
+    end
+
+    it "provides status" do
+      @client.subscribe('/hello', -1)
+      log = @client.backlog
+      log.length.should == 1
+      log[0].data.should == {"/hello" => 0}
+    end
+
     it "should provide a list of subscriptions" do
       @client.subscribe('/hello', nil)
       @client.subscriptions['/hello'].should_not be_nil

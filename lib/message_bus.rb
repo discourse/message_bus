@@ -232,10 +232,10 @@ module MessageBus::Implementation
   ENCODE_SITE_TOKEN = "$|$"
 
   # encode channel name to include site
-  def encode_channel_name(channel)
-    if site_id_lookup && !global?(channel)
+  def encode_channel_name(channel, site_id=nil)
+    if (site_id || site_id_lookup) && !global?(channel)
       raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
-      "#{channel}#{ENCODE_SITE_TOKEN}#{site_id_lookup.call}"
+      "#{channel}#{ENCODE_SITE_TOKEN}#{site_id || site_id_lookup.call}"
     else
       channel
     end
@@ -268,10 +268,10 @@ module MessageBus::Implementation
     backlog(nil, last_id)
   end
 
-  def backlog(channel=nil, last_id=nil)
+  def backlog(channel=nil, last_id=nil, site_id=nil)
     old =
       if channel
-        reliable_pub_sub.backlog(encode_channel_name(channel), last_id)
+        reliable_pub_sub.backlog(encode_channel_name(channel,site_id), last_id)
       else
         reliable_pub_sub.global_backlog(last_id)
       end
@@ -282,8 +282,8 @@ module MessageBus::Implementation
     old
   end
 
-  def last_id(channel)
-    reliable_pub_sub.last_id(encode_channel_name(channel))
+  def last_id(channel,site_id=nil)
+    reliable_pub_sub.last_id(encode_channel_name(channel,site_id))
   end
 
   def last_message(channel)
