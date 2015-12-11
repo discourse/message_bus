@@ -119,6 +119,7 @@ class MessageBus::Client
   CONNECTION_CLOSE = "Connection: close\r\n".freeze
 
   def write_and_close(data)
+    @bus.logger.info "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
       @io.write(HTTP_11)
       @headers.each do |k,v|

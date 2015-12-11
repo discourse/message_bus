@@ -116,6 +116,7 @@ class MessageBus::Rack::Middleware
                    @connection_manager.client_count < @bus.max_active_clients
 
     if backlog.length > 0
+      @bus.logger.info "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
       [200, headers, [self.class.backlog_to_json(backlog)] ]
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
       io = env['rack.hijack'].call
