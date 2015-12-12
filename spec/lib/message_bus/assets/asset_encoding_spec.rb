@@ -1,4 +1,4 @@
-asset_directory = File.expand_path('../../../../assets', __FILE__)
+asset_directory = File.expand_path('../../../../../assets', __FILE__)
 asset_file_paths = Dir.glob(File.join(asset_directory, 'message-bus.js'))
 asset_file_names = asset_file_paths.map{|e| File.basename(e) }
 
