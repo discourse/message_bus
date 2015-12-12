@@ -93,9 +93,7 @@ class MessageBus::Rack::Middleware
       end
     end
 
-    backlog = client.backlog
     headers = {}
-
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] = "application/json; charset=utf-8"
     headers["Pragma"] = "no-cache"
@@ -115,7 +113,11 @@ class MessageBus::Rack::Middleware
                    env['QUERY_STRING'] !~ /dlp=t/.freeze &&
                    @connection_manager.client_count < @bus.max_active_clients
 
+    add_client_with_timeout(client)
+    backlog = (client.backlog + client.buffered_messages).uniq
+
     if backlog.length > 0
+      client.cancel
       @bus.logger.info "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
       [200, headers, [self.class.backlog_to_json(backlog)] ]
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
@@ -123,7 +125,7 @@ class MessageBus::Rack::Middleware
       client.io = io
       client.headers = headers
 
-      add_client_with_timeout(client)
+      client.try_deliver_buffered_messages
       [418, {}, ["I'm a teapot, undefined in spec"]]
     elsif long_polling && env['async.callback']
       response = nil
@@ -142,7 +144,7 @@ class MessageBus::Rack::Middleware
 
       client.async_response = response
 
-      add_client_with_timeout(client)
+      client.try_deliver_buffered_messages
 
       throw :async
     else
