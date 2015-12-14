@@ -1,7 +1,7 @@
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
-                :async_response, :io, :headers, :seq
+                :async_response, :io, :headers, :seq, :buffered_messages
 
   def initialize(opts)
     self.client_id = opts[:client_id]
@@ -12,6 +12,7 @@ class MessageBus::Client
     self.connect_time = Time.now
     @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
+    @buffered_messages = []
   end
 
   def cancel
@@ -25,6 +26,12 @@ class MessageBus::Client
 
   def in_async?
     @async_response || @io
+  end
+
+  def try_deliver_buffered_messages
+    if @buffered_messages.length > 0
+      write_and_close messages_to_json(@buffered_messages)
+    end
   end
 
   def ensure_closed!
@@ -56,7 +63,11 @@ class MessageBus::Client
   end
 
   def <<(msg)
-    write_and_close messages_to_json([msg])
+    if in_async?
+      write_and_close messages_to_json(@buffered_messages << msg)
+    else
+      @buffered_messages << msg
+    end
   end
 
   def subscriptions
@@ -119,6 +130,7 @@ class MessageBus::Client
   CONNECTION_CLOSE = "Connection: close\r\n".freeze
 
   def write_and_close(data)
+    @bus.logger.info "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
       @io.write(HTTP_11)
       @headers.each do |k,v|
