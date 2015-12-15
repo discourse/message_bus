@@ -195,5 +195,6 @@ If you are looking to contribute to this project here are some ideas
 - Build a PostgreSQL backend using NOTIFY and LISTEN
 - Improve general documentation
 - Port the test suite to MiniTest
+- Make MessageBus a nice website
 
 
