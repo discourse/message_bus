@@ -4,6 +4,6 @@ result=`cd /root/message_bus && git pull | grep "Already up-to-date"`
 
 if [ -z "$result" ]; then
    echo "updating..."
-   cd /var/docker && ./launcher rebuild chat
+   cd /var/docker && ./launcher rebuild chat --skip-prereqs
 fi
 
