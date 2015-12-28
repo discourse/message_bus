@@ -39,7 +39,7 @@ hooks:
          exec 2>&1
          # redis
          cd $home/examples/chat
-         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 puma -p 8080 -E production
+         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 puma -p 8080 -e production
     - exec: rm /etc/nginx/sites-enabled/default
     - replace:
         filename: /etc/nginx/nginx.conf
