@@ -1,4 +1,4 @@
-base_image: "discourse/discourse_base:1.0.15"
+base_image: "discourse/base:1.0.15"
 
 update_pups: false
 
