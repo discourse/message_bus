@@ -1,4 +1,4 @@
-base_image: "samsaffron/discourse_base:1.0.11"
+base_image: "discourse/discourse_base:1.0.15"
 
 update_pups: false
 
@@ -28,23 +28,18 @@ hooks:
     - exec: cd /var/www && git clone --depth 1 https://github.com/SamSaffron/message_bus.git
     - exec:
         cmd:
-          - gem install unicorn
+          - gem install puma
           - gem install redis
           - gem install sinatra
-          - gem install rbtrace
-    - replace:
-      - filename: $home/examples/chat/chat.rb
-      - from: "require 'json'"
-      - to: "require 'json'\nrequire 'rbtrace'"
     - file:
-       path: /etc/service/unicorn/run
+       path: /etc/service/puma/run
        chmod: "+x"
        contents: |
          #!/bin/bash
          exec 2>&1
          # redis
          cd $home/examples/chat
-         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 unicorn -p 8080 -E production
+         exec sudo -E -u chat LD_PRELOAD=/usr/lib/libjemalloc.so.1 puma -p 8080 -E production
     - exec: rm /etc/nginx/sites-enabled/default
     - replace:
         filename: /etc/nginx/nginx.conf
