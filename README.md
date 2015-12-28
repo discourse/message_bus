@@ -45,7 +45,6 @@ end
 MessageBus.backlog "/channel", id
 # returns all messages after the id
 
-
 # messages can be targetted at particular users or groups
 MessageBus.publish "/channel", user_ids: [1,2,3], group_ids: [4,5,6]
 
@@ -63,13 +62,6 @@ MessageBus.group_ids_lookup do |env|
   # can be nil or []
 end
 
-
-MessageBus.client_filter("/channel") do |user_id, message|
-  # return message if client is allowed to see this message
-  # allows you to inject server side filtering of messages based on arbitrary rules
-  # also allows you to override the message a clients will see
-  # be sure to .dup the message if you wish to change it
-end
 
 ```
 
