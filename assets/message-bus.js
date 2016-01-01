@@ -35,7 +35,7 @@ window.MessageBus = (function() {
 
 
   (function(){
-    var prefixes = ["","webkit","ms","moz","ms"];
+    var prefixes = ["","webkit","ms","moz"];
     for(var i=0; i<prefixes.length; i++) {
       var prefix = prefixes[i];
       var check = prefix + (prefix === "" ? "hidden" : "Hidden");
