@@ -121,6 +121,7 @@ class Chat < Sinatra::Base
       $(function() {
         var name;
 
+        MessageBus.enableChunkedEncoding = false;
         MessageBus.ajax = function(args){
           args["headers"]["X-NAME"] = name;
           return $.ajax(args);
