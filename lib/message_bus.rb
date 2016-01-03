@@ -51,6 +51,8 @@ module MessageBus::Implementation
     return @logger if @logger
     require 'logger'
     @logger = Logger.new(STDOUT)
+    @logger.level = Logger::INFO
+    @logger
   end
 
   def long_polling_enabled?

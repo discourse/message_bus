@@ -7,6 +7,7 @@ require 'json'
 
 $online = Hash.new
 
+
 MessageBus.subscribe "/presence" do |msg|
   if user = msg.data["enter"]
      $online[user] = Time.now
@@ -17,6 +18,7 @@ MessageBus.subscribe "/presence" do |msg|
 end
 
 MessageBus.user_id_lookup do |env|
+  MessageBus.logger = env['rack.logger']
   name = env["HTTP_X_NAME"]
   if name
     unless $online[name]

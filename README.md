@@ -2,7 +2,7 @@
 
 A reliable, robust messaging bus for Ruby processes and web clients built on Redis.
 
-MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling or long-polling)
+MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling, long-polling or long-polling + streaming)
 
 Long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web server can run MessageBus (Thin, Puma, Unicorn) and handle a large amount of concurrent connections that wait on messages.
 
@@ -14,6 +14,9 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ### http://chat.samsaffron.com
 
+## Can you handle concurrent requests?
+
+**Yes**, MessageBus uses Rack Hijack, this interface allows us to take control of the underlying socket. MessageBus can handle thousands of concurrent long polls on all popular Ruby webservers. MessageBus runs as middleware in your Rack (or by extension Rails) application and does not require a dedicated server. Background work is minimized to ensure it does not interfere with existing non MessageBus traffic.
 
 ## Installation
 
@@ -61,9 +64,41 @@ MessageBus.group_ids_lookup do |env|
   # return the group ids the user belongs to
   # can be nil or []
 end
+```
 
+### Transport
+
+MessageBus ships with 3 transport mechanisms.
+
+1. Long Polling with chunked encoding (streaming)
+2. Long Polling
+3. Polling
+
+Long Polling with chunked encoding allows a single connection to stream multiple messages to a client, this requires HTTP/1.1
+
+Chunked encoding provides all the benefits of [EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) with greater browser support (as it works on IE10 and up as well)
+
+To setup NGINX to proxy to your app correctly be sure to enable HTTP1.1 and disable buffering
 
 ```
+location ... {
+  ...
+  proxy_buffering off;
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  ...
+}
+```
+
+If you wish to disable chunked encoding run:
+
+```
+MessageBus.enableChunkedEncoding = false; // in your JavaScript
+```
+
+Long Polling requires no special setup, as soon as new data arrives on the channel the server delivers the data and closes the connection.
+
+Polling also requires no special setup, MessageBus will fallback to polling after a tab becomes inactive and remains inactive for a period.
 
 ### Multisite support
 

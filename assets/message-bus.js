@@ -1,12 +1,6 @@
 /*jshint bitwise: false*/
+"use strict;"
 
-/**
-  Message Bus functionality.
-
-  @class MessageBus
-  @namespace Discourse
-  @module Discourse
-**/
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
@@ -53,6 +47,11 @@ window.MessageBus = (function() {
     }
   };
 
+  var hasonprogress = (new XMLHttpRequest()).onprogress === null;
+  var allowChunked = function(){
+    return me.enableChunkedEncoding && hasonprogress;
+  };
+
   shouldLongPoll = function() {
     return me.alwaysLongPoll || !isHidden();
   };
@@ -64,7 +63,6 @@ window.MessageBus = (function() {
   var processMessages = function(messages) {
     var gotData = false;
     if (!messages) return false; // server unexpectedly closed connection
-
 
     for (var i=0; i<messages.length; i++) {
       var message = messages[i];
@@ -93,6 +91,20 @@ window.MessageBus = (function() {
     return gotData;
   };
 
+  var reqSuccess = function(messages) {
+    failCount = 0;
+    if (paused) {
+      if (messages) {
+        for (var i=0; i<messages.length; i++) {
+          later.push(messages[i]);
+        }
+      }
+    } else {
+      return processMessages(messages);
+    }
+    return false;
+  };
+
   longPoller = function(poll,data){
     var gotData = false;
     var aborted = false;
@@ -100,27 +112,76 @@ window.MessageBus = (function() {
     totalAjaxCalls += 1;
     data.__seq = totalAjaxCalls;
 
-    return me.ajax({
-      url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!shouldLongPoll() || !me.enableLongPolling ? "dlp=t" : ""),
+    var longPoll = shouldLongPoll() && me.enableLongPolling;
+    var chunked = longPoll && allowChunked();
+
+    var headers = {
+      'X-SILENCE-LOGGER': 'true'
+    };
+
+    if (!chunked){
+      headers["Dont-Chunk"] = 'true';
+    }
+
+    var dataType = chunked ? "text" : "json";
+
+    var handle_progress = function(payload, position) {
+
+      var length = payload.length;
+      var chunkLength = "";
+
+      var originalPos = position;
+
+      var c = payload[position];
+      while (c != '\r' && position < length) {
+        chunkLength += c;
+        position ++;
+        c = payload[position];
+      }
+
+      if (c != '\r') {
+        return originalPos;
+      }
+
+      position++; // \n as well
+      chunkLength = parseInt(chunkLength, 16);
+
+      if (length >= (position + chunkLength)) {
+        var chunk = payload.substr(position, chunkLength + 1);
+        try {
+          reqSuccess(JSON.parse(chunk));
+        } catch(e) {
+          if (console.log) {
+            console.log("FAILED TO PARSE CHUNKED REPLY");
+            console.log(data);
+          }
+        }
+        return handle_progress(payload, position + chunkLength + 1);
+      } else {
+        return originalPos;
+      }
+    }
+
+    var req = me.ajax({
+      url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!longPoll ? "dlp=t" : ""),
       data: data,
       cache: false,
-      dataType: 'json',
+      dataType: dataType,
       type: 'POST',
-      headers: {
-        'X-SILENCE-LOGGER': 'true'
+      headers: headers,
+      xhr: function() {
+         var xhr = jQuery.ajaxSettings.xhr();
+         var position = 0;
+         xhr.onprogress = function () {
+            position = handle_progress(xhr.responseText, position);
+         }
+         return xhr;
       },
       success: function(messages) {
-        failCount = 0;
-        if (paused) {
-          if (messages) {
-            for (var i=0; i<messages.length; i++) {
-              later.push(messages[i]);
-            }
-          }
-        } else {
-          gotData = processMessages(messages);
-        }
-      },
+                 if (!chunked) {
+                   gotData = reqSuccess(messages);
+                 }
+               },
       error: function(xhr, textStatus, err) {
         if(textStatus === "abort") {
           aborted = true;
@@ -161,9 +222,12 @@ window.MessageBus = (function() {
         me.longPoll = null;
       }
     });
+
+    return req;
   };
 
   me = {
+    enableChunkedEncoding: true,
     enableLongPolling: true,
     callbackInterval: 15000,
     backgroundCallbackInterval: 60000,

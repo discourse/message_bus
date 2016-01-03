@@ -1,7 +1,7 @@
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
-                :async_response, :io, :headers, :seq, :buffered_messages
+                :async_response, :io, :headers, :seq, :use_chunked
 
   def initialize(opts)
     self.client_id = opts[:client_id]
@@ -10,9 +10,13 @@ class MessageBus::Client
     self.site_id = opts[:site_id]
     self.seq = opts[:seq].to_i
     self.connect_time = Time.now
+    @lock = Mutex.new
     @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
-    @buffered_messages = []
+  end
+
+  def synchronize
+    @lock.synchronize { yield }
   end
 
   def cancel
@@ -28,15 +32,33 @@ class MessageBus::Client
     @async_response || @io
   end
 
-  def try_deliver_buffered_messages
-    if @buffered_messages.length > 0
-      write_and_close messages_to_json(@buffered_messages)
+  def deliver_backlog(backlog)
+    if backlog.length > 0
+      if use_chunked
+        write_chunk(messages_to_json(backlog))
+      else
+        write_and_close messages_to_json(backlog)
+      end
     end
   end
 
   def ensure_closed!
     return unless in_async?
-    write_and_close "[]"
+    if use_chunked
+      write_chunk("[]".freeze)
+      if @io
+        @io.write("0\r\n\r\n".freeze)
+        @io.close
+        @io = nil
+      end
+      if @async_response
+        @async_response << ("0\r\n\r\n".freeze)
+        @async_response.done
+        @async_response = nil
+      end
+    else
+      write_and_close "[]"
+    end
   rescue
     # we may have a dead socket, just nil the @io
     @io = nil
@@ -44,12 +66,11 @@ class MessageBus::Client
   end
 
   def close
-    return unless in_async?
-    write_and_close "[]"
+    ensure_closed!
   end
 
-  def closed
-    !@async_response
+  def closed?
+    !@async_response && !@io
   end
 
   def subscribe(channel, last_seen_id)
@@ -63,10 +84,11 @@ class MessageBus::Client
   end
 
   def <<(msg)
-    if in_async?
-      write_and_close messages_to_json(@buffered_messages << msg)
+    json = messages_to_json([msg])
+    if use_chunked
+      write_chunk json
     else
-      @buffered_messages << msg
+      write_and_close json
     end
   end
 
@@ -110,7 +132,7 @@ class MessageBus::Client
     @subscriptions.each do |k,v|
       if v.to_i == -1
         status_message ||= {}
-        status_message[k] = @bus.last_id(k, site_id)
+        @subscriptions[k] = status_message[k] = @bus.last_id(k, site_id)
       end
     end
     r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
@@ -128,21 +150,70 @@ class MessageBus::Client
   HTTP_11 = "HTTP/1.1 200 OK\r\n".freeze
   CONTENT_LENGTH = "Content-Length: ".freeze
   CONNECTION_CLOSE = "Connection: close\r\n".freeze
+  CHUNKED_ENCODING = "Transfer-Encoding: chunked\r\n".freeze
+  NO_SNIFF = "X-Content-Type-Options: nosniff\r\n".freeze
+
+  TYPE_TEXT = "Content-Type: text/plain; charset=utf-8\r\n".freeze
+  TYPE_JSON = "Content-Type: application/json; charset=utf-8\r\n".freeze
+
+  def write_headers
+    @io.write(HTTP_11)
+    @headers.each do |k,v|
+      next if k == "Content-Type"
+      @io.write(k)
+      @io.write(COLON_SPACE)
+      @io.write(v)
+      @io.write(NEWLINE)
+    end
+    @io.write(CONNECTION_CLOSE)
+    if use_chunked
+      @io.write(TYPE_TEXT)
+    else
+      @io.write(TYPE_JSON)
+    end
+  end
+
+  def write_chunk(data)
+    @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id} (chunked)"
+    if @io && !@wrote_headers
+      write_headers
+      @io.write(CHUNKED_ENCODING)
+      # this is required otherwise chrome will delay onprogress calls
+      @io.write(NO_SNIFF)
+      @io.write(NEWLINE)
+      @wrote_headers = true
+    end
+
+    data_length = data.bytesize
+    # chunked encoding may be "re-chunked" by proxies
+    # include chunk size a second time for client
+    preamble = data_length.to_s(16)
+    preamble << NEWLINE
+
+    chunk_length = preamble.bytesize + data_length
+
+    if @async_response
+      @async_response << chunk_length.to_s(16)
+      @async_response << NEWLINE
+      @async_response << preamble
+      @async_response << data
+      @async_response << NEWLINE
+    else
+      @io.write(chunk_length.to_s(16))
+      @io.write(NEWLINE)
+      @io.write(preamble)
+      @io.write(data)
+      @io.write(NEWLINE)
+    end
+  end
 
   def write_and_close(data)
-    @bus.logger.info "Delivering messages #{data} to client #{client_id} for user #{user_id}"
+    @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
-      @io.write(HTTP_11)
-      @headers.each do |k,v|
-        @io.write(k)
-        @io.write(COLON_SPACE)
-        @io.write(v)
-        @io.write(NEWLINE)
-      end
+      write_headers
       @io.write(CONTENT_LENGTH)
       @io.write(data.bytes.to_a.length)
       @io.write(NEWLINE)
-      @io.write(CONNECTION_CLOSE)
       @io.write(NEWLINE)
       @io.write(data)
       @io.close

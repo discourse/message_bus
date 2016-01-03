@@ -27,12 +27,14 @@ class MessageBus::ConnectionManager
             if client && client.allowed?(msg)
               if copy = client.filter(msg)
                 begin
-                  client << copy
+                  client.synchronize do
+                    client << copy
+                  end
                 rescue
                   # pipe may be broken, move on
                 end
                 # turns out you can delete from a set while itereating
-                remove_client(client)
+                remove_client(client) if client.closed?
               end
             end
           end

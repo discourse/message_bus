@@ -23,6 +23,10 @@ class FakeAsyncMiddleware
     @simulate_hijack = true
   end
 
+  def allow_chunked
+    @allow_chunked = true
+  end
+
   def in_async?
     @in_async
   end
@@ -37,6 +41,9 @@ class FakeAsyncMiddleware
   end
 
   def call(env)
+    unless @allow_chunked
+      env['HTTP_DONT_CHUNK'] = 'True'
+    end
     if simulate_thin_async?
       call_thin_async(env)
     elsif simulate_hijack?

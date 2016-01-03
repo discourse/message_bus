@@ -113,19 +113,25 @@ class MessageBus::Rack::Middleware
                    env['QUERY_STRING'] !~ /dlp=t/.freeze &&
                    @connection_manager.client_count < @bus.max_active_clients
 
-    add_client_with_timeout(client)
-    backlog = (client.backlog + client.buffered_messages).uniq
+    allow_chunked = env['HTTP_VERSION'.freeze] == 'HTTP/1.1'.freeze
+    allow_chunked &&= !env['HTTP_DONT_CHUNK'.freeze]
+    client.use_chunked = allow_chunked
 
-    if backlog.length > 0
+    backlog = client.backlog
+
+    if backlog.length > 0 && !allow_chunked
       client.cancel
-      @bus.logger.info "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
+      @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
       [200, headers, [self.class.backlog_to_json(backlog)] ]
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
       io = env['rack.hijack'].call
+      # TODO disable client till deliver backlog is called
       client.io = io
       client.headers = headers
-
-      client.try_deliver_buffered_messages
+      client.synchronize do
+        client.deliver_backlog(backlog)
+        add_client_with_timeout(client)
+      end
       [418, {}, ["I'm a teapot, undefined in spec"]]
     elsif long_polling && env['async.callback']
       response = nil
@@ -140,11 +146,19 @@ class MessageBus::Rack::Middleware
       headers.each do |k,v|
         response.headers[k] = v
       end
+
+      if allow_chunked
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Transfer-Encoding"] = "chunked"
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+      end
+
       response.status = 200
-
       client.async_response = response
-
-      client.try_deliver_buffered_messages
+      client.synchronize do
+        add_client_with_timeout(client)
+        client.deliver_backlog(backlog)
+      end
 
       throw :async
     else

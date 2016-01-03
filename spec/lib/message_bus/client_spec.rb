@@ -15,6 +15,82 @@ describe MessageBus::Client do
       @bus.destroy
     end
 
+    def http_parse(message)
+      lines = message.split("\r\n")
+      status = lines.shift.split(" ")[1]
+      headers = {}
+      chunks = []
+
+      while line = lines.shift
+        break if line == ""
+        name,val = line.split(": ")
+        headers[name] = val
+      end
+
+      length = nil
+      while line = lines.shift
+        length = line.to_i(16)
+        break if length == 0
+        rest = lines.join("\r\n")
+        chunks << rest[0...length]
+        lines = (rest[length+2..-1] || "").split("\r\n")
+      end
+
+      [status, headers, chunks]
+    end
+
+    def parse_chunk(data)
+      split = data.split("\r\n")
+      length = split[0].to_i(16)
+      payload = split[1..-1].join("\r\n")[0...length]
+      JSON.parse(payload)
+    end
+
+    it "can chunk replies" do
+      @client.use_chunked = true
+      r,w = IO.pipe
+      @client.io = w
+      @client.headers = {"Content-Type" => "application/json; charset=utf-8"}
+      @client << MessageBus::Message.new(1, 1, '/test', 'test')
+      @client << MessageBus::Message.new(2, 2, '/test', 'test2')
+
+      lines = r.read_nonblock(8000)
+
+      status, headers, chunks = http_parse(lines)
+
+      headers["Content-Type"].should == "text/plain; charset=utf-8"
+      status.should == "200"
+      chunks.length.should == 2
+
+      chunk1 = parse_chunk(chunks[0])
+      chunk1.length.should == 1
+      chunk1.first["data"].should == 'test'
+
+      chunk2 = parse_chunk(chunks[1])
+      chunk2.length.should == 1
+      chunk2.first["data"].should == 'test2'
+
+      @client << MessageBus::Message.new(3, 3, '/test', 'test3')
+      @client.close
+
+      data = r.read
+
+      data[-5..-1].should == "0\r\n\r\n"
+
+      _,_,chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" << data)
+
+      chunks.length.should == 2
+
+      chunk1 = parse_chunk(chunks[0])
+      chunk1.length.should == 1
+      chunk1.first["data"].should == 'test3'
+
+      # end with []
+      chunk2 = parse_chunk(chunks[1])
+      chunk2.length.should == 0
+
+    end
+
     it "does not bleed data accross sites" do
       @client.site_id = "test"
 
