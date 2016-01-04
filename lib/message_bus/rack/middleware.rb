@@ -131,6 +131,7 @@ class MessageBus::Rack::Middleware
       client.synchronize do
         client.deliver_backlog(backlog)
         add_client_with_timeout(client)
+        client.ensure_first_chunk_sent
       end
       [418, {}, ["I'm a teapot, undefined in spec"]]
     elsif long_polling && env['async.callback']
@@ -158,6 +159,7 @@ class MessageBus::Rack::Middleware
       client.synchronize do
         add_client_with_timeout(client)
         client.deliver_backlog(backlog)
+        client.ensure_first_chunk_sent
       end
 
       throw :async

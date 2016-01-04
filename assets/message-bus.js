@@ -173,15 +173,24 @@ window.MessageBus = (function() {
          var xhr = jQuery.ajaxSettings.xhr();
          var position = 0;
          xhr.onprogress = function () {
-            position = handle_progress(xhr.responseText, position);
+           if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
+             // not chunked we are sending json back
+             chunked = false;
+             return;
+           }
+           position = handle_progress(xhr.responseText, position);
          }
          return xhr;
       },
       success: function(messages) {
-                 if (!chunked) {
-                   gotData = reqSuccess(messages);
-                 }
-               },
+         if (!chunked) {
+           // we may have requested text so jQuery will not parse
+           if (typeof(messages) === "string") {
+             messages = JSON.parse(messages);
+           }
+           gotData = reqSuccess(messages);
+         }
+       },
       error: function(xhr, textStatus, err) {
         if(textStatus === "abort") {
           aborted = true;

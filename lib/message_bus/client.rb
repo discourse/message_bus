@@ -13,6 +13,7 @@ class MessageBus::Client
     @lock = Mutex.new
     @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
+    @chunks_sent = 0
   end
 
   def synchronize
@@ -39,6 +40,12 @@ class MessageBus::Client
       else
         write_and_close messages_to_json(backlog)
       end
+    end
+  end
+
+  def ensure_first_chunk_sent
+    if use_chunked && @chunks_sent == 0
+      write_chunk("[]".freeze)
     end
   end
 
@@ -191,6 +198,8 @@ class MessageBus::Client
     preamble << NEWLINE
 
     chunk_length = preamble.bytesize + data_length
+
+    @chunks_sent += 1
 
     if @async_response
       @async_response << chunk_length.to_s(16)
