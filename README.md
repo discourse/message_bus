@@ -81,14 +81,15 @@ Chunked encoding provides all the benefits of [EventSource](https://developer.mo
 To setup NGINX to proxy to your app correctly be sure to enable HTTP1.1 and disable buffering
 
 ```
-location ... {
+location /message-bus/ {
   ...
   proxy_buffering off;
   proxy_http_version 1.1;
-  proxy_set_header Connection "";
   ...
 }
 ```
+
+**NOTE**: do not set proxy_buffering off globally, it may have unintended consequences.
 
 If you wish to disable chunked encoding run:
 
