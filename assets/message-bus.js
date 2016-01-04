@@ -132,15 +132,15 @@ window.MessageBus = (function() {
 
     var handle_progress = function(payload, position) {
 
-      var seperator = "\r\n|\r\n";
-      var endChunk = payload.indexOf(seperator, position);
+      var separator = "\r\n|\r\n";
+      var endChunk = payload.indexOf(separator, position);
 
       if (endChunk === -1) {
         return position;
       }
 
       var chunk = payload.substring(position, endChunk);
-      chunk = chunk.replace(/\r\n\|\|\r\n/g, seperator);
+      chunk = chunk.replace(/\r\n\|\|\r\n/g, separator);
 
       try {
         console.log(chunk);
@@ -152,7 +152,7 @@ window.MessageBus = (function() {
         }
       }
 
-      return handle_progress(payload, endChunk + seperator.length);
+      return handle_progress(payload, endChunk + separator.length);
     }
 
     var disableChunked = function(){
