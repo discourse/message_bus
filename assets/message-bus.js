@@ -24,6 +24,7 @@ window.MessageBus = (function() {
   baseUrl = "/";
   paused = false;
   later = [];
+  chunkedBackoff = 0;
 
   var hiddenProperty;
 
@@ -114,6 +115,10 @@ window.MessageBus = (function() {
 
     var longPoll = shouldLongPoll() && me.enableLongPolling;
     var chunked = longPoll && allowChunked();
+    if (chunkedBackoff > 0) {
+      chunkedBackoff--;
+      chunked = false;
+    }
 
     var headers = {
       'X-SILENCE-LOGGER': 'true'
@@ -162,6 +167,14 @@ window.MessageBus = (function() {
       }
     }
 
+    var startTime = new Date();
+    var disableChunked = function(){
+      if (me.longPoll) {
+        me.longPoll.abort();
+        chunkedBackoff = 30;
+      }
+    };
+
     var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!longPoll ? "dlp=t" : ""),
       data: data,
@@ -171,8 +184,20 @@ window.MessageBus = (function() {
       headers: headers,
       xhr: function() {
          var xhr = jQuery.ajaxSettings.xhr();
+
+         if (!chunked) {
+            return xhr;
+         }
+
          var position = 0;
+
+         // if it takes longer than 3000 ms to get first chunk, we have some proxy
+         // this is messing with us, so just backoff from using chunked for now
+         var chunkedTimeout = setTimeout(disableChunked,3000);
+
          xhr.onprogress = function () {
+           clearTimeout(chunkedTimeout);
+
            if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
              // not chunked we are sending json back
              chunked = false;
@@ -180,6 +205,7 @@ window.MessageBus = (function() {
            }
            position = handle_progress(xhr.responseText, position);
          }
+
          return xhr;
       },
       success: function(messages) {
