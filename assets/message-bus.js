@@ -167,7 +167,6 @@ window.MessageBus = (function() {
       }
     }
 
-    var startTime = new Date();
     var disableChunked = function(){
       if (me.longPoll) {
         me.longPoll.abort();

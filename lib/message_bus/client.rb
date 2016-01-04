@@ -194,7 +194,7 @@ class MessageBus::Client
     data_length = data.bytesize
     # chunked encoding may be "re-chunked" by proxies
     # include chunk size a second time for client
-    preamble = data_length.to_s(16)
+    preamble = data.length.to_s(16)
     preamble << NEWLINE
 
     chunk_length = preamble.bytesize + data_length
