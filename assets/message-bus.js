@@ -132,39 +132,27 @@ window.MessageBus = (function() {
 
     var handle_progress = function(payload, position) {
 
-      var length = payload.length;
-      var chunkLength = "";
+      var seperator = "\r\n|\r\n";
+      var endChunk = payload.indexOf(seperator, position);
 
-      var originalPos = position;
-
-      var c = payload[position];
-      while (c != '\r' && position < length) {
-        chunkLength += c;
-        position ++;
-        c = payload[position];
+      if (endChunk === -1) {
+        return position;
       }
 
-      if (c != '\r') {
-        return originalPos;
-      }
+      var chunk = payload.substring(position, endChunk);
+      chunk = chunk.replace(/\r\n\|\|\r\n/g, seperator);
 
-      position++; // \n as well
-      chunkLength = parseInt(chunkLength, 16);
-
-      if (length >= (position + chunkLength)) {
-        var chunk = payload.substr(position, chunkLength + 1);
-        try {
-          reqSuccess(JSON.parse(chunk));
-        } catch(e) {
-          if (console.log) {
-            console.log("FAILED TO PARSE CHUNKED REPLY");
-            console.log(data);
-          }
+      try {
+        console.log(chunk);
+        reqSuccess(JSON.parse(chunk));
+      } catch(e) {
+        if (console.log) {
+          console.log("FAILED TO PARSE CHUNKED REPLY");
+          console.log(data);
         }
-        return handle_progress(payload, position + chunkLength + 1);
-      } else {
-        return originalPos;
       }
+
+      return handle_progress(payload, endChunk + seperator.length);
     }
 
     var disableChunked = function(){

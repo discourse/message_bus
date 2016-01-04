@@ -191,27 +191,24 @@ class MessageBus::Client
       @wrote_headers = true
     end
 
-    data_length = data.bytesize
-    # chunked encoding may be "re-chunked" by proxies
-    # include chunk size a second time for client
-    preamble = data.length.to_s(16)
-    preamble << NEWLINE
-
-    chunk_length = preamble.bytesize + data_length
+    # chunked encoding may be "re-chunked" by proxies, so add a seperator
+    postfix = NEWLINE + "|" + NEWLINE
+    data = data.gsub(postfix, NEWLINE + "||" + NEWLINE)
+    chunk_length = data.bytesize + postfix.bytesize
 
     @chunks_sent += 1
 
     if @async_response
       @async_response << chunk_length.to_s(16)
       @async_response << NEWLINE
-      @async_response << preamble
       @async_response << data
+      @async_response << postfix
       @async_response << NEWLINE
     else
       @io.write(chunk_length.to_s(16))
       @io.write(NEWLINE)
-      @io.write(preamble)
       @io.write(data)
+      @io.write(postfix)
       @io.write(NEWLINE)
     end
   end
