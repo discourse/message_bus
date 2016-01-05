@@ -115,16 +115,6 @@ class MessageBus::Client
     )
   end
 
-  def filter(msg)
-    filter = @bus.client_filter(msg.channel)
-
-    if filter
-      filter.call(self.user_id, msg)
-    else
-      msg
-    end
-  end
-
   def backlog
     r = []
     @subscriptions.each do |k,v|
@@ -144,7 +134,6 @@ class MessageBus::Client
     end
     r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
 
-    r.map!{|msg| filter(msg)}.compact!
     r || []
   end
 

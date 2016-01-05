@@ -79,50 +79,11 @@ describe MessageBus::Rack::Middleware do
         @bus.long_polling_interval = 10
         s = Time.now.to_f * 1000
         post "/message-bus/ABC", '/foo' => nil
-        (Time.now.to_f * 1000 - s).should < 30
+        # allow for some jitter
+        (Time.now.to_f * 1000 - s).should < 50
       ensure
         @bus.long_polling_interval = 5000
       end
-    end
-
-    it "should support batch filtering" do
-      bus = @bus
-      async_middleware = @async_middleware
-
-      bus.user_id_lookup do |env|
-        1
-      end
-
-      bus.around_client_batch("/demo") do |message, user_ids, callback|
-        begin
-          Thread.current["test"] = user_ids
-          callback.call
-        ensure
-          Thread.current["test"] = nil
-        end
-      end
-
-      test = nil
-
-      bus.client_filter("/demo") do |user_id, message|
-        test = Thread.current["test"]
-        message
-      end
-
-      client_id = "ABCD"
-
-      id = bus.publish("/demo", "test")
-
-      Thread.new do
-        wait_for(2000) { async_middleware.in_async? }
-        bus.publish "/demo", "test"
-      end
-
-      post "/message-bus/#{client_id}", {
-        '/demo' => id
-      }
-
-      test.should == [1]
     end
   end
 
@@ -302,54 +263,6 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.should == 1
-    end
-
-
-    it "should filter by client_filter correctly" do
-      id = @bus.publish("/filter", "test")
-      uid = 0
-
-      @bus.user_id_lookup do |env|
-        uid
-      end
-
-      @bus.client_filter("/filter") do |user_id, message|
-        if user_id == 0
-          message = message.dup
-          message.data += "_filter"
-          message
-        elsif user_id == 1
-          message
-        end
-      end
-
-      client_id = "ABCD"
-
-      post "/message-bus/#{client_id}", {
-        '/filter' => id - 1
-      }
-
-      parsed = JSON.parse(last_response.body)
-      parsed[0]['data'].should == "test_filter"
-
-      uid = 1
-
-      post "/message-bus/#{client_id}", {
-        '/filter' => id - 1
-      }
-
-      parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
-      parsed[0]["data"].should == "test"
-
-      uid = 2
-
-      post "/message-bus/#{client_id}", {
-        '/filter' => id - 1
-      }
-
-      parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
     end
 
     it "should filter by group correctly" do

@@ -145,18 +145,6 @@ module MessageBus::Implementation
     @extra_response_headers_lookup
   end
 
-  def client_filter(channel, &blk)
-    @client_filters ||= {}
-    @client_filters[channel] = blk if blk
-    @client_filters[channel]
-  end
-
-  def around_client_batch(channel, &blk)
-    @around_client_batches ||= {}
-    @around_client_batches[channel] = blk if blk
-    @around_client_batches[channel]
-  end
-
   def on_connect(&blk)
     @on_connect = blk if blk
     @on_connect

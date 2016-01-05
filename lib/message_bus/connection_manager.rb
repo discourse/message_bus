@@ -19,38 +19,19 @@ class MessageBus::ConnectionManager
 
         return unless subscription
 
-        around_filter = @bus.around_client_batch(msg.channel)
-
-        work = lambda do
-          subscription.each do |client_id|
-            client = @clients[client_id]
-            if client && client.allowed?(msg)
-              if copy = client.filter(msg)
-                begin
-                  client.synchronize do
-                    client << copy
-                  end
-                rescue
-                  # pipe may be broken, move on
-                end
-                # turns out you can delete from a set while itereating
-                remove_client(client) if client.closed?
+        subscription.each do |client_id|
+          client = @clients[client_id]
+          if client && client.allowed?(msg)
+            begin
+              client.synchronize do
+                client << msg
               end
+            rescue
+              # pipe may be broken, move on
             end
+            # turns out you can delete from a set while itereating
+            remove_client(client) if client.closed?
           end
-        end
-
-        if around_filter
-          user_ids = subscription.map do |s|
-            c = @clients[s]
-            c && c.user_id
-          end.compact
-
-          if user_ids && user_ids.length > 0
-            around_filter.call(msg, user_ids, work)
-          end
-        else
-          work.call
         end
 
       rescue => e
