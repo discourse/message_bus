@@ -4,6 +4,7 @@
 - Feature: add support for chunked encoding transport, this significnatlly improves long polling performance
 - Feature: strip around_filters and client filters, which were speculative
 - Fix: Message delivery race condition when a message was published just as long poll started. Ben Langfeld
+- Feature: strip support for message_handlers, speculative feature that was not used
 
 09-12-2015
 
