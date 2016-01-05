@@ -42,7 +42,7 @@ message_id = MessageBus.publish "/channel", "message"
 # in another process / spot
 
 MessageBus.subscribe "/channel" do |msg|
-  # block called in a backgroud thread when message is recieved
+  # block called in a background thread when message is received
 end
 
 MessageBus.backlog "/channel", id
