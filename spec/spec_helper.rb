@@ -10,9 +10,14 @@ RSpec.configure do |config|
   end
 
   # to debug hanging tests
-  # config.before :each do |x|
-  #   p x.metadata[:location]
-  # end
+  config.before :each do |x|
+    $start = Time.now
+    puts "Start: #{x.metadata[:location]}"
+  end
+
+  config.after :each do |x|
+    puts "#{x.metadata[:location]} #{Time.now - $start}"
+  end
 end
 
 def wait_for(timeout_milliseconds)
