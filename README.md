@@ -97,6 +97,12 @@ If you wish to disable chunked encoding run:
 MessageBus.enableChunkedEncoding = false; // in your JavaScript
 ```
 
+Or
+
+```
+MessageBus.chunked_encoding_enabled = false // in Ruby
+```
+
 Long Polling requires no special setup, as soon as new data arrives on the channel the server delivers the data and closes the connection.
 
 Polling also requires no special setup, MessageBus will fallback to polling after a tab becomes inactive and remains inactive for a period.

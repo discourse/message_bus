@@ -115,6 +115,8 @@ class MessageBus::Rack::Middleware
 
     allow_chunked = env['HTTP_VERSION'.freeze] == 'HTTP/1.1'.freeze
     allow_chunked &&= !env['HTTP_DONT_CHUNK'.freeze]
+    allow_chunked &&= @bus.chunked_encoding_enabled?
+
     client.use_chunked = allow_chunked
 
     backlog = client.backlog

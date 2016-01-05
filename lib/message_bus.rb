@@ -55,6 +55,14 @@ module MessageBus::Implementation
     @logger
   end
 
+  def chunked_encoding_enabled?
+    @chunked_encoding_enabled == false ? false : true
+  end
+
+  def chunked_encoding_enabled=(val)
+    @chunked_encoding_enabled = val
+  end
+
   def long_polling_enabled?
     @long_polling_enabled == false ? false : true
   end
