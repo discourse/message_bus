@@ -17,6 +17,7 @@ describe MessageBus::Client do
 
     def http_parse(message)
       lines = message.split("\r\n")
+
       status = lines.shift.split(" ")[1]
       headers = {}
       chunks = []
@@ -36,13 +37,14 @@ describe MessageBus::Client do
         lines = (rest[length+2..-1] || "").split("\r\n")
       end
 
+      # split/join gets tricky
+      chunks[-1] << "\r\n"
+
       [status, headers, chunks]
     end
 
     def parse_chunk(data)
-      split = data.split("\r\n")
-      length = split[0].to_i(16)
-      payload = split[1..-1].join("\r\n")[0...length]
+      payload,_ = data.split(/\r\n\|\r\n/m)
       JSON.parse(payload)
     end
 
@@ -52,7 +54,7 @@ describe MessageBus::Client do
       @client.io = w
       @client.headers = {"Content-Type" => "application/json; charset=utf-8"}
       @client << MessageBus::Message.new(1, 1, '/test', 'test')
-      @client << MessageBus::Message.new(2, 2, '/test', 'test2')
+      @client << MessageBus::Message.new(2, 2, '/test', "a|\r\n|\r\n|b")
 
       lines = r.read_nonblock(8000)
 
@@ -68,7 +70,7 @@ describe MessageBus::Client do
 
       chunk2 = parse_chunk(chunks[1])
       chunk2.length.should == 1
-      chunk2.first["data"].should == 'test2'
+      chunk2.first["data"].should == "a|\r\n|\r\n|b"
 
       @client << MessageBus::Message.new(3, 3, '/test', 'test3')
       @client.close
