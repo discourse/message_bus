@@ -13,15 +13,16 @@ describe MessageBus::Redis::ReliablePubSub do
   end
 
   context "readonly" do
-    before do
-      @bus.pub_redis.slaveof "127.0.0.80", "666"
-    end
 
     after do
       @bus.pub_redis.slaveof "no", "one"
     end
 
     it "should be able to store messages in memory for a period while in read only" do
+
+      skip "This spec changes redis behavior that in turn means other specs run slow"
+
+      @bus.pub_redis.slaveof "127.0.0.80", "666"
       @bus.max_in_memory_publish_backlog = 2
 
       3.times do
