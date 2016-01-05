@@ -33,35 +33,19 @@ describe MessageBus::TimerThread do
   end
 
   it "queues jobs in the correct order" do
-    counter = 0
-    failed = nil
 
-    ready = 0
-
-    items = (0...4).to_a.shuffle
-    items.map do |i|
-      # threading introduces a delay meaning we need to wait a long time
-      Thread.new do
-        ready += 1
-        while ready < 4
-          sleep 0
-        end
-        # on my mbp I measure at least 200ms of schedule jitter for Thread
-        @timer.queue(i/3.0) do
-          #puts "counter #{counter} i #{i}"
-          failed = true if counter != i
-          counter += 1
-        end
-        #puts "\nqueued #{i/200.0} #{i} #{Time.now.to_f}\n"
+    results = []
+    (0..3).to_a.reverse.each do |i|
+      @timer.queue(0.005 * i) do
+        results << i
       end
     end
 
     wait_for(3000) {
-      counter == items.length
+      4 == results.length
     }
 
-    counter.should == items.length
-    failed.should == nil
+    results.should == [0,1,2,3]
   end
 
   it "should call the error callback if something goes wrong" do
