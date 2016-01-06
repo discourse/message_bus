@@ -1,1 +1,0 @@
-ab -n 1000 -c 25 -p payload.post -T "application/x-www-form-urlencoded" "http://localhost:3000/message-bus/poll"
