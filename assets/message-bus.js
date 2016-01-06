@@ -143,7 +143,6 @@ window.MessageBus = (function() {
       chunk = chunk.replace(/\r\n\|\|\r\n/g, separator);
 
       try {
-        console.log(chunk);
         reqSuccess(JSON.parse(chunk));
       } catch(e) {
         if (console.log) {

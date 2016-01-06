@@ -1,5 +1,8 @@
 03-01-2016
 
+- Version 2.0.0.beta.2
+- Fix: Remove stray console.log
+
 - Version 2.0.0.beta.1
 - Feature: add support for chunked encoding transport, this significnatlly improves long polling performance
 - Feature: strip around_filters and client filters, which were speculative
