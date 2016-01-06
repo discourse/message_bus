@@ -214,6 +214,7 @@ end
 #### Puma
 ```ruby
 # path/to/your/config/puma.rb
+require 'message_bus'
 on_worker_boot do
   MessageBus.after_fork
 end
@@ -222,6 +223,7 @@ end
 #### Unicorn
 ```ruby
 # path/to/your/config/unicorn.rb
+require 'message_bus'
 after_fork do |server, worker|
   MessageBus.after_fork
 end
