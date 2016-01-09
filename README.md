@@ -49,10 +49,10 @@ MessageBus.backlog "/channel", id
 # returns all messages after the id
 
 # messages can be targetted at particular users or groups
-MessageBus.publish "/channel", user_ids: [1,2,3], group_ids: [4,5,6]
+MessageBus.publish "/channel", "hello", user_ids: [1,2,3], group_ids: [4,5,6]
 
 # messages can be targetted at particular clients (using MessageBus.clientId)
-MessageBus.publish "/channel", client_ids: ["XXX","YYY"]
+MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
 
 # message bus determines the user ids and groups based on env
 
