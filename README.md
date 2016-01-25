@@ -137,6 +137,11 @@ JavaScript can listen on any channel (and receive notification via polling or lo
 ```
 Note, the message-bus.js file is located in the assets folder.
 
+**Rails**
+```javascript
+//= require message-bus
+```
+
 ```javascript
 MessageBus.start(); // call once at startup
 
