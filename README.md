@@ -148,6 +148,10 @@ MessageBus.subscribe("/channel", function(data){
 
 ```
 
+There is also a Ruby implementation of the client library, at
+[message_bus-client](https://github.com/lowjoel/message_bus-client) with the API very similar to
+that of the JavaScript client.
+
 **Client settings**:
 
 
