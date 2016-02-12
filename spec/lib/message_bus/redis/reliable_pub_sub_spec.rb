@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../spec_helper'
 require 'message_bus'
 
 describe MessageBus::Redis::ReliablePubSub do
@@ -12,7 +12,7 @@ describe MessageBus::Redis::ReliablePubSub do
     @bus.reset!
   end
 
-  context "readonly" do
+  describe "readonly" do
 
     after do
       @bus.pub_redis.slaveof "no", "one"
@@ -27,13 +27,13 @@ describe MessageBus::Redis::ReliablePubSub do
 
       3.times do
         result = @bus.publish "/foo", "bar"
-        result.should == nil
+        result.must_equal nil
       end
 
       @bus.pub_redis.slaveof "no", "one"
       sleep 0.01
 
-      @bus.backlog("/foo", 0).map(&:data).should == ["bar","bar"]
+      @bus.backlog("/foo", 0).map(&:data).must_equal ["bar","bar"]
 
     end
   end
@@ -41,22 +41,22 @@ describe MessageBus::Redis::ReliablePubSub do
   it "can set backlog age" do
     @bus.max_backlog_age = 100
     @bus.publish "/foo", "bar"
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).should be <= 100
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).should be > 0
+    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :<=, 100
+    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :>, 0
   end
 
   it "should be able to access the backlog" do
     @bus.publish "/foo", "bar"
     @bus.publish "/foo", "baz"
 
-    @bus.backlog("/foo", 0).to_a.should == [
+    @bus.backlog("/foo", 0).to_a.must_equal [
       MessageBus::Message.new(1,1,'/foo','bar'),
       MessageBus::Message.new(2,2,'/foo','baz')
     ]
   end
 
   it "should initialize with max_backlog_size" do
-    MessageBus::Redis::ReliablePubSub.new({},2000).max_backlog_size.should == 2000
+    MessageBus::Redis::ReliablePubSub.new({},2000).max_backlog_size.must_equal 2000
   end
 
   it "should truncate channels correctly" do
@@ -65,7 +65,7 @@ describe MessageBus::Redis::ReliablePubSub do
       @bus.publish "/foo", t.to_s
     end
 
-    @bus.backlog("/foo").to_a.should == [
+    @bus.backlog("/foo").to_a.must_equal [
       MessageBus::Message.new(3,3,'/foo','2'),
       MessageBus::Message.new(4,4,'/foo','3'),
     ]
@@ -77,14 +77,14 @@ describe MessageBus::Redis::ReliablePubSub do
     @bus.publish "/bar", "2"
     @bus.publish "/baz", "3"
 
-    @bus.global_backlog.length.should == 2
+    @bus.global_backlog.length.must_equal 2
   end
 
   it "should be able to grab a message by id" do
     id1 = @bus.publish "/foo", "bar"
     id2 = @bus.publish "/foo", "baz"
-    @bus.get_message("/foo", id2).should == MessageBus::Message.new(2, 2, "/foo", "baz")
-    @bus.get_message("/foo", id1).should == MessageBus::Message.new(1, 1, "/foo", "bar")
+    @bus.get_message("/foo", id2).must_equal MessageBus::Message.new(2, 2, "/foo", "baz")
+    @bus.get_message("/foo", id1).must_equal MessageBus::Message.new(1, 1, "/foo", "bar")
   end
 
   it "should be able to access the global backlog" do
@@ -93,7 +93,7 @@ describe MessageBus::Redis::ReliablePubSub do
     @bus.publish "/foo", "baz"
     @bus.publish "/hello", "planet"
 
-    @bus.global_backlog.to_a.should == [
+    @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(1, 1, "/foo", "bar"),
       MessageBus::Message.new(2, 1, "/hello", "world"),
       MessageBus::Message.new(3, 2, "/foo", "baz"),
@@ -108,7 +108,7 @@ describe MessageBus::Redis::ReliablePubSub do
     @bus.publish "/bar", "a"
     @bus.publish "/bar", "b"
 
-    @bus.global_backlog.to_a.should == [
+    @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(2, 2, "/foo", "b"),
       MessageBus::Message.new(4, 2, "/bar", "b")
     ]
@@ -148,13 +148,13 @@ describe MessageBus::Redis::ReliablePubSub do
 
     t.kill
 
-    got.length.should == 3
-    got.map{|m| m.data}.should == ["1","2","3"]
+    got.length.must_equal 3
+    got.map{|m| m.data}.must_equal ["1","2","3"]
   end
 
   it "should be able to encode and decode messages properly" do
     m = MessageBus::Message.new 1,2,'||','||'
-    MessageBus::Message.decode(m.encode).should == m
+    MessageBus::Message.decode(m.encode).must_equal m
   end
 
   it "should handle subscribe on single channel, with recovery" do
@@ -176,7 +176,7 @@ describe MessageBus::Redis::ReliablePubSub do
 
     t.kill
 
-    got.map{|m| m.data}.should == ["1","3"]
+    got.map{|m| m.data}.must_equal ["1","3"]
   end
 
   it "should not get backlog if subscribe is called without params" do
@@ -201,13 +201,13 @@ describe MessageBus::Redis::ReliablePubSub do
 
     t.kill
 
-    got.map{|m| m.data}.should == ["2"]
+    got.map{|m| m.data}.must_equal ["2"]
   end
 
   it "should allow us to get last id on a channel" do
-    @bus.last_id("/foo").should == 0
+    @bus.last_id("/foo").must_equal 0
     @bus.publish("/foo", "1")
-    @bus.last_id("/foo").should == 1
+    @bus.last_id("/foo").must_equal 1
   end
 
 end

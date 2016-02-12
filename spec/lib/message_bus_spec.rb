@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 require 'message_bus'
 require 'redis'
 
@@ -29,7 +29,7 @@ describe MessageBus do
 
     wait_for(2000){ client_ids}
 
-    client_ids.should == ['a', 'b']
+    client_ids.must_equal ['a', 'b']
 
   end
 
@@ -49,7 +49,7 @@ describe MessageBus do
 
     wait_for(2000){ data["yeager"]}
 
-    data["yeager"].should == true
+    data["yeager"].must_equal true
 
   end
 
@@ -61,7 +61,7 @@ describe MessageBus do
     @bus.publish("/chuck", {:norris => true})
     wait_for(2000){ data }
 
-    data["norris"].should == true
+    data["norris"].must_equal true
   end
 
   it "should get a message if it subscribes to it" do
@@ -78,10 +78,10 @@ describe MessageBus do
 
     wait_for(2000){data}
 
-    data.should == 'norris'
-    site_id.should == 'magic'
-    channel.should == '/chuck'
-    user_ids.should == [1,2,3]
+    data.must_equal 'norris'
+    site_id.must_equal 'magic'
+    channel.must_equal '/chuck'
+    user_ids.must_equal [1,2,3]
 
   end
 
@@ -99,9 +99,9 @@ describe MessageBus do
 
     wait_for(2000){data}
 
-    data.should == 'norris'
-    site_id.should == 'magic'
-    channel.should == '/chuck'
+    data.must_equal 'norris'
+    site_id.must_equal 'magic'
+    channel.must_equal '/chuck'
 
   end
 
@@ -112,7 +112,7 @@ describe MessageBus do
 
     r = @bus.backlog("/chuck", id)
 
-    r.map{|i| i.data}.to_a.should == ['foo', 'bar']
+    r.map{|i| i.data}.to_a.must_equal ['foo', 'bar']
   end
 
   it "should correctly get full backlog of a channel" do
@@ -120,18 +120,18 @@ describe MessageBus do
     @bus.publish("/chuck", "foo")
     @bus.publish("/chuckles", "bar")
 
-    @bus.backlog("/chuck").map{|i| i.data}.to_a.should == ['norris', 'foo']
+    @bus.backlog("/chuck").map{|i| i.data}.to_a.must_equal ['norris', 'foo']
 
   end
 
   it "allows you to look up last_message" do
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")
-    @bus.last_message("/bob").data.should == "marley"
-    @bus.last_message("/nothing").should == nil
+    @bus.last_message("/bob").data.must_equal "marley"
+    @bus.last_message("/nothing").must_equal nil
   end
 
-  context "global subscriptions" do
+  describe "global subscriptions" do
     before do
       seq = 0
       @bus.site_id_lookup do
@@ -141,7 +141,7 @@ describe MessageBus do
 
     it "can get last_message" do
       @bus.publish("/global/test", "test")
-      @bus.last_message("/global/test").data.should == "test"
+      @bus.last_message("/global/test").data.must_equal "test"
     end
 
     it "can subscribe globally" do
@@ -154,7 +154,7 @@ describe MessageBus do
       @bus.publish("/global/test", "test")
       wait_for(1000){ data }
 
-      data.should == "test"
+      data.must_equal "test"
     end
 
     it "can subscribe to channel" do
@@ -167,19 +167,19 @@ describe MessageBus do
       @bus.publish("/global/test", "test")
       wait_for(1000){ data }
 
-      data.should == "test"
+      data.must_equal "test"
     end
 
     it "should exception if publishing restricted messages to user" do
       lambda do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.should raise_error(MessageBus::InvalidMessage)
+      end.must_raise(MessageBus::InvalidMessage)
     end
 
     it "should exception if publishing restricted messages to group" do
       lambda do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.should raise_error(MessageBus::InvalidMessage)
+      end.must_raise(MessageBus::InvalidMessage)
     end
 
   end
@@ -198,7 +198,7 @@ describe MessageBus do
       wait_for(2000) { data == "ready" }
       @bus.publish("/hello", "world1")
       wait_for(2000) { data == "got it" }
-      data.should == "got it"
+      data.must_equal "got it"
       Process.wait(child)
     else
       @bus.after_fork

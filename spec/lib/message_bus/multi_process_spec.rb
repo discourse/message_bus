@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 require 'message_bus'
 
 describe MessageBus::Redis::ReliablePubSub do
@@ -44,7 +44,7 @@ describe MessageBus::Redis::ReliablePubSub do
 
       # p responses.group_by(&:data).map{|k,v|[k, v.count]}
       # p responses.group_by(&:global_id).map{|k,v|[k, v.count]}
-      responses.count.should == 100
+      responses.count.must_equal 100
     ensure
       if pids
         pids.each do |pid|

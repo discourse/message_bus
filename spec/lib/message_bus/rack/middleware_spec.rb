@@ -1,6 +1,6 @@
 # coding: utf-8
 
-require 'spec_helper'
+require_relative '../../../spec_helper'
 require 'message_bus'
 require 'rack/test'
 
@@ -31,24 +31,26 @@ describe MessageBus::Rack::Middleware do
     @async_middleware
   end
 
-  shared_examples "long polling" do
+  module LongPolling
+    extend Minitest::Spec::DSL
+    
     before do
       @bus.long_polling_enabled = true
     end
 
     it "should respond right away if dlp=t" do
       post "/message-bus/ABC?dlp=t", '/foo1' => 0
-      @async_middleware.in_async?.should == false
-      last_response.should be_ok
+      @async_middleware.in_async?.must_equal false
+      last_response.ok?.must_equal true
     end
 
     it "should respond right away to long polls that are polling on -1 with the last_id" do
       post "/message-bus/ABC", '/foo' => -1
-      last_response.should be_ok
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
-      parsed[0]["channel"].should == "/__status"
-      parsed[0]["data"]["/foo"].should == @bus.last_id("/foo")
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
     end
 
     it "should respond to long polls when data is available" do
@@ -66,12 +68,12 @@ describe MessageBus::Rack::Middleware do
 
       post "/message-bus/ABC", '/foo' => nil
 
-      last_response.should be_ok
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
-      parsed[0]["data"].should == "םוֹלשָׁ"
+      parsed.length.must_equal 1
+      parsed[0]["data"].must_equal "םוֹלשָׁ"
 
-      last_response.headers["FOO"].should == "BAR"
+      last_response.headers["FOO"].must_equal "BAR"
     end
 
     it "should timeout within its alloted slot" do
@@ -80,7 +82,7 @@ describe MessageBus::Rack::Middleware do
         s = Time.now.to_f * 1000
         post "/message-bus/ABC", '/foo' => nil
         # allow for some jitter
-        (Time.now.to_f * 1000 - s).should < 50
+        (Time.now.to_f * 1000 - s).must_be :<, 50
       ensure
         @bus.long_polling_interval = 5000
       end
@@ -91,7 +93,8 @@ describe MessageBus::Rack::Middleware do
     before do
       @async_middleware.simulate_thin_async
     end
-    it_behaves_like "long polling"
+
+    include LongPolling
   end
 
   describe "hijack" do
@@ -99,27 +102,28 @@ describe MessageBus::Rack::Middleware do
       @async_middleware.simulate_hijack
       @bus.rack_hijack_enabled = true
     end
-    it_behaves_like "long polling"
+
+    include LongPolling
   end
 
   describe "diagnostics" do
 
     it "should return a 403 if a user attempts to get at the _diagnostics path" do
       get "/message-bus/_diagnostics"
-      last_response.status.should == 403
+      last_response.status.must_equal 403
     end
 
     it "should get a 200 with html for an authorized user" do
-      @bus.stub(:is_admin_lookup).and_return(lambda{|env| true })
+      def @bus.is_admin_lookup; proc{|_| true} end
       get "/message-bus/_diagnostics"
-      last_response.status.should == 200
+      last_response.status.must_equal 200
     end
 
     it "should get the script it asks for" do
-      @bus.stub(:is_admin_lookup).and_return(lambda{|env| true })
+      def @bus.is_admin_lookup; proc{|_| true} end
       get "/message-bus/_diagnostics/assets/message-bus.js"
-      last_response.status.should == 200
-      last_response.content_type.should == "text/javascript;"
+      last_response.status.must_equal 200
+      last_response.content_type.must_equal "text/javascript;"
     end
 
   end
@@ -142,7 +146,7 @@ describe MessageBus::Rack::Middleware do
         '/bar' => nil
       }
 
-      last_response.headers["FOO"].should == "BAR"
+      last_response.headers["FOO"].must_equal "BAR"
     end
 
     it "should respond with a 200 to a subscribe" do
@@ -153,7 +157,7 @@ describe MessageBus::Rack::Middleware do
         '/foo' => nil,
         '/bar' => nil
       }
-      last_response.should be_ok
+      last_response.ok?.must_equal true
     end
 
     it "should correctly understand that -1 means stuff from now onwards" do
@@ -163,11 +167,11 @@ describe MessageBus::Rack::Middleware do
       post "/message-bus/ABCD", {
         '/foo' => -1
       }
-      last_response.should be_ok
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
-      parsed[0]["channel"].should == "/__status"
-      parsed[0]["data"]["/foo"].should ==@bus.last_id("/foo")
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal@bus.last_id("/foo")
 
     end
 
@@ -184,9 +188,9 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 2
-      parsed[0]["data"].should == "barbs"
-      parsed[1]["data"].should == "borbs"
+      parsed.length.must_equal 2
+      parsed[0]["data"].must_equal "barbs"
+      parsed[1]["data"].must_equal "borbs"
     end
 
     it "should have no cross talk" do
@@ -205,7 +209,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
+      parsed.length.must_equal 0
 
     end
 
@@ -223,7 +227,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
+      parsed.length.must_equal 1
     end
 
     it "should not get consumed messages" do
@@ -236,7 +240,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
+      parsed.length.must_equal 0
     end
 
     it "should filter by user correctly" do
@@ -251,7 +255,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
+      parsed.length.must_equal 0
 
       @bus.user_id_lookup do |env|
         1
@@ -262,7 +266,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
+      parsed.length.must_equal 1
     end
 
     it "should filter by group correctly" do
@@ -277,7 +281,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 0
+      parsed.length.must_equal 0
 
       @bus.group_ids_lookup do |env|
         [1,7,4,100]
@@ -288,7 +292,7 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.should == 1
+      parsed.length.must_equal 1
     end
   end
 
