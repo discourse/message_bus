@@ -4,13 +4,8 @@ source 'https://rubygems.org'
 gemspec
 
 group :test do
-  gem 'rspec'
-  gem 'redis'
+  gem 'minitest'
   gem 'rake'
-  gem 'rbtrace'
-  gem 'guard-rspec'
-  gem 'rb-inotify', require: RUBY_PLATFORM =~ /linux/i ? 'rb-inotify' : false
-  gem 'rack'
   gem 'http_parser.rb'
   gem 'thin'
   gem 'rack-test', require: 'rack/test'

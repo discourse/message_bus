@@ -1,24 +1,9 @@
+$: << File.dirname(__FILE__)
 require 'thin'
 require 'lib/fake_async_middleware'
 
-RSpec.configure do |config|
-  config.expect_with :rspec do |c|
-    c.syntax = [:should, :expect]
-  end
-  config.mock_with :rspec do |mocks|
-    mocks.syntax = :should
-  end
-
-  # to debug hanging tests
-  # config.before :each do |x|
-  #   $start = Time.now
-  #   puts "Start: #{x.metadata[:location]}"
-  # end
-  #
-  # config.after :each do |x|
-  #   puts "#{x.metadata[:location]} #{Time.now - $start}"
-  # end
-end
+require 'minitest/autorun'
+require 'minitest/spec'
 
 def wait_for(timeout_milliseconds)
   timeout = (timeout_milliseconds + 0.0) / 1000
@@ -30,5 +15,3 @@ def wait_for(timeout_milliseconds)
   end
   t.join
 end
-
-

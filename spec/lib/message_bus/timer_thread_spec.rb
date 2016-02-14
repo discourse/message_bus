@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 require 'message_bus/timer_thread'
 
 describe MessageBus::TimerThread do
@@ -13,7 +13,7 @@ describe MessageBus::TimerThread do
   it "allows you to queue every jobs" do
     i = 0
     m = Mutex.new
-    every = @timer.every(0.001){m.synchronize{i += 1}}
+    every = @timer.every(0.001){m.synchronize{i += 1 if i < 3}}
     # allow lots of time, cause in test mode stuff can be slow
     wait_for(1000) do
       m.synchronize do
@@ -22,14 +22,14 @@ describe MessageBus::TimerThread do
       end
     end
     sleep 0.002
-    i.should == 3
+    i.must_equal 3
   end
 
   it "allows you to cancel timers" do
     success = true
     @timer.queue(0.005){success=false}.cancel
     sleep(0.006)
-    success.should == true
+    success.must_equal true
   end
 
   it "queues jobs in the correct order" do
@@ -45,7 +45,7 @@ describe MessageBus::TimerThread do
       4 == results.length
     }
 
-    results.should == [0,1,2,3]
+    results.must_equal [0,1,2,3]
   end
 
   it "should call the error callback if something goes wrong" do
@@ -67,7 +67,7 @@ describe MessageBus::TimerThread do
       error
     end
 
-    error.class.should == NameError
+    error.class.must_equal NameError
   end
 
 end

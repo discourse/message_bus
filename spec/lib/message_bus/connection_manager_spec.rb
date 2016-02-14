@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 require 'message_bus'
 
 class FakeAsync
@@ -38,11 +38,11 @@ describe MessageBus::ConnectionManager do
     m = MessageBus::Message.new(1,1,"test","data")
     m.site_id = 10
     @manager.notify_clients(m)
-    @client.cleanup_timer.cancelled.should == true
+    @client.cleanup_timer.cancelled.must_equal true
   end
 
   it "should be able to lookup an identical client" do
-    @manager.lookup_client(@client.client_id).should == @client
+    @manager.lookup_client(@client.client_id).must_equal @client
   end
 
   it "should be subscribed to a channel" do
@@ -53,14 +53,14 @@ describe MessageBus::ConnectionManager do
     m = MessageBus::Message.new(1,1,"test","data")
     m.site_id = 9
     @manager.notify_clients(m)
-    @resp.sent.should == nil
+    @resp.sent.must_equal nil
   end
 
   it "should notify clients on the correct site" do
     m = MessageBus::Message.new(1,1,"test","data")
     m.site_id = 10
     @manager.notify_clients(m)
-    @resp.sent.should_not == nil
+    @resp.sent.wont_equal nil
   end
 
   it "should strip site id and user id from the payload delivered" do
@@ -69,8 +69,8 @@ describe MessageBus::ConnectionManager do
     m.site_id = 10
     @manager.notify_clients(m)
     parsed = JSON.parse(@resp.sent)
-    parsed[0]["site_id"].should == nil
-    parsed[0]["user_id"].should == nil
+    parsed[0]["site_id"].must_equal nil
+    parsed[0]["user_id"].must_equal nil
   end
 
   it "should not deliver unselected" do
@@ -78,7 +78,7 @@ describe MessageBus::ConnectionManager do
     m.user_ids = [5]
     m.site_id = 10
     @manager.notify_clients(m)
-    @resp.sent.should == nil
+    @resp.sent.must_equal nil
   end
 end
 
@@ -93,7 +93,7 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
     manager.add_client(client2)
     manager.add_client(client1)
 
-    manager.lookup_client("a").should == client2
+    manager.lookup_client("a").must_equal client2
   end
 
   it "is thread-safe" do
@@ -102,29 +102,27 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
 
     client_threads = 10.times.map do |id|
       Thread.new do
-        expect {
-          @client = MessageBus::Client.new(client_id: "xyz_#{id}", site_id: 10)
-          @resp = FakeAsync.new
-          @client.async_response = @resp
-          @client.subscribe("test", -1)
-          @manager.add_client(@client)
-          @client.cleanup_timer = FakeTimer.new
-        }.not_to raise_error
+        @client = MessageBus::Client.new(client_id: "xyz_#{id}", site_id: 10)
+        @resp = FakeAsync.new
+        @client.async_response = @resp
+        @client.subscribe("test", -1)
+        @manager.add_client(@client)
+        @client.cleanup_timer = FakeTimer.new
+        1
       end
     end
 
     subscriber_threads = 10.times.map do |id|
       Thread.new do
-        expect {
-          m = MessageBus::Message.new(1,id,"test","data_#{id}")
-          m.site_id = 10
-          @manager.notify_clients(m)
-        }.not_to raise_error
+        m = MessageBus::Message.new(1,id,"test","data_#{id}")
+        m.site_id = 10
+        @manager.notify_clients(m)
+        1
       end
     end
 
-    client_threads.each(&:join)
-    subscriber_threads.each(&:join)
+    client_threads.each(&:join).map(&:value).must_equal([1] * 10)
+    subscriber_threads.each(&:join).map(&:value).must_equal([1] * 10)
   end
 
 end
