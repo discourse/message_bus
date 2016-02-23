@@ -1,10 +1,10 @@
 require_relative '../../spec_helper'
 require 'message_bus'
 
-describe MessageBus::Redis::ReliablePubSub do
+describe PUB_SUB_CLASS do
 
   def new_bus
-    MessageBus::Redis::ReliablePubSub.new(:db => 10)
+    PUB_SUB_CLASS.new(MESSAGE_BUS_REDIS_CONFIG.merge(:db => 10))
   end
 
   def work_it
@@ -15,6 +15,8 @@ describe MessageBus::Redis::ReliablePubSub do
     new_bus.subscribe("/echo", 0) do |msg|
       bus.publish("/response", Process.pid.to_s)
     end
+  ensure
+    exit!(0)
   end
 
   def spawn_child
@@ -27,11 +29,11 @@ describe MessageBus::Redis::ReliablePubSub do
   end
 
   it 'gets every response from child processes' do
-    Redis.new(:db => 10).flushdb
+    new_bus.pub_redis.flushdb
     begin
       pids = (1..10).map{spawn_child}
       responses = []
-      bus = MessageBus::Redis::ReliablePubSub.new(:db => 10)
+      bus = new_bus
       Thread.new do
         bus.subscribe("/response", 0) do |msg|
           responses << msg if pids.include? msg.data.to_i

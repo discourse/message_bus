@@ -7,7 +7,6 @@ require "message_bus/connection_manager"
 require "message_bus/diagnostics"
 require "message_bus/rack/middleware"
 require "message_bus/rack/diagnostics"
-require "message_bus/redis/reliable_pub_sub"
 require "message_bus/timer_thread"
 
 # we still need to take care of the logger
@@ -182,7 +181,12 @@ module MessageBus::Implementation
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
-      @reliable_pub_sub ||= MessageBus::Redis::ReliablePubSub.new redis_config
+      @reliable_pub_sub ||= if redis_config[:pub_sub_class]
+        redis_config[:pub_sub_class].new redis_config
+      else
+        require "message_bus/redis/reliable_pub_sub"
+        MessageBus::Redis::ReliablePubSub.new redis_config
+      end
     end
   end
 

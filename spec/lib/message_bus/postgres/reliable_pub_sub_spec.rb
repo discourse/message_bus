@@ -1,7 +1,7 @@
 require_relative '../../../spec_helper'
 require 'message_bus'
 
-unless MESSAGE_BUS_REDIS_CONFIG[:pub_sub_class]
+if MESSAGE_BUS_REDIS_CONFIG[:pub_sub_class].to_s =~ /postgres/i
 describe PUB_SUB_CLASS do
 
   def new_test_bus
@@ -37,13 +37,6 @@ describe PUB_SUB_CLASS do
       @bus.backlog("/foo", 0).map(&:data).must_equal ["bar","bar"]
 
     end
-  end
-
-  it "can set backlog age" do
-    @bus.max_backlog_age = 100
-    @bus.publish "/foo", "bar"
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :<=, 100
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :>, 0
   end
 
   it "should be able to access the backlog" do
@@ -96,9 +89,9 @@ describe PUB_SUB_CLASS do
 
     @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(1, 1, "/foo", "bar"),
-      MessageBus::Message.new(2, 1, "/hello", "world"),
-      MessageBus::Message.new(3, 2, "/foo", "baz"),
-      MessageBus::Message.new(4, 2, "/hello", "planet")
+      MessageBus::Message.new(2, 2, "/hello", "world"),
+      MessageBus::Message.new(3, 3, "/foo", "baz"),
+      MessageBus::Message.new(4, 4, "/hello", "planet")
     ]
   end
 
@@ -111,7 +104,7 @@ describe PUB_SUB_CLASS do
 
     @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(2, 2, "/foo", "b"),
-      MessageBus::Message.new(4, 2, "/bar", "b")
+      MessageBus::Message.new(4, 4, "/bar", "b")
     ]
   end
 

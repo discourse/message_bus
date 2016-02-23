@@ -243,7 +243,6 @@ end
 If you are looking to contribute to this project here are some ideas
 
 - Build an in-memory storage backend to ease testing and for very simple deployments
-- Build a PostgreSQL backend using NOTIFY and LISTEN
 - Improve general documentation
 - Make MessageBus a nice website
 

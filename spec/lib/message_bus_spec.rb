@@ -10,7 +10,7 @@ describe MessageBus do
     @bus.site_id_lookup do
       "magic"
     end
-    @bus.redis_config = {}
+    @bus.redis_config = MESSAGE_BUS_REDIS_CONFIG
   end
 
   after do
@@ -201,19 +201,20 @@ describe MessageBus do
       data.must_equal "got it"
       Process.wait(child)
     else
-      @bus.after_fork
-      @bus.publish("/hello", "ready")
-      wait_for(2000) { data == "world1" }
-      if(data=="world1")
-        @bus.publish("/hello", "got it")
+      begin
+        @bus.after_fork
+        @bus.publish("/hello", "ready")
+        wait_for(2000) { data == "world1" }
+        if(data=="world1")
+          @bus.publish("/hello", "got it")
+        end
+
+        $stdout.reopen("/dev/null", "w")
+        $stderr.reopen("/dev/null", "w")
+
+      ensure
+        exit!(0)
       end
-
-      $stdout.reopen("/dev/null", "w")
-      $stderr.reopen("/dev/null", "w")
-
-      # having some issues with exit here
-      # TODO find and fix
-      Process.kill "KILL", Process.pid
     end
 
   end
