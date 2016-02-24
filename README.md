@@ -1,6 +1,6 @@
 # MessageBus
 
-A reliable, robust messaging bus for Ruby processes and web clients built on Redis.
+A reliable, robust messaging bus for Ruby processes and web clients.
 
 MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling, long-polling or long-polling + streaming)
 
@@ -213,7 +213,7 @@ The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ru
 
 ### Forking/threading app servers
 
-If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis in your app server config:
+If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis/PostgreSQL in your app server config:
 
 #### Passenger
 ```ruby
