@@ -44,6 +44,11 @@ class MessageBus::Postgres::Client
     nil
   end
 
+  def expire(max_backlog_age)
+    hold{|conn| conn.exec_prepared('expire', [max_backlog_age])}
+    nil
+  end
+
   def backlog(channel, backlog_id)
     hold{|conn| conn.exec_prepared('channel_backlog', [channel, backlog_id]).values.each{|a| a[0] = a[0].to_i}}
   end
@@ -165,6 +170,7 @@ class MessageBus::Postgres::Client
     conn.exec 'PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC OFFSET $3)))'
     conn.exec 'PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id'
     conn.exec 'PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id'
+    conn.exec "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - ($1::text || ' seconds')::interval"
     conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
     conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
     conn.exec 'PREPARE max_id AS SELECT max(id) FROM message_bus'
@@ -243,6 +249,7 @@ class MessageBus::Postgres::ReliablePubSub
     payload = msg.encode
     client.publish postgresql_channel_name, payload
     client.clear_global_backlog(backlog_id, @max_global_backlog_size)
+    client.expire(@max_backlog_age)
     client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
 
     backlog_id
