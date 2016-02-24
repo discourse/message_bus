@@ -339,4 +339,5 @@ class MessageBus::Redis::ReliablePubSub
     end
   end
 
+  MessageBus::BACKENDS[:redis] = self
 end

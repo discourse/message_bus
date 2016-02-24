@@ -1,7 +1,7 @@
 require_relative '../../../spec_helper'
 require 'message_bus'
 
-if MESSAGE_BUS_REDIS_CONFIG[:pub_sub_class].to_s =~ /postgres/i
+if MESSAGE_BUS_REDIS_CONFIG[:backend] == :postgres
 describe PUB_SUB_CLASS do
 
   def new_test_bus

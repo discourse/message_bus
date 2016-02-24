@@ -56,14 +56,14 @@ MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
 
 # message bus determines the user ids and groups based on env
 
-MessageBus.user_id_lookup do |env|
+MessageBus.configure(user_id_lookup: proc do |env|
   # return the user id here
-end
+end)
 
-MessageBus.group_ids_lookup do |env|
+MessageBus.configure(group_ids_lookup: proc do |env|
   # return the group ids the user belongs to
   # can be nil or []
-end
+end)
 ```
 
 ### Transport
@@ -100,7 +100,7 @@ MessageBus.enableChunkedEncoding = false; // in your JavaScript
 Or
 
 ```
-MessageBus.chunked_encoding_enabled = false // in Ruby
+MessageBus.configure(chunked_encoding_enabled: false) // in Ruby
 ```
 
 Long Polling requires no special setup, as soon as new data arrives on the channel the server delivers the data and closes the connection.
@@ -113,9 +113,9 @@ MessageBus can be used in an environment that hosts multiple sites by multiplexi
 
 ```ruby
 # define a site_id lookup method
-MessageBus.site_id_lookup do
+MessageBus.configure(site_id_lookup: proc do
   some_method_that_returns_site_id_string
-end
+end)
 
 # you may post messages just to this site
 MessageBus.publish "/channel", "some message"
@@ -197,9 +197,19 @@ ajax|$.ajax|The only dependency on jQuery, you may set up a custom ajax function
 You can configure redis setting in `config/initializers/message_bus.rb`, like
 
 ```ruby
-MessageBus.redis_config = { url: "redis://:p4ssw0rd@10.0.1.1:6380/15" }
+MessageBus.configure(backend: :redis, url: "redis://:p4ssw0rd@10.0.1.1:6380/15")
 ```
 The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
+
+### PostgreSQL
+
+message_bus also supports PostgreSQL as the backend:
+
+```ruby
+MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', dbname: 'message_bus'})
+```
+
+The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can configure.
 
 ### Forking/threading app servers
 

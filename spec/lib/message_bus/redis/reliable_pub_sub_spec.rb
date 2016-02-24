@@ -1,7 +1,7 @@
 require_relative '../../../spec_helper'
 require 'message_bus'
 
-unless MESSAGE_BUS_REDIS_CONFIG[:pub_sub_class]
+if MESSAGE_BUS_REDIS_CONFIG[:backend] == :redis
 describe PUB_SUB_CLASS do
 
   def new_test_bus

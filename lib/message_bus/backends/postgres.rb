@@ -1,6 +1,5 @@
 require 'pg'
 
-module MessageBus; end
 module MessageBus::Postgres; end
 
 class MessageBus::Postgres::RedisAPI
@@ -23,6 +22,12 @@ class MessageBus::Postgres::RedisAPI
   end
 
   def self.setup!(config)
+    new(config.merge(:no_prepare=>true)) do
+      setup
+    end
+  end
+
+  def self.reset!(config)
     new(config.merge(:no_prepare=>true)) do
       reset!
     end
@@ -102,7 +107,7 @@ class MessageBus::Postgres::RedisAPI
   end
 
   def new_pg_connection
-    conn = PG::Connection.connect(@config[:pg_config] || {})
+    conn = PG::Connection.connect(@config[:backend_options] || {})
     unless @config[:no_prepare]
       conn.exec 'PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id'
       conn.exec 'PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)'
@@ -198,6 +203,10 @@ class MessageBus::Postgres::ReliablePubSub
 
   def self.setup!(config)
     MessageBus::Postgres::RedisAPI.setup!(config)
+  end
+
+  def self.reset!(config)
+    MessageBus::Postgres::RedisAPI.reset!(config)
   end
 
   # max_backlog_size is per multiplexed channel
@@ -442,4 +451,5 @@ class MessageBus::Postgres::ReliablePubSub
     end
   end
 
+  MessageBus::BACKENDS[:postgres] = self
 end
