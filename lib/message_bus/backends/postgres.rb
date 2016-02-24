@@ -2,9 +2,7 @@ require 'pg'
 
 module MessageBus::Postgres; end
 
-class MessageBus::Postgres::RedisAPI
-  CommandError = PGError
-
+class MessageBus::Postgres::Client
   class Listener
     attr_reader :do_sub, :do_unsub, :do_message
 
@@ -136,10 +134,6 @@ class MessageBus::Postgres::RedisAPI
   alias flushdb flushall
   alias reset! flushall
 
-  def client
-    self
-  end
-
   def max_id(channel=nil)
     res = if channel
       hold{|conn| conn.exec_prepared('max_channel_id', [channel])}
@@ -202,16 +196,16 @@ class MessageBus::Postgres::ReliablePubSub
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
   def self.setup!(config)
-    MessageBus::Postgres::RedisAPI.setup!(config)
+    MessageBus::Postgres::Client.setup!(config)
   end
 
   def self.reset!(config)
-    MessageBus::Postgres::RedisAPI.reset!(config)
+    MessageBus::Postgres::Client.reset!(config)
   end
 
   # max_backlog_size is per multiplexed channel
-  def initialize(redis_config = {}, max_backlog_size = 1000)
-    @redis_config = redis_config
+  def initialize(config = {}, max_backlog_size = 1000)
+    @config = config
     @max_backlog_size = max_backlog_size
     @max_global_backlog_size = 2000
     @max_publish_retries = 10
@@ -225,8 +219,8 @@ class MessageBus::Postgres::ReliablePubSub
     @h = {}
   end
 
-  def new_redis_connection
-    MessageBus::Postgres::RedisAPI.new(@redis_config)
+  def new_connection
+    MessageBus::Postgres::Client.new(@config)
   end
 
   def backend
@@ -234,36 +228,35 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def after_fork
-    pub_redis.client.reconnect
+    client.reconnect
   end
 
-  def redis_channel_name
-    db = @redis_config[:db] || 0
+  def postgresql_channel_name
+    db = @config[:db] || 0
     "_message_bus_#{db}"
   end
 
-  # redis connection used for publishing messages
-  def pub_redis
-    @pub_redis ||= new_redis_connection
+  def client
+    @client ||= new_connection
   end
 
   # use with extreme care, will nuke all of the data
   def reset!
-    pub_redis.reset!
+    client.reset!
   end
 
   def publish(channel, data, queue_in_memory=true)
-    redis = pub_redis
-    backlog_id = redis.add(channel, data)
+    client = self.client
+    backlog_id = client.add(channel, data)
     msg = MessageBus::Message.new backlog_id, backlog_id, channel, data
     payload = msg.encode
-    redis.publish redis_channel_name, payload
-    redis.clear_global_backlog(backlog_id, @max_global_backlog_size)
-    redis.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
+    client.publish postgresql_channel_name, payload
+    client.clear_global_backlog(backlog_id, @max_global_backlog_size)
+    client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
 
     backlog_id
 
-  rescue redis.class::CommandError => e
+  rescue PGError => e
     if queue_in_memory &&
           e.message =~ /^READONLY/
 
@@ -297,7 +290,7 @@ class MessageBus::Postgres::ReliablePubSub
 
         begin
           publish(*@in_memory_backlog[0],false)
-        rescue pub_redis.class::CommandError => e
+        rescue PGError => e
           if e.message =~ /^READONLY/
             try_again = true
           else
@@ -314,7 +307,7 @@ class MessageBus::Postgres::ReliablePubSub
         sleep 0.005
         # in case we are not connected to the correct server
         # which can happen when sharing ips
-        pub_redis.client.reconnect
+        client.reconnect
       end
     end
   ensure
@@ -324,12 +317,11 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def last_id(channel)
-    pub_redis.max_id(channel)
+    client.max_id(channel)
   end
 
   def backlog(channel, last_id = nil)
-    redis = pub_redis
-    items = redis.backlog channel, last_id.to_i
+    items = client.backlog channel, last_id.to_i
 
     items.map! do |id, data|
       MessageBus::Message.new id, id, channel, data
@@ -338,9 +330,8 @@ class MessageBus::Postgres::ReliablePubSub
 
   def global_backlog(last_id = nil)
     last_id = last_id.to_i
-    redis = pub_redis
 
-    items = redis.global_backlog last_id.to_i
+    items = client.global_backlog last_id.to_i
 
     items.map! do |id, channel, data|
       MessageBus::Message.new id, id, channel, data
@@ -348,9 +339,7 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def get_message(channel, message_id)
-    redis = pub_redis
-
-    if data = redis.get_value(channel, message_id)
+    if data = client.get_value(channel, message_id)
       MessageBus::Message.new message_id, message_id, channel, data
     else
       nil
@@ -368,7 +357,7 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def process_global_backlog(highest_id)
-    if highest_id > pub_redis.max_id
+    if highest_id > client.max_id
       highest_id = 0
     end
 
@@ -381,10 +370,10 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def global_unsubscribe
-    if @redis_global
-      pub_redis.publish(redis_channel_name, UNSUB_MESSAGE)
-      @redis_global.reconnect
-      @redis_global = nil
+    if @client_global
+      client.publish(postgresql_channel_name, UNSUB_MESSAGE)
+      @client_global.reconnect
+      @client_global = nil
     end
   end
 
@@ -394,13 +383,13 @@ class MessageBus::Postgres::ReliablePubSub
 
 
     begin
-      redis_global = @redis_global = new_redis_connection
+      client_global = @client_global = new_connection
 
       if highest_id
         highest_id = process_global_backlog(highest_id, &blk)
       end
 
-      redis_global.subscribe(redis_channel_name) do |on|
+      client_global.subscribe(postgresql_channel_name) do |on|
         h = {}
 
         on.subscribe do
@@ -420,7 +409,7 @@ class MessageBus::Postgres::ReliablePubSub
 
         on.message do |c,m|
           if m == UNSUB_MESSAGE
-            redis_global.unsubscribe
+            client_global.unsubscribe
             return
           end
           m = MessageBus::Message.decode m

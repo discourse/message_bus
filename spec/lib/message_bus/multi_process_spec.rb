@@ -29,7 +29,7 @@ describe PUB_SUB_CLASS do
   end
 
   it 'gets every response from child processes' do
-    new_bus.pub_redis.flushdb
+    new_bus.reset!
     begin
       pids = (1..10).map{spawn_child}
       responses = []
