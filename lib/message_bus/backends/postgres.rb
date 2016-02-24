@@ -19,18 +19,6 @@ class MessageBus::Postgres::Client
     end
   end
 
-  def self.setup!(config)
-    new(config.merge(:no_prepare=>true)) do
-      setup
-    end
-  end
-
-  def self.reset!(config)
-    new(config.merge(:no_prepare=>true)) do
-      reset!
-    end
-  end
-
   def initialize(config)
     @config = config
     @listening_on = []
@@ -38,42 +26,6 @@ class MessageBus::Postgres::Client
     @allocated = {}
     @mutex = Mutex.new
     @pid = Process.pid
-    reconnect
-  end
-
-  def sync
-    @mutex.synchronize{yield}
-  end
-
-  def hold
-    if Process.pid != @pid
-      reconnect
-    end
-
-    if conn = sync{@allocated[Thread.current]}
-      return yield(conn)
-    end
-      
-    begin
-      if sync{@available.empty?}
-        conn = @allocated[Thread.current] = new_pg_connection
-        yield conn
-      else
-        conn = sync{@allocated[Thread.current] = @available.shift}
-        yield conn
-      end
-    ensure
-      sync{@available << conn} if conn
-    end
-  end
-
-  def setup
-    hold do |conn|
-      conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL, added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
-      conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
-      conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
-    end
-    nil
   end
 
   def add(channel, value)
@@ -104,35 +56,20 @@ class MessageBus::Postgres::Client
     hold{|conn| conn.exec_prepared('get_message', [channel, id]).getvalue(0,0)}
   end
 
-  def new_pg_connection
-    conn = PG::Connection.connect(@config[:backend_options] || {})
-    unless @config[:no_prepare]
-      conn.exec 'PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id'
-      conn.exec 'PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)'
-      conn.exec 'PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC OFFSET $3)))'
-      conn.exec 'PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id'
-      conn.exec 'PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id'
-      conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
-      conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
-      conn.exec 'PREPARE max_id AS SELECT max(id) FROM message_bus'
-      conn.exec 'PREPARE publish AS SELECT pg_notify($1, $2)'
-    end
-    conn
-  end
-
   def reconnect
-    @listening_on.clear
     sync do
+      @listening_on.clear
       @available.clear
     end
   end
 
-  def flushall
-    hold{|conn| conn.exec 'DROP TABLE IF EXISTS message_bus'}
-    setup
+  # Dangerous, drops the message_bus table containing the backlog if it exists.
+  def reset!
+    hold do |conn|
+      conn.exec 'DROP TABLE IF EXISTS message_bus'
+      create_table(conn)
+    end
   end
-  alias flushdb flushall
-  alias reset! flushall
 
   def max_id(channel=nil)
     res = if channel
@@ -153,7 +90,7 @@ class MessageBus::Postgres::Client
   end
 
   def subscribe(channel)
-    @listening_on << channel
+    sync{@listening_on << channel}
     listener = Listener.new
     yield listener
     
@@ -170,20 +107,78 @@ class MessageBus::Postgres::Client
       ensure
         begin
           conn.exec "UNLISTEN #{channel}"
-        rescue PGError, IOError
+        rescue PG::Error, IOError
         end
       end
     end
   end
 
   def unsubscribe
-    @listening_on.clear
+    sync{@listening_on.clear}
   end
 
   private
 
+  def create_table(conn)
+    conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL, added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+    conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
+    conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
+    nil
+  end
+
+  def hold
+    if Process.pid != @pid
+      reconnect
+    end
+
+    if conn = sync{@allocated[Thread.current]}
+      return yield(conn)
+    end
+      
+    begin
+      if sync{@available.empty?}
+        conn = new_pg_connection
+        sync{@allocated[Thread.current] = conn}
+        yield conn
+      else
+        conn = sync{@allocated[Thread.current] = @available.shift}
+        yield conn
+      end
+    rescue PG::ConnectionBad => e
+      # don't add this connection back to the pool
+    ensure
+      sync{@available << conn} if conn && !e
+    end
+  end
+
+  def new_pg_connection
+    conn = PG::Connection.connect(@config[:backend_options] || {})
+
+    begin
+      conn.exec("SELECT 'message_bus'::regclass")
+    rescue PG::UndefinedTable
+      create_table(conn)
+    end
+
+    conn.exec 'PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id'
+    conn.exec 'PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)'
+    conn.exec 'PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC OFFSET $3)))'
+    conn.exec 'PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id'
+    conn.exec 'PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id'
+    conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
+    conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
+    conn.exec 'PREPARE max_id AS SELECT max(id) FROM message_bus'
+    conn.exec 'PREPARE publish AS SELECT pg_notify($1, $2)'
+
+    conn
+  end
+
   def listening_on?(channel)
-    @listening_on.include?(channel)
+    sync{@listening_on.include?(channel)}
+  end
+
+  def sync
+    @mutex.synchronize{yield}
   end
 end
 
@@ -195,12 +190,8 @@ class MessageBus::Postgres::ReliablePubSub
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
-  def self.setup!(config)
-    MessageBus::Postgres::Client.setup!(config)
-  end
-
   def self.reset!(config)
-    MessageBus::Postgres::Client.reset!(config)
+    MessageBus::Postgres::Client.new(config).reset!
   end
 
   # max_backlog_size is per multiplexed channel
@@ -256,7 +247,7 @@ class MessageBus::Postgres::ReliablePubSub
 
     backlog_id
 
-  rescue PGError => e
+  rescue PG::Error => e
     if queue_in_memory &&
           e.message =~ /^READONLY/
 
@@ -290,7 +281,7 @@ class MessageBus::Postgres::ReliablePubSub
 
         begin
           publish(*@in_memory_backlog[0],false)
-        rescue PGError => e
+        rescue PG::Error => e
           if e.message =~ /^READONLY/
             try_again = true
           else

@@ -13,7 +13,6 @@ require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
 if backend == :postgres
   MESSAGE_BUS_REDIS_CONFIG.merge!(:backend_options=>{:user=>ENV['PGUSER'] || 'postgres', :dbname=>ENV['PGDATABASE'] || 'message_bus_test'})
-  PUB_SUB_CLASS.reset!(MESSAGE_BUS_REDIS_CONFIG)
 end
 puts "Running with backend: #{backend}"
 
