@@ -83,7 +83,7 @@ describe MessageBus::Rack::Middleware do
         s = Time.now.to_f * 1000
         post "/message-bus/ABC", '/foo' => nil
         # allow for some jitter
-        (Time.now.to_f * 1000 - s).must_be :<, 50
+        (Time.now.to_f * 1000 - s).must_be :<, 100
       ensure
         @bus.long_polling_interval = 5000
       end
