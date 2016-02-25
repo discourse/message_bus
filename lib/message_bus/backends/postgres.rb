@@ -3,6 +3,8 @@ require 'pg'
 module MessageBus::Postgres; end
 
 class MessageBus::Postgres::Client
+  INHERITED_CONNECTIONS = []
+
   class Listener
     attr_reader :do_sub, :do_unsub, :do_message
 
@@ -21,7 +23,7 @@ class MessageBus::Postgres::Client
 
   def initialize(config)
     @config = config
-    @listening_on = []
+    @listening_on = {}
     @available = []
     @allocated = {}
     @mutex = Mutex.new
@@ -29,36 +31,36 @@ class MessageBus::Postgres::Client
   end
 
   def add(channel, value)
-    hold{|conn| conn.exec_prepared('insert_message', [channel, value]).getvalue(0,0).to_i}
+    hold{|conn| exec_prepared(conn, 'insert_message', [channel, value]){|r| r.getvalue(0,0).to_i}}
   end
 
   def clear_global_backlog(backlog_id, num_to_keep)
     if backlog_id > num_to_keep
-      hold{|conn| conn.exec_prepared('clear_global_backlog', [backlog_id - num_to_keep])}
+      hold{|conn| exec_prepared(conn, 'clear_global_backlog', [backlog_id - num_to_keep])}
       nil
     end
   end
 
   def clear_channel_backlog(channel, backlog_id, num_to_keep)
-    hold{|conn| conn.exec_prepared('clear_channel_backlog', [channel, backlog_id, num_to_keep])}
+    hold{|conn| exec_prepared(conn, 'clear_channel_backlog', [channel, backlog_id, num_to_keep])}
     nil
   end
 
   def expire(max_backlog_age)
-    hold{|conn| conn.exec_prepared('expire', [max_backlog_age])}
+    hold{|conn| exec_prepared(conn, 'expire', [max_backlog_age])}
     nil
   end
 
   def backlog(channel, backlog_id)
-    hold{|conn| conn.exec_prepared('channel_backlog', [channel, backlog_id]).values.each{|a| a[0] = a[0].to_i}}
+    hold{|conn| exec_prepared(conn, 'channel_backlog', [channel, backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}}
   end
 
   def global_backlog(backlog_id)
-    hold{|conn| conn.exec_prepared('global_backlog', [backlog_id]).values.each{|a| a[0] = a[0].to_i}}
+    hold{|conn| exec_prepared(conn, 'global_backlog', [backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}}
   end
 
   def get_value(channel, id)
-    hold{|conn| conn.exec_prepared('get_message', [channel, id]).getvalue(0,0)}
+    hold{|conn| exec_prepared(conn, 'get_message', [channel, id]){|r| r.getvalue(0,0)}}
   end
 
   def reconnect
@@ -77,47 +79,50 @@ class MessageBus::Postgres::Client
   end
 
   def max_id(channel=nil)
-    res = if channel
-      hold{|conn| conn.exec_prepared('max_channel_id', [channel])}
-    else
-      hold{|conn| conn.exec_prepared('max_id')}
+    block = proc do |r|
+      if r.ntuples > 0
+        r.getvalue(0,0).to_i
+      else
+        0
+      end
     end
 
-    if res.ntuples > 0
-      res.getvalue(0,0).to_i
+    if channel
+      hold{|conn| exec_prepared(conn, 'max_channel_id', [channel], &block)}
     else
-      0
+      hold{|conn| exec_prepared(conn, 'max_id', &block)}
     end
   end
 
   def publish(channel, data)
-    hold{|conn| conn.exec_prepared('publish', [channel, data])}
+    hold{|conn| exec_prepared(conn, 'publish', [channel, data])}
   end
 
   def subscribe(channel)
-    sync{@listening_on << channel}
+    obj = Object.new
+    sync{@listening_on[channel] = obj}
     listener = Listener.new
     yield listener
+    pid = Process.pid
     
-    hold do |conn|
-      begin
-        conn.exec "LISTEN #{channel}"
-        listener.do_sub.call
-        while listening_on?(channel)
-          conn.wait_for_notify(10) do |_,_,payload|
-            listener.do_message.call(nil, payload)
-          end
-        end
-        listener.do_unsub.call
-      ensure
-        begin
-          conn.exec "UNLISTEN #{channel}"
-        rescue PG::Error, IOError
-          # Remove connection from pool, just to be safe
-          raise PG::ConnectionBad
-        end
+    conn = raw_pg_connection
+    conn.exec "LISTEN #{channel}"
+    listener.do_sub.call
+    while listening_on?(channel, obj)
+      conn.wait_for_notify(10) do |_,_,payload|
+        listener.do_message.call(nil, payload)
       end
+      break if pid != Process.pid
     end
+    listener.do_unsub.call
+
+    if pid != Process.pid
+      sync{INHERITED_CONNECTIONS << conn}
+    else
+      conn.exec "UNLISTEN #{channel}"
+    end
+
+    nil
   end
 
   def unsubscribe
@@ -125,6 +130,13 @@ class MessageBus::Postgres::Client
   end
 
   private
+
+  def exec_prepared(conn, *a)
+    r = conn.exec_prepared(*a)
+    yield r if block_given?
+  ensure
+    r.clear if r.respond_to?(:clear)
+  end
 
   def create_table(conn)
     conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL, added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
@@ -134,8 +146,14 @@ class MessageBus::Postgres::Client
   end
 
   def hold
-    if Process.pid != @pid
-      reconnect
+    current_pid = Process.pid
+    if current_pid != @pid
+      @pid = current_pid
+      sync do
+        @listening_on.clear
+        INHERITED_CONNECTIONS.concat(@available)
+        @available.clear
+      end
     end
 
     if conn = sync{@allocated[Thread.current]}
@@ -143,23 +161,27 @@ class MessageBus::Postgres::Client
     end
       
     begin
-      if sync{@available.empty?}
-        conn = new_pg_connection
-        sync{@allocated[Thread.current] = conn}
-        yield conn
-      else
-        conn = sync{@allocated[Thread.current] = @available.shift}
-        yield conn
-      end
+      conn = sync{@available.shift} || new_pg_connection
+      sync{@allocated[Thread.current] = conn}
+      yield conn
     rescue PG::ConnectionBad => e
       # don't add this connection back to the pool
     ensure
-      sync{@available << conn} if conn && !e
+      sync{@allocated.delete(Thread.current)}
+      if Process.pid != current_pid
+        sync{INHERITED_CONNECTIONS << conn}
+      elsif conn && !e
+        sync{@available << conn}
+      end
     end
   end
 
+  def raw_pg_connection
+    PG::Connection.connect(@config[:backend_options] || {})
+  end
+
   def new_pg_connection
-    conn = PG::Connection.connect(@config[:backend_options] || {})
+    conn = raw_pg_connection
 
     begin
       conn.exec("SELECT 'message_bus'::regclass")
@@ -181,8 +203,8 @@ class MessageBus::Postgres::Client
     conn
   end
 
-  def listening_on?(channel)
-    sync{@listening_on.include?(channel)}
+  def listening_on?(channel, obj)
+    sync{@listening_on[channel]} == obj
   end
 
   def sync
@@ -255,65 +277,6 @@ class MessageBus::Postgres::ReliablePubSub
     client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
 
     backlog_id
-
-  rescue PG::Error => e
-    if queue_in_memory &&
-          e.message =~ /^READONLY/
-
-      @lock.synchronize do
-        @in_memory_backlog << [channel,data]
-        if @in_memory_backlog.length > @max_in_memory_publish_backlog
-          @in_memory_backlog.delete_at(0)
-          MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full")
-        end
-      end
-
-      if @flush_backlog_thread == nil
-        @lock.synchronize do
-          if @flush_backlog_thread == nil
-            @flush_backlog_thread = Thread.new{ensure_backlog_flushed}
-          end
-        end
-      end
-      nil
-    else
-      raise
-    end
-  end
-
-  def ensure_backlog_flushed
-    while true
-      try_again = false
-
-      @lock.synchronize do
-        break if @in_memory_backlog.length == 0
-
-        begin
-          publish(*@in_memory_backlog[0],false)
-        rescue PG::Error => e
-          if e.message =~ /^READONLY/
-            try_again = true
-          else
-            MessageBus.logger.warn("Dropping undeliverable message #{e}")
-          end
-        rescue => e
-          MessageBus.logger.warn("Dropping undeliverable message #{e}")
-        end
-
-        @in_memory_backlog.delete_at(0) unless try_again
-      end
-
-      if try_again
-        sleep 0.005
-        # in case we are not connected to the correct server
-        # which can happen when sharing ips
-        client.reconnect
-      end
-    end
-  ensure
-    @lock.synchronize do
-      @flush_backlog_thread = nil
-    end
   end
 
   def last_id(channel)
@@ -370,26 +333,20 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def global_unsubscribe
-    if @client_global
-      client.publish(postgresql_channel_name, UNSUB_MESSAGE)
-      @client_global.reconnect
-      @client_global = nil
-    end
+    client.publish(postgresql_channel_name, UNSUB_MESSAGE)
+    @subscribed = false
   end
 
   def global_subscribe(last_id=nil, &blk)
     raise ArgumentError unless block_given?
     highest_id = last_id
 
+    if highest_id
+      highest_id = process_global_backlog(highest_id, &blk)
+    end
 
     begin
-      client_global = @client_global = new_connection
-
-      if highest_id
-        highest_id = process_global_backlog(highest_id, &blk)
-      end
-
-      client_global.subscribe(postgresql_channel_name) do |on|
+      client.subscribe(postgresql_channel_name) do |on|
         h = {}
 
         on.subscribe do
@@ -409,7 +366,7 @@ class MessageBus::Postgres::ReliablePubSub
 
         on.message do |c,m|
           if m == UNSUB_MESSAGE
-            client_global.unsubscribe
+            @subscribed = false
             return
           end
           m = MessageBus::Message.decode m
@@ -424,7 +381,6 @@ class MessageBus::Postgres::ReliablePubSub
             # If already yielded during the clear backlog when subscribing,
             # don't yield a duplicate copy.
             unless h.delete(m.global_id)
-              # First new message not from clear backlog, disable further checking.
               h = nil if h.empty?
               yield m
             end
@@ -434,7 +390,7 @@ class MessageBus::Postgres::ReliablePubSub
         end
       end
     rescue => error
-      MessageBus.logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
+      MessageBus.logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
       sleep 1
       retry
     end
