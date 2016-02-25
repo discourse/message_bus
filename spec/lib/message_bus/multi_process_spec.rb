@@ -2,6 +2,13 @@ require_relative '../../spec_helper'
 require 'message_bus'
 
 describe PUB_SUB_CLASS do
+  def self.error!
+    @error = true
+  end
+
+  def self.error?
+    defined?(@error)
+  end
 
   def new_bus
     PUB_SUB_CLASS.new(MESSAGE_BUS_REDIS_CONFIG.merge(:db => 10))
@@ -28,33 +35,49 @@ describe PUB_SUB_CLASS do
     end
   end
 
-  it 'gets every response from child processes' do
-    new_bus.reset!
-    begin
-      pids = (1..10).map{spawn_child}
-      responses = []
-      bus = new_bus
-      Thread.new do
-        bus.subscribe("/response", 0) do |msg|
-          responses << msg if pids.include? msg.data.to_i
+  n = ENV['MULTI_PROCESS_TIMES'].to_i
+  n = 1 if n < 1
+  n.times do 
+    it 'gets every response from child processes' do
+      skip("previous error") if self.class.error?
+      GC.start
+      new_bus.reset!
+      begin
+        pids = (1..10).map{spawn_child}
+        responses = []
+        bus = new_bus
+        t = Thread.new do
+          bus.subscribe("/response", 0) do |msg|
+            responses << msg if pids.include? msg.data.to_i
+          end
         end
-      end
-      10.times{bus.publish("/echo", Process.pid.to_s)}
-      wait_for 4000 do
-        responses.count == 100
-      end
+        # Sleep, as not all children may be listening immediately
+        sleep 0.1
+        10.times{bus.publish("/echo", Process.pid.to_s)}
+        wait_for 4000 do
+          responses.count == 100
+        end
+        bus.global_unsubscribe
+        t.join
 
-      # p responses.group_by(&:data).map{|k,v|[k, v.count]}
-      # p responses.group_by(&:global_id).map{|k,v|[k, v.count]}
-      responses.count.must_equal 100
-    ensure
-      if pids
-        pids.each do |pid|
-          Process.kill("KILL", pid)
-          Process.wait(pid)
+        # p responses.group_by(&:data).map{|k,v|[k, v.count]}
+        # p responses.group_by(&:global_id).map{|k,v|[k, v.count]}
+        responses.count.must_equal 100
+      rescue Exception
+        self.class.error!
+        raise
+      ensure
+        if pids
+          pids.each do |pid|
+            begin
+              Process.kill("KILL", pid)
+            rescue SystemCallError
+            end
+            Process.wait(pid)
+          end
         end
+        bus.global_unsubscribe
       end
-      bus.global_unsubscribe
     end
   end
 end
