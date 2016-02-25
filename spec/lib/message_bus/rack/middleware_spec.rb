@@ -6,13 +6,16 @@ require 'rack/test'
 
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
+  let(:extra_middleware){nil}
 
   before do
     bus = @bus = MessageBus::Instance.new
     @bus.long_polling_enabled = false
 
+    e_m = extra_middleware
     builder = Rack::Builder.new {
       use FakeAsyncMiddleware, :message_bus => bus
+      use e_m if e_m
       use MessageBus::Rack::Middleware, :message_bus => bus
       run lambda {|env| [500, {'Content-Type' => 'text/html'}, 'should not be called' ]}
     }
@@ -294,6 +297,41 @@ describe MessageBus::Rack::Middleware do
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
     end
-  end
 
+    describe "messagebus.channels env support" do
+      let(:extra_middleware) do
+        Class.new do
+          attr_reader :app
+
+          def initialize(app)
+            @app = app
+          end
+
+          def call(env)
+            @app.call(env.merge('message_bus.channels'=>{'/foo'=>0}))
+          end
+        end
+      end
+
+      it "should respect messagebus.channels in the environment to force channels" do
+        @message_bus_middleware = @async_middleware.app.app
+        foo_id = @bus.publish("/foo", "testfoo")
+        bar_id = @bus.publish("/bar", "testbar")
+
+        post "/message-bus/ABCD", {
+          '/foo' => foo_id - 1
+        }
+
+        parsed = JSON.parse(last_response.body)
+        parsed.first['data'].must_equal 'testfoo'
+
+        post "/message-bus/ABCD", {
+          '/bar' => bar_id - 1
+        }
+
+        parsed = JSON.parse(last_response.body)
+        parsed.first['data'].must_equal 'testfoo'
+      end
+    end
+  end
 end
