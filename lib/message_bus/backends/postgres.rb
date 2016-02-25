@@ -113,6 +113,8 @@ class MessageBus::Postgres::Client
         begin
           conn.exec "UNLISTEN #{channel}"
         rescue PG::Error, IOError
+          # Remove connection from pool, just to be safe
+          raise PG::ConnectionBad
         end
       end
     end
