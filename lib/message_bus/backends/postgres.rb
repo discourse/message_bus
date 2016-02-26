@@ -341,17 +341,13 @@ class MessageBus::Postgres::ReliablePubSub
     raise ArgumentError unless block_given?
     highest_id = last_id
 
-    if highest_id
-      highest_id = process_global_backlog(highest_id, &blk)
-    end
-
     begin
       client.subscribe(postgresql_channel_name) do |on|
         h = {}
 
         on.subscribe do
           if highest_id
-            highest_id = process_global_backlog(highest_id) do |m|
+            process_global_backlog(highest_id) do |m|
               h[m.global_id] = true
               yield m
             end
