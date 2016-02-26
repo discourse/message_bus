@@ -51,8 +51,6 @@ describe PUB_SUB_CLASS do
             responses << msg if pids.include? msg.data.to_i
           end
         end
-        # Sleep, as not all children may be listening immediately
-        sleep 0.1
         10.times{bus.publish("/echo", Process.pid.to_s)}
         wait_for 4000 do
           responses.count == 100
