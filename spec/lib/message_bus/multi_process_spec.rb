@@ -20,7 +20,7 @@ describe PUB_SUB_CLASS do
     $stderr.reopen("/dev/null", "w")
     # subscribe blocks, so we need a new bus to transmit
     new_bus.subscribe("/echo", 0) do |msg|
-      bus.publish("/response", Process.pid.to_s)
+      bus.publish("/response", "#{msg.data}-#{Process.pid.to_s}")
     end
   ensure
     exit!(0)
@@ -44,23 +44,28 @@ describe PUB_SUB_CLASS do
       new_bus.reset!
       begin
         pids = (1..10).map{spawn_child}
+        expected_responses = pids.map{|x| (0...10).map{|i| "#{i}-#{x}"}}.flatten
+        unexpected_responses = []
         responses = []
         bus = new_bus
         t = Thread.new do
           bus.subscribe("/response", 0) do |msg|
-            responses << msg if pids.include? msg.data.to_i
+            if expected_responses.include?(msg.data)
+              expected_responses.delete(msg.data)
+            else
+              unexpected_responses << msg.data
+            end
           end
         end
-        10.times{bus.publish("/echo", Process.pid.to_s)}
+        10.times{|i| bus.publish("/echo", i.to_s)}
         wait_for 4000 do
-          responses.count == 100
+          expected_responses.empty?
         end
         bus.global_unsubscribe
         t.join
 
-        # p responses.group_by(&:data).map{|k,v|[k, v.count]}
-        # p responses.group_by(&:global_id).map{|k,v|[k, v.count]}
-        responses.count.must_equal 100
+        expected_responses.must_be :empty?
+        unexpected_responses.must_be :empty?
       rescue Exception
         self.class.error!
         raise
