@@ -1,10 +1,11 @@
 require_relative '../../../spec_helper'
 require 'message_bus'
 
-describe MessageBus::Redis::ReliablePubSub do
+if MESSAGE_BUS_REDIS_CONFIG[:backend] == :postgres
+describe PUB_SUB_CLASS do
 
   def new_test_bus
-    MessageBus::Redis::ReliablePubSub.new(:db => 10)
+    PUB_SUB_CLASS.new(MESSAGE_BUS_REDIS_CONFIG.merge(:db => 10))
   end
 
   before do
@@ -38,13 +39,6 @@ describe MessageBus::Redis::ReliablePubSub do
     end
   end
 
-  it "can set backlog age" do
-    @bus.max_backlog_age = 100
-    @bus.publish "/foo", "bar"
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :<=, 100
-    @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :>, 0
-  end
-
   it "should be able to access the backlog" do
     @bus.publish "/foo", "bar"
     @bus.publish "/foo", "baz"
@@ -56,7 +50,7 @@ describe MessageBus::Redis::ReliablePubSub do
   end
 
   it "should initialize with max_backlog_size" do
-    MessageBus::Redis::ReliablePubSub.new({},2000).max_backlog_size.must_equal 2000
+    PUB_SUB_CLASS.new({},2000).max_backlog_size.must_equal 2000
   end
 
   it "should truncate channels correctly" do
@@ -95,9 +89,9 @@ describe MessageBus::Redis::ReliablePubSub do
 
     @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(1, 1, "/foo", "bar"),
-      MessageBus::Message.new(2, 1, "/hello", "world"),
-      MessageBus::Message.new(3, 2, "/foo", "baz"),
-      MessageBus::Message.new(4, 2, "/hello", "planet")
+      MessageBus::Message.new(2, 2, "/hello", "world"),
+      MessageBus::Message.new(3, 3, "/foo", "baz"),
+      MessageBus::Message.new(4, 4, "/hello", "planet")
     ]
   end
 
@@ -110,7 +104,7 @@ describe MessageBus::Redis::ReliablePubSub do
 
     @bus.global_backlog.to_a.must_equal [
       MessageBus::Message.new(2, 2, "/foo", "b"),
-      MessageBus::Message.new(4, 2, "/bar", "b")
+      MessageBus::Message.new(4, 4, "/bar", "b")
     ]
   end
 
@@ -210,4 +204,5 @@ describe MessageBus::Redis::ReliablePubSub do
     @bus.last_id("/foo").must_equal 1
   end
 
+end
 end

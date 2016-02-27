@@ -3,9 +3,15 @@ language: ruby
 rvm:
   - 1.9.3
   - 2.0.0
-  - 2.1.2
-  - 2.2
+  - 2.1.8
+  - 2.2.4
+  - 2.3.0
 gemfile:
   - Gemfile
+addons:
+  postgresql: "9.4"
+before_script:
+  - psql -c 'create database message_bus_test;' -U postgres
 services:
   - redis-server
+  - postgresql
