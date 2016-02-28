@@ -10,7 +10,7 @@ describe MessageBus do
     @bus.site_id_lookup do
       "magic"
     end
-    @bus.redis_config = MESSAGE_BUS_REDIS_CONFIG
+    @bus.redis_config = MESSAGE_BUS_CONFIG
   end
 
   after do

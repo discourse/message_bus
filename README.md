@@ -188,6 +188,13 @@ ajax|$.ajax|The only dependency on jQuery, you may set up a custom ajax function
 
 `MessageBus.unsubscribe(channel,func)` : Unsubscribe callback from a particular channel
 
+## Running tests
+
+To run tests you need both Postgres and Redis installed. By default we will connect to the database `message_bus_test` with the current username. If you wish to override this:
+
+```
+PGUSER=some_user PGDATABASE=some_db bundle exec rake
+```
 
 
 ## Configuration
@@ -248,11 +255,13 @@ after_fork do |server, worker|
 end
 ```
 
+### 
+
 ## Want to help?
 
 If you are looking to contribute to this project here are some ideas
 
-- Build an in-memory storage backend to ease testing and for very simple deployments
+- Build backends for other providers (zeromq, rabbitmq, disque)
 - Improve general documentation
 - Make MessageBus a nice website
 

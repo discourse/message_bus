@@ -1,11 +1,11 @@
 require_relative '../../../spec_helper'
 require 'message_bus'
 
-if MESSAGE_BUS_REDIS_CONFIG[:backend] == :postgres
+if MESSAGE_BUS_CONFIG[:backend] == :postgres
 describe PUB_SUB_CLASS do
 
   def new_test_bus
-    PUB_SUB_CLASS.new(MESSAGE_BUS_REDIS_CONFIG.merge(:db => 10))
+    PUB_SUB_CLASS.new(MESSAGE_BUS_CONFIG.merge(:db => 10))
   end
 
   before do

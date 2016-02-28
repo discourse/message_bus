@@ -11,7 +11,7 @@ describe PUB_SUB_CLASS do
   end
 
   def new_bus
-    PUB_SUB_CLASS.new(MESSAGE_BUS_REDIS_CONFIG.merge(:db => 10))
+    PUB_SUB_CLASS.new(MESSAGE_BUS_CONFIG.merge(:db => 10))
   end
 
   def work_it
@@ -46,7 +46,6 @@ describe PUB_SUB_CLASS do
         pids = (1..10).map{spawn_child}
         expected_responses = pids.map{|x| (0...10).map{|i| "#{i}-#{x}"}}.flatten
         unexpected_responses = []
-        responses = []
         bus = new_bus
         t = Thread.new do
           bus.subscribe("/response", 0) do |msg|

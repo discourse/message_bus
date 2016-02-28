@@ -8,21 +8,22 @@ require 'minitest/autorun'
 require 'minitest/spec'
 
 backend = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
-MESSAGE_BUS_REDIS_CONFIG = {:backend=>backend}
+MESSAGE_BUS_CONFIG = {:backend=>backend}
 require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
 if backend == :postgres
-  MESSAGE_BUS_REDIS_CONFIG.merge!(:backend_options=>{:user=>ENV['PGUSER'] || 'postgres', :dbname=>ENV['PGDATABASE'] || 'message_bus_test'})
+  MESSAGE_BUS_CONFIG.merge!(:backend_options=>{:user=>ENV['PGUSER'] || ENV['USER'], :dbname=>ENV['PGDATABASE'] || 'message_bus_test'})
 end
 puts "Running with backend: #{backend}"
 
 def wait_for(timeout_milliseconds)
   timeout = (timeout_milliseconds + 0.0) / 1000
   finish = Time.now + timeout
-  t = Thread.new do
+
+  Thread.new do
     while Time.now < finish && !yield
       sleep(0.001)
     end
-  end
-  t.join
+  end.join
+
 end
