@@ -1,5 +1,9 @@
 29-02-2016
 
+- Version 2.0.0.beta.4
+
+- Feature: allow verbose redis logging by specifying `enable_redis_logger` in config, default disabled
+
 - Version 2.0.0.beta.3
 
 - Feature: Postgresql backend @jeremyevans

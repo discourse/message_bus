@@ -27,7 +27,10 @@ class MessageBus::Redis::ReliablePubSub
 
   # max_backlog_size is per multiplexed channel
   def initialize(redis_config = {}, max_backlog_size = 1000)
-    @redis_config = redis_config
+    @redis_config = redis_config.dup
+    unless @redis_config[:enable_redis_logger]
+      @redis_config[:logger] = nil
+    end
     @max_backlog_size = max_backlog_size
     @max_global_backlog_size = 2000
     @max_publish_retries = 10
