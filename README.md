@@ -262,7 +262,8 @@ end
 If you are looking to contribute to this project here are some ideas
 
 - Build backends for other providers (zeromq, rabbitmq, disque)
-- Improve general documentation
+- Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
+- Improve general documentation (Add examples, refine existing examples)
 - Make MessageBus a nice website
 
 
