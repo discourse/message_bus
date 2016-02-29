@@ -23,9 +23,10 @@ describe MessageBus::Rack::Middleware do
 
     @async_middleware = builder.to_app
     @message_bus_middleware = @async_middleware.app
+    @bus.reset!
   end
 
-  after do |x|
+  after do
     @message_bus_middleware.stop_listener
     @bus.reset!
     @bus.destroy
