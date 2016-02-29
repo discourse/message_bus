@@ -207,9 +207,7 @@ end
 
 class MessageBus::Postgres::ReliablePubSub
   attr_reader :subscribed
-  attr_accessor :max_publish_retries, :max_publish_wait, :max_backlog_size,
-                :max_global_backlog_size, :max_in_memory_publish_backlog,
-                :max_backlog_age
+  attr_accessor :max_backlog_size, :max_global_backlog_size, :max_backlog_age, :clear_every
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -222,15 +220,9 @@ class MessageBus::Postgres::ReliablePubSub
     @config = config
     @max_backlog_size = max_backlog_size
     @max_global_backlog_size = 2000
-    @max_publish_retries = 10
-    @max_publish_wait = 500 #ms
-    @max_in_memory_publish_backlog = 1000
-    @in_memory_backlog = []
-    @lock = Mutex.new
-    @flush_backlog_thread = nil
     # after 7 days inactive backlogs will be removed
     @max_backlog_age = 604800
-    @h = {}
+    @clear_every = config[:clear_every] || 1
   end
 
   def new_connection
@@ -265,9 +257,11 @@ class MessageBus::Postgres::ReliablePubSub
     msg = MessageBus::Message.new backlog_id, backlog_id, channel, data
     payload = msg.encode
     client.publish postgresql_channel_name, payload
-    client.clear_global_backlog(backlog_id, @max_global_backlog_size)
-    client.expire(@max_backlog_age)
-    client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
+    if backlog_id % clear_every == 0
+      client.clear_global_backlog(backlog_id, @max_global_backlog_size)
+      client.expire(@max_backlog_age)
+      client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
+    end
 
     backlog_id
   end

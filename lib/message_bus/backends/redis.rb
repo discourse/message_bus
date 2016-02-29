@@ -10,9 +10,7 @@ require 'redis'
 module MessageBus::Redis; end
 class MessageBus::Redis::ReliablePubSub
   attr_reader :subscribed
-  attr_accessor :max_publish_retries, :max_publish_wait, :max_backlog_size,
-                :max_global_backlog_size, :max_in_memory_publish_backlog,
-                :max_backlog_age
+  attr_accessor :max_backlog_size, :max_global_backlog_size, :max_in_memory_publish_backlog, :max_backlog_age
 
   UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -33,8 +31,6 @@ class MessageBus::Redis::ReliablePubSub
     end
     @max_backlog_size = max_backlog_size
     @max_global_backlog_size = 2000
-    @max_publish_retries = 10
-    @max_publish_wait = 500 #ms
     @max_in_memory_publish_backlog = 1000
     @in_memory_backlog = []
     @lock = Mutex.new
