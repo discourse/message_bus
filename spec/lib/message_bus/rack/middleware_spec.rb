@@ -10,7 +10,7 @@ describe MessageBus::Rack::Middleware do
 
   before do
     bus = @bus = MessageBus::Instance.new
-    @bus.redis_config = MESSAGE_BUS_CONFIG
+    @bus.configure(MESSAGE_BUS_CONFIG)
     @bus.long_polling_enabled = false
 
     e_m = extra_middleware
@@ -23,9 +23,10 @@ describe MessageBus::Rack::Middleware do
 
     @async_middleware = builder.to_app
     @message_bus_middleware = @async_middleware.app
+    @bus.reset!
   end
 
-  after do |x|
+  after do
     @message_bus_middleware.stop_listener
     @bus.reset!
     @bus.destroy

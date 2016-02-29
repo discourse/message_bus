@@ -103,25 +103,19 @@ class MessageBus::Postgres::Client
     sync{@listening_on[channel] = obj}
     listener = Listener.new
     yield listener
-    pid = Process.pid
     
     conn = raw_pg_connection
     conn.exec "LISTEN #{channel}"
     listener.do_sub.call
     while listening_on?(channel, obj)
       conn.wait_for_notify(10) do |_,_,payload|
+        break unless listening_on?(channel, obj)
         listener.do_message.call(nil, payload)
       end
-      break if pid != Process.pid
     end
     listener.do_unsub.call
 
-    if pid != Process.pid
-      sync{INHERITED_CONNECTIONS << conn}
-    else
-      conn.exec "UNLISTEN #{channel}"
-    end
-
+    conn.exec "UNLISTEN #{channel}"
     nil
   end
 
@@ -139,7 +133,7 @@ class MessageBus::Postgres::Client
   end
 
   def create_table(conn)
-    conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL, added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+    conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
     conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
     conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
     nil
@@ -150,7 +144,6 @@ class MessageBus::Postgres::Client
     if current_pid != @pid
       @pid = current_pid
       sync do
-        @listening_on.clear
         INHERITED_CONNECTIONS.concat(@available)
         @available.clear
       end

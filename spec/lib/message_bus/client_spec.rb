@@ -7,7 +7,7 @@ describe MessageBus::Client do
 
     before do
       @bus = MessageBus::Instance.new
-      @bus.redis_config = MESSAGE_BUS_CONFIG
+      @bus.configure(MESSAGE_BUS_CONFIG)
       @client = MessageBus::Client.new client_id: 'abc', message_bus: @bus
     end
 

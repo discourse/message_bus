@@ -44,7 +44,7 @@ describe PUB_SUB_CLASS do
       new_bus.reset!
       begin
         pids = (1..10).map{spawn_child}
-        expected_responses = pids.map{|x| (0...10).map{|i| "#{i}-#{x}"}}.flatten
+        expected_responses = pids.map{|x| (0...10).map{|i| "0#{i}-#{x}"}}.flatten
         unexpected_responses = []
         bus = new_bus
         t = Thread.new do
@@ -56,7 +56,7 @@ describe PUB_SUB_CLASS do
             end
           end
         end
-        10.times{|i| bus.publish("/echo", i.to_s)}
+        10.times{|i| bus.publish("/echo", "0#{i}")}
         wait_for 4000 do
           expected_responses.empty?
         end
