@@ -43,7 +43,7 @@ describe MessageBus do
     @bus.publish("/chuck", {:norris => true})
     @bus.publish("/chuck", {:norris => true})
 
-    @bus.reliable_pub_sub.pub_redis.flushall
+    @bus.reliable_pub_sub.reset!
 
     @bus.publish("/chuck", {:yeager => true})
 
