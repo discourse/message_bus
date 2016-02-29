@@ -473,7 +473,7 @@ module MessageBus::Implementation
         globals, locals, local_globals, global_globals = nil
 
         @mutex.synchronize do
-          raise MessageBus::BusDestroyed if @destroyed
+          return if @destroyed
           next unless @subscriptions
 
           globals = @subscriptions[nil]

@@ -222,6 +222,14 @@ MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', 
 
 The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can configure.
 
+### Memory
+
+message_bus also supports an in-memory backend.  This can be used for testing or simple single-process environments that do not require persistence.
+
+```ruby
+MessageBus.configure(backend: :memory)
+```
+
 ### Forking/threading app servers
 
 If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis/PostgreSQL in your app server config:

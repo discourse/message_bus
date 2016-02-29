@@ -184,39 +184,40 @@ describe MessageBus do
 
   end
 
-  it "should support forking properly do" do
-    data = nil
-    @bus.subscribe do |msg|
-      data = msg.data
-    end
-
-    @bus.publish("/hello", "world")
-
-    wait_for(2000){ data }
-
-    if child = Process.fork
-      wait_for(2000) { data == "ready" }
-      @bus.publish("/hello", "world1")
-      wait_for(2000) { data == "got it" }
-      data.must_equal "got it"
-      Process.wait(child)
-    else
-      begin
-        @bus.after_fork
-        @bus.publish("/hello", "ready")
-        wait_for(2000) { data == "world1" }
-        if(data=="world1")
-          @bus.publish("/hello", "got it")
-        end
-
-        $stdout.reopen("/dev/null", "w")
-        $stderr.reopen("/dev/null", "w")
-
-      ensure
-        exit!(0)
+  unless MESSAGE_BUS_CONFIG[:backend] == :memory
+    it "should support forking properly do" do
+      data = nil
+      @bus.subscribe do |msg|
+        data = msg.data
       end
+
+      @bus.publish("/hello", "world")
+
+      wait_for(2000){ data }
+
+      if child = Process.fork
+        wait_for(2000) { data == "ready" }
+        @bus.publish("/hello", "world1")
+        wait_for(2000) { data == "got it" }
+        data.must_equal "got it"
+        Process.wait(child)
+      else
+        begin
+          @bus.after_fork
+          @bus.publish("/hello", "ready")
+          wait_for(2000) { data == "world1" }
+          if(data=="world1")
+            @bus.publish("/hello", "got it")
+          end
+
+          $stdout.reopen("/dev/null", "w")
+          $stderr.reopen("/dev/null", "w")
+
+        ensure
+          exit!(0)
+        end
+      end
+
     end
-
   end
-
 end

@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
 require 'message_bus'
 
+unless MESSAGE_BUS_CONFIG[:backend] == :memory
 describe PUB_SUB_CLASS do
   def self.error!
     @error = true
@@ -82,4 +83,5 @@ describe PUB_SUB_CLASS do
       end
     end
   end
+end
 end

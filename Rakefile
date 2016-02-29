@@ -17,10 +17,14 @@ run_spec = proc do |backend|
   end
 end
 
-task :spec => [:spec_redis, :spec_postgres]
+task :spec => [:spec_redis, :spec_postgres, :spec_memory]
 
 task :spec_redis do
   run_spec.call('redis')
+end
+
+task :spec_memory do
+  run_spec.call('memory')
 end
 
 task :spec_postgres do
