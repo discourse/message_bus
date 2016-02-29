@@ -18,6 +18,10 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 **Yes**, MessageBus uses Rack Hijack, this interface allows us to take control of the underlying socket. MessageBus can handle thousands of concurrent long polls on all popular Ruby webservers. MessageBus runs as middleware in your Rack (or by extension Rails) application and does not require a dedicated server. Background work is minimized to ensure it does not interfere with existing non MessageBus traffic.
 
+## Is this used in production at scale?
+
+**Yes**, MessageBus was extracted out of [Discourse](http://www.discourse.org/) and is used in thousands of production Discourse sites at scale. 
+
 ## Installation
 
 Add this line to your application's Gemfile:
