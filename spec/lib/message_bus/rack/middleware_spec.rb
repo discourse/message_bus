@@ -10,7 +10,7 @@ describe MessageBus::Rack::Middleware do
 
   before do
     bus = @bus = MessageBus::Instance.new
-    @bus.redis_config = MESSAGE_BUS_CONFIG
+    @bus.configure(MESSAGE_BUS_CONFIG)
     @bus.long_polling_enabled = false
 
     e_m = extra_middleware
