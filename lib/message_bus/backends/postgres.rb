@@ -133,7 +133,7 @@ class MessageBus::Postgres::Client
   end
 
   def create_table(conn)
-    conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL, added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+    conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
     conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
     conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
     nil
