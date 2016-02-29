@@ -220,7 +220,9 @@ message_bus also supports PostgreSQL as the backend:
 MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', dbname: 'message_bus'})
 ```
 
-The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can configure.
+The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can configure inside `:backend_options`.
+
+A `:clear_every` option is also supported, which only clears the backlogs on every number of requests given.  So if you set `clear_every: 100`, the backlog will only be cleared every 100 requests.  This can improve performance in cases where exact backlog clearing are not required.
 
 ### Memory
 
@@ -229,6 +231,8 @@ message_bus also supports an in-memory backend.  This can be used for testing or
 ```ruby
 MessageBus.configure(backend: :memory)
 ```
+
+The `:clear_every` option supported by the PostgreSQL backend is also supported by the in-memory backend.
 
 ### Forking/threading app servers
 

@@ -74,6 +74,19 @@ describe PUB_SUB_CLASS do
     @bus.global_backlog.length.must_equal 2
   end
 
+  it "should support clear_every setting" do
+    @bus.clear_every = 5
+    @bus.max_global_backlog_size = 2
+    @bus.publish "/foo", "11"
+    @bus.publish "/bar", "21"
+    @bus.publish "/baz", "31"
+    @bus.publish "/bar", "41"
+    @bus.global_backlog.length.must_equal 4
+
+    @bus.publish "/baz", "51"
+    @bus.global_backlog.length.must_equal 2
+  end
+
   it "should be able to grab a message by id" do
     id1 = @bus.publish "/foo", "bar"
     id2 = @bus.publish "/foo", "baz"
