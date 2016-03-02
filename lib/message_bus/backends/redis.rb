@@ -47,6 +47,11 @@ class MessageBus::Redis::ReliablePubSub
     pub_redis.client.reconnect
   end
 
+  def update_config(config)
+    @redis_config = config
+    @pub_redis = new_redis_connection
+  end
+
   def redis_channel_name
     db = @redis_config[:db] || 0
     "_message_bus_#{db}"
