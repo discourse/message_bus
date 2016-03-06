@@ -253,6 +253,25 @@ if defined?(PhusionPassenger)
 end
 ```
 
+In case your app got slow with passenger and using message_bus. You may need to add:
+
+* for passenger version < 5.0.21
+
+`PhusionPassenger.advertised_concurrency_level = 0` to application.rb
+
+* for passenger version > 5.0.21
+
+```
+# Use default concurrency for the app. But for the endpoint
+   # /special_websocket_endpoint, force a different concurrency.
+   location /special_websocket_endpoint {
+       passenger_app_group_name foo_websocket;
+       passenger_force_max_concurrent_requests_per_process 0;
+   }
+```
+to nginx.conf.
+For more information see [Passenger documentation](https://www.phusionpassenger.com/library/config/nginx/tuning_sse_and_websockets/)
+
 #### Puma
 ```ruby
 # path/to/your/config/puma.rb
