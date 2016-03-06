@@ -253,7 +253,7 @@ if defined?(PhusionPassenger)
 end
 ```
 
-In case your app got slow with passenger and using message_bus. You may need to add:
+MessageBus uses long polling which needs to be configured in Passenger
 
 * for passenger version < 5.0.21
 
@@ -262,9 +262,7 @@ In case your app got slow with passenger and using message_bus. You may need to 
 * for passenger version > 5.0.21
 
 ```
-# Use default concurrency for the app. But for the endpoint
-   # /special_websocket_endpoint, force a different concurrency.
-   location /special_websocket_endpoint {
+   location /message-bus {
        passenger_app_group_name foo_websocket;
        passenger_force_max_concurrent_requests_per_process 0;
    }
