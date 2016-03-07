@@ -147,11 +147,21 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   def ensure_backlog_flushed
-    while true
+    flushed = false
+
+    while !flushed
       try_again = false
 
+      if is_readonly?
+        sleep 1
+        next
+      end
+
       @lock.synchronize do
-        break if @in_memory_backlog.length == 0
+        if @in_memory_backlog.length == 0
+          flushed = true
+          break
+        end
 
         begin
           publish(*@in_memory_backlog[0],false)
@@ -166,13 +176,6 @@ class MessageBus::Redis::ReliablePubSub
         end
 
         @in_memory_backlog.delete_at(0) unless try_again
-      end
-
-      if try_again
-        sleep 0.005
-        # in case we are not connected to the correct server
-        # which can happen when sharing ips
-        pub_redis.client.reconnect
       end
     end
   ensure
@@ -335,6 +338,22 @@ class MessageBus::Redis::ReliablePubSub
       MessageBus.logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
       sleep 1
       retry
+    end
+  end
+
+  private
+
+  def is_readonly?
+    key = "__mb_is_readonly".freeze
+
+    begin
+      # in case we are not connected to the correct server
+      # which can happen when sharing ips
+      pub_redis.client.reconnect
+      pub_redis.client.call([:set, key, '1'])
+      false
+    rescue Redis::CommandError => e
+      return true if e.message =~ /^READONLY/
     end
   end
 
