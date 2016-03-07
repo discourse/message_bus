@@ -26,16 +26,22 @@ describe PUB_SUB_CLASS do
       @bus.pub_redis.slaveof "127.0.0.80", "666"
       @bus.max_in_memory_publish_backlog = 2
 
+      current_threads = Thread.list
+      current_threads_length  = current_threads.count
+
       3.times do
         result = @bus.publish "/foo", "bar"
         result.must_equal nil
+        Thread.list.length.must_equal (current_threads_length + 1)
       end
 
       @bus.pub_redis.slaveof "no", "one"
       sleep 0.01
 
-      @bus.backlog("/foo", 0).map(&:data).must_equal ["bar","bar"]
+      (Thread.list - current_threads).each(&:join)
+      Thread.list.length.must_equal current_threads_length
 
+      @bus.backlog("/foo", 0).map(&:data).must_equal ["bar","bar"]
     end
   end
 
