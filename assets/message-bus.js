@@ -345,22 +345,26 @@ window.MessageBus = (function() {
         last_id: lastId
       });
       if (me.longPoll) {
-        return me.longPoll.abort();
+        me.longPoll.abort();
       }
+
+      return func;
     },
 
     // Unsubscribe from a channel
     unsubscribe: function(channel, func) {
-      // TODO proper globbing
+      // TODO allow for globbing in the middle of a channel name
+      // like /something/*/something
+      // at the moment we only support globbing /something/*
       var glob;
       if (channel.indexOf("*", channel.length - 1) !== -1) {
         channel = channel.substr(0, channel.length - 1);
         glob = true;
       }
 
-      var filtered = [];
+      var removed = false;
 
-      for (var i=0; i<callbacks.length; i++) {
+      for (var i=callbacks.length-1; i>=0; i--) {
 
         callback = callbacks[i];
         var keep;
@@ -375,16 +379,17 @@ window.MessageBus = (function() {
           keep = true;
         }
 
-        if (keep) {
-          filtered.push(callback);
+        if (!keep) {
+          callbacks.splice(i,1);
+          removed = true;
         }
       }
 
-      callbacks = filtered;
-
-      if (me.longPoll) {
-        return me.longPoll.abort();
+      if (removed && me.longPoll) {
+        me.longPoll.abort();
       }
+
+      return removed;
     }
   };
 
