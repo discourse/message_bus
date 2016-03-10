@@ -4,7 +4,9 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me, started, stopped, longPoller, pollTimeout, paused, later;
+  var me, started, stopped, longPoller, pollTimeout, paused, later, cacheBuster;
+
+  cacheBuster =  Math.random() * 10000 | 0;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -27,7 +29,6 @@ window.MessageBus = (function() {
   chunkedBackoff = 0;
 
   var hiddenProperty;
-
 
   (function(){
     var prefixes = ["","webkit","ms","moz"];
@@ -161,90 +162,101 @@ window.MessageBus = (function() {
       }
     };
 
-    var req = me.ajax({
-      url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!longPoll ? "dlp=t" : ""),
-      data: data,
-      cache: false,
-      dataType: dataType,
-      type: 'POST',
-      headers: headers,
-      xhr: function() {
-         var xhr = jQuery.ajaxSettings.xhr();
-
-         if (!chunked) {
-            return xhr;
-         }
-
-         var position = 0;
-
-         // if it takes longer than 3000 ms to get first chunk, we have some proxy
-         // this is messing with us, so just backoff from using chunked for now
-         var chunkedTimeout = setTimeout(disableChunked,3000);
-
-         xhr.onprogress = function () {
-           clearTimeout(chunkedTimeout);
-
-           if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
-             // not chunked we are sending json back
-             chunked = false;
-             return;
-           }
-           position = handle_progress(xhr.responseText, position);
-         }
-
-         return xhr;
-      },
-      success: function(messages) {
-         if (!chunked) {
-           // we may have requested text so jQuery will not parse
-           if (typeof(messages) === "string") {
-             messages = JSON.parse(messages);
-           }
-           gotData = reqSuccess(messages);
-         }
-       },
-      error: function(xhr, textStatus, err) {
-        if(textStatus === "abort") {
-          aborted = true;
-        } else {
-          failCount += 1;
-          totalAjaxFailures += 1;
+    var success = function(messages) {
+      if (!chunked) {
+        // we may have requested text so jQuery will not parse
+        if (typeof(messages) === "string") {
+          messages = JSON.parse(messages);
         }
-      },
-      complete: function() {
-        var interval;
-        try {
-          if (gotData || aborted) {
-            interval = 100;
-          } else {
-            interval = me.callbackInterval;
-            if (failCount > 2) {
-              interval = interval * failCount;
-            } else if (!shouldLongPoll()) {
-              interval = me.backgroundCallbackInterval;
-            }
-            if (interval > me.maxPollInterval) {
-              interval = me.maxPollInterval;
-            }
-
-            interval -= (new Date() - lastAjax);
-
-            if (interval < 100) {
-              interval = 100;
-            }
-          }
-        } catch(e) {
-          if(console.log && e.message) {
-            console.log("MESSAGE BUS FAIL: " + e.message);
-          }
-        }
-
-        pollTimeout = setTimeout(function(){pollTimeout=null; poll();}, interval);
-        me.longPoll = null;
+        gotData = reqSuccess(messages);
       }
-    });
+    }
 
-    return req;
+    var error = function(xhr, textStatus) {
+      if(textStatus === "abort") {
+        aborted = true;
+      } else {
+        failCount += 1;
+        totalAjaxFailures += 1;
+      }
+    };
+
+    var complete = function() {
+      var interval;
+      try {
+        if (gotData || aborted) {
+          interval = 100;
+        } else {
+          interval = me.callbackInterval;
+          if (failCount > 2) {
+            interval = interval * failCount;
+          } else if (!shouldLongPoll()) {
+            interval = me.backgroundCallbackInterval;
+          }
+          if (interval > me.maxPollInterval) {
+            interval = me.maxPollInterval;
+          }
+
+          interval -= (new Date() - lastAjax);
+
+          if (interval < 100) {
+            interval = 100;
+          }
+        }
+      } catch(e) {
+        if(console.log && e.message) {
+          console.log("MESSAGE BUS FAIL: " + e.message);
+        }
+      }
+
+      pollTimeout = setTimeout(function(){pollTimeout=null; poll();}, interval);
+      me.longPoll = null;
+    }
+
+    var params = ('?_=' + cacheBuster++) + ( longPoll ? '' : '&dlp=t' );
+    var xhr = new me.XMLHttpRequest();
+    xhr.dataType = dataType;
+    xhr.open('POST', me.baseUrl + "message-bus/" + me.clientId + "/poll" + params);
+    for (var name in headers){
+      xhr.setRequestHeader(name, headers[name]);
+    }
+
+    if (chunked){
+      var position = 0;
+      // if it takes longer than 3000 ms to get first chunk, we have some proxy
+      // this is messing with us, so just backoff from using chunked for now
+      var chunkedTimeout = setTimeout(disableChunked,3000);
+      xhr.onprogress = function(){
+        clearTimeout(chunkedTimeout);
+        if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
+          // not chunked we are sending json back
+          chunked = false;
+          return;
+        }
+        position = handle_progress(xhr.responseText, position);
+      }
+    }
+
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState === 4){
+        var status = xhr.status;
+        if (status >= 200 && status < 300 || status === 304){
+          success(xhr.responseText);
+        } else {
+          error(xhr, xhr.statusText);
+        }
+        complete();
+      }
+    }
+    var form = new FormData();
+    // set data as property for inspection by tests since
+    // .entries() is only supported by Firefox
+    form.data = data;
+    for (var key in data){
+      form.append(key, data[key]);
+    }
+    xhr.send(form)
+    return xhr;
   };
 
   me = {
@@ -257,9 +269,7 @@ window.MessageBus = (function() {
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
-    // TODO we can make the dependency on $ and jQuery conditional
-    // all we really need is an implementation of ajax
-    ajax: ($ && $.ajax),
+    XMLHttpRequest: XMLHttpRequest,
 
     diagnostics: function(){
       console.log("Stopped: " + stopped + " Started: " + started);
