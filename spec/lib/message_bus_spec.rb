@@ -47,7 +47,7 @@ describe MessageBus do
 
     @bus.publish("/chuck", {:yeager => true})
 
-    wait_for(2000){ data["yeager"]}
+    wait_for(2000){ data && data["yeager"]}
 
     data["yeager"].must_equal true
 
