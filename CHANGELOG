@@ -1,5 +1,10 @@
 29-02-2016
 
+- Version 2.0.0.beta.5
+
+- Fix: JavaScript unsubscribe was not updating publicly visible MessageBus.callbacks @sam
+- Fix: When MessageBus is talking to a readonly redis buffering may cause a infinite loop @tgxworld
+
 - Version 2.0.0.beta.4
 
 - Feature: allow verbose redis logging by specifying `enable_redis_logger` in config, default disabled
