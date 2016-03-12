@@ -179,7 +179,7 @@ window.MessageBus = (function() {
     var ajax = (me.jQuery && me.jQuery.ajax) || me.ajaxImplementation;
     var req = ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!longPoll ? "dlp=t" : ""),
-      data: data,
+      data: JSON.stringify(data),
       cache: false,
       dataType: dataType,
       type: 'POST',

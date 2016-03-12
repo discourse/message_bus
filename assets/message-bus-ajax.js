@@ -30,14 +30,7 @@
         options.complete();
       }
     }
-    var form = new FormData();
-    // set data as property for inspection by tests since
-    // .entries() is only supported by Firefox
-    form.data = options.data;
-    for (var key in options.data){
-      form.append(key, options.data[key]);
-    }
-    xhr.send(form)
+    xhr.send(options.data);
     return xhr;
   };
 

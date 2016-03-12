@@ -9,9 +9,9 @@ describe("Messagebus", function() {
     MessageBus.subscribe('/test', function(){
       expect(spec.MockedXMLHttpRequest.prototype.send)
         .toHaveBeenCalled()
-      var formData = spec.MockedXMLHttpRequest.prototype.send.calls.argsFor(0)[0];
-      expect(formData.data['/test']).toEqual(-1)
-      expect(formData.data['__seq']).not.toBeUndefined();
+      var req = JSON.parse(spec.MockedXMLHttpRequest.prototype.send.calls.argsFor(0)[0]);
+      expect(req['/test']).toEqual(-1)
+      expect(req['__seq']).not.toBeUndefined();
       done()
     });
   });
@@ -29,6 +29,7 @@ describe("Messagebus", function() {
       done();
     });
   });
+
 
 
 });
