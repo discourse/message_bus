@@ -4,15 +4,18 @@
 // Only implements methods & options used by MessageBus
 (function(global, undefined) {
   'use strict';
-
+  var cacheBuster =  Math.random() * 10000 | 0;
   var MessageBus = global.MessageBus || (global.MessageBus = {});
 
   MessageBus.ajaxImplementation = function(options){
-
     var XHRImpl = MessageBus.xhrImplementation || global.XMLHttpRequest;
     var xhr = new XHRImpl();
     xhr.dataType = options.dataType;
-    xhr.open('POST', options.url);
+    var url = options.url;
+    if (!options.cache){
+      url += ((-1 == url.indexOf('?')) ? '?' : '&') + '_=' + (cacheBuster++)
+    }
+    xhr.open('POST', url);
     for (var name in options.headers){
       xhr.setRequestHeader(name, options.headers[name]);
     }
