@@ -12,6 +12,7 @@
 #
 src_files:
   - assets/message-bus.js
+  - assets/message-bus-ajax.js
 
 
 # stylesheets

@@ -13,23 +13,24 @@ var encodeChunks = function(chunks) {
 }
 
 beforeEach(function () {
-    var spec = this;
+  var spec = this;
 
-    function MockedXMLHttpRequest(){ }
-    MockedXMLHttpRequest.prototype.open              = function(){ }
-    MockedXMLHttpRequest.prototype.send              = function(){
-      this.readyState = 4
-      this.responseText = spec.responseChunks ? encodeChunks(spec.responseChunks) : ''
-      this.statusText = 'OK'
-      this.onprogress()
-      this.onreadystatechange()
-    }
-    MockedXMLHttpRequest.prototype.abort             = function(){ }
-    MockedXMLHttpRequest.prototype.setRequestHeader  = function(){ }
-    MockedXMLHttpRequest.prototype.getResponseHeader = function(){ }
-    MessageBus.XMLHttpRequest = MockedXMLHttpRequest
-    this.MockedXMLHttpRequest = MockedXMLHttpRequest
-    MessageBus.start()
+  function MockedXMLHttpRequest(){ }
+  MockedXMLHttpRequest.prototype.open              = function(){ }
+  MockedXMLHttpRequest.prototype.send              = function(){
+    this.readyState = 4
+    this.responseText = spec.responseChunks ? encodeChunks(spec.responseChunks) : ''
+    this.statusText = 'OK'
+    this.onprogress()
+    this.onreadystatechange()
+  }
+  MockedXMLHttpRequest.prototype.abort             = function(){ }
+  MockedXMLHttpRequest.prototype.setRequestHeader  = function(){ }
+  MockedXMLHttpRequest.prototype.getResponseHeader = function(){ }
+
+  MessageBus.xhrImplementation = MockedXMLHttpRequest
+  this.MockedXMLHttpRequest = MockedXMLHttpRequest
+  MessageBus.start()
 
 });
 
