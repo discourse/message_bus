@@ -4,7 +4,7 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me, started, stopped, longPoller, pollTimeout, paused, later;
+  var me, started, stopped, longPoller, pollTimeout, paused, later, jQuery;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -25,9 +25,8 @@ window.MessageBus = (function() {
   paused = false;
   later = [];
   chunkedBackoff = 0;
-
+  jQuery = window.jQuery;
   var hiddenProperty;
-
 
   (function(){
     var prefixes = ["","webkit","ms","moz"];
@@ -176,8 +175,8 @@ window.MessageBus = (function() {
         position = handle_progress(xhr.responseText, position);
       }
     };
-    var ajax = (me.jQuery && me.jQuery.ajax) || me.ajaxImplementation;
-    var req = ajax({
+
+    var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
       data: JSON.stringify(data),
       cache: false,
@@ -272,7 +271,8 @@ window.MessageBus = (function() {
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
-    jQuery: window.jQuery,
+    ajax: (jQuery && jQuery.ajax) || MessageBus.ajaxImplementation,
+
     diagnostics: function(){
       console.log("Stopped: " + stopped + " Started: " + started);
       console.log("Current callbacks");

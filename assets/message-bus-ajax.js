@@ -8,7 +8,7 @@
   var MessageBus = global.MessageBus || (global.MessageBus = {});
 
   MessageBus.ajaxImplementation = function(options){
-    var XHRImpl = MessageBus.xhrImplementation || global.XMLHttpRequest;
+    var XHRImpl = global.MessageBus.xhrImplementation || global.XMLHttpRequest;
     var xhr = new XHRImpl();
     xhr.dataType = options.dataType;
     var url = options.url;

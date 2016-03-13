@@ -25,7 +25,6 @@ beforeEach(function () {
   var spec = this;
 
   function MockedXMLHttpRequest(options){ this.options = options; }
-  MockedXMLHttpRequest.prototype.open              = function(){ }
   MockedXMLHttpRequest.prototype.send              = function(){
     this.readyState = 4
     this.responseText = encodeChunks(this, spec.responseChunks);
@@ -34,12 +33,12 @@ beforeEach(function () {
     if (this.onprogress){ this.onprogress(); }
     this.onreadystatechange()
   }
+  MockedXMLHttpRequest.prototype.open              = function(){ }
   MockedXMLHttpRequest.prototype.abort             = function(){ }
   MockedXMLHttpRequest.prototype.setRequestHeader  = function(){ }
   MockedXMLHttpRequest.prototype.getResponseHeader = function(){
     return 'text/plain; charset=utf-8';
   }
-
   MessageBus.xhrImplementation = MockedXMLHttpRequest
   this.MockedXMLHttpRequest = MockedXMLHttpRequest
   MessageBus.start()
