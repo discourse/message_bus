@@ -20,7 +20,7 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ## Is this used in production at scale?
 
-**Yes**, MessageBus was extracted out of [Discourse](http://www.discourse.org/) and is used in thousands of production Discourse sites at scale. 
+**Yes**, MessageBus was extracted out of [Discourse](http://www.discourse.org/) and is used in thousands of production Discourse sites at scale.
 
 ## Installation
 
@@ -174,7 +174,7 @@ backgroundCallbackInterval|60000|Interval to poll when long polling is disabled 
 maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
 alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
 baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
-ajax|$.ajax|The only dependency on jQuery, you may set up a custom ajax function here
+ajax|$.ajax or MessageBus.ajaxImplementation|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `messsage-bus-ajax.js` file. `messsage-bus-ajax.js` must be loaded before `messsage-bus.js` if jQuery is not present.
 
 **API**:
 
@@ -288,7 +288,7 @@ after_fork do |server, worker|
 end
 ```
 
-### 
+###
 
 ## Want to help?
 
@@ -299,5 +299,3 @@ If you are looking to contribute to this project here are some ideas
 - Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
 - Improve general documentation (Add examples, refine existing examples)
 - Make MessageBus a nice website
-
-
