@@ -175,7 +175,9 @@ window.MessageBus = (function() {
         position = handle_progress(xhr.responseText, position);
       }
     };
-
+    if (!me.ajax){
+      throw new Error("Either jQuery or the ajax adapter must be loaded");
+    }
     var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
       data: data,
