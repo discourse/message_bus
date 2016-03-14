@@ -44,13 +44,13 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should respond right away if dlp=t" do
-      post "/message-bus/ABC?dlp=t", JSON.generate('/foo1' => 0)
+      post "/message-bus/ABC?dlp=t", '/foo1' => 0
       @async_middleware.in_async?.must_equal false
       last_response.ok?.must_equal true
     end
 
     it "should respond right away to long polls that are polling on -1 with the last_id" do
-      post "/message-bus/ABC", JSON.generate('/foo' => -1)
+      post "/message-bus/ABC", '/foo' => -1
       last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -71,7 +71,8 @@ describe MessageBus::Rack::Middleware do
         bus.publish "/foo", "םוֹלשָׁ"
       end
 
-      post "/message-bus/ABC", JSON.generate('/foo' => nil)
+      post "/message-bus/ABC", '/foo' => nil
+
       last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -84,7 +85,7 @@ describe MessageBus::Rack::Middleware do
       begin
         @bus.long_polling_interval = 10
         s = Time.now.to_f * 1000
-        post "/message-bus/ABC", JSON.generate('/foo' => nil)
+        post "/message-bus/ABC", '/foo' => nil
         # allow for some jitter
         (Time.now.to_f * 1000 - s).must_be :<, 100
       ensure
@@ -145,10 +146,10 @@ describe MessageBus::Rack::Middleware do
       client_id = "ABCD"
 
       # client always keeps a list of channels with last message id they got on each
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => nil,
         '/bar' => nil
-      })
+      }
 
       last_response.headers["FOO"].must_equal "BAR"
     end
@@ -157,10 +158,10 @@ describe MessageBus::Rack::Middleware do
       client_id = "ABCD"
 
       # client always keeps a list of channels with last message id they got on each
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => nil,
         '/bar' => nil
-      })
+      }
       last_response.ok?.must_equal true
     end
 
@@ -168,9 +169,9 @@ describe MessageBus::Rack::Middleware do
 
       @bus.publish('foo', 'bar')
 
-      post "/message-bus/ABCD", JSON.generate({
+      post "/message-bus/ABCD", {
         '/foo' => -1
-      })
+      }
       last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -186,10 +187,10 @@ describe MessageBus::Rack::Middleware do
       @bus.publish("/foo", "borbs")
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id,
         '/bar' => nil
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 2
@@ -208,9 +209,9 @@ describe MessageBus::Rack::Middleware do
       msg = @bus.publish("/foo", "test")
 
       # subscribed on channel 2
-      post "/message-bus/ABCD", JSON.generate({
+      post "/message-bus/ABCD", {
         '/foo' => (msg-1)
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
@@ -226,9 +227,9 @@ describe MessageBus::Rack::Middleware do
 
       msg = @bus.publish("/global/foo", "test")
 
-      post "/message-bus/ABCD", JSON.generate({
+      post "/message-bus/ABCD", {
         '/global/foo' => (msg-1)
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -239,9 +240,9 @@ describe MessageBus::Rack::Middleware do
       id =@bus.last_id('/foo')
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
@@ -254,9 +255,9 @@ describe MessageBus::Rack::Middleware do
       end
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id - 1
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
@@ -265,9 +266,9 @@ describe MessageBus::Rack::Middleware do
         1
       end
 
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id - 1
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -280,9 +281,9 @@ describe MessageBus::Rack::Middleware do
       end
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id - 1
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
@@ -291,12 +292,21 @@ describe MessageBus::Rack::Middleware do
         [1,7,4,100]
       end
 
-      post "/message-bus/#{client_id}", JSON.generate({
+      post "/message-bus/#{client_id}", {
         '/foo' => id - 1
-      })
+      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
+    end
+
+    it "can decode a JSON encoded request" do
+      id = @bus.last_id('/foo')
+      @bus.publish("/foo", {json: true})
+      post( "/message-bus/1234",
+            JSON.generate({'/foo' => id}),
+            { "CONTENT_TYPE" => "application/json" })
+      JSON.parse(last_response.body).first["data"].must_equal({'json' => true})
     end
 
     describe "messagebus.channels env support" do
@@ -319,16 +329,16 @@ describe MessageBus::Rack::Middleware do
         foo_id = @bus.publish("/foo", "testfoo")
         bar_id = @bus.publish("/bar", "testbar")
 
-        post "/message-bus/ABCD", JSON.generate({
+        post "/message-bus/ABCD", {
           '/foo' => foo_id - 1
-        })
+        }
 
         parsed = JSON.parse(last_response.body)
         parsed.first['data'].must_equal 'testfoo'
 
-        post "/message-bus/ABCD", JSON.generate({
+        post "/message-bus/ABCD", {
           '/bar' => bar_id - 1
-        })
+        }
 
         parsed = JSON.parse(last_response.body)
         parsed.first['data'].must_equal 'testfoo'

@@ -178,7 +178,7 @@ window.MessageBus = (function() {
 
     var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
-      data: JSON.stringify(data),
+      data: data,
       cache: false,
       dataType: dataType,
       type: 'POST',

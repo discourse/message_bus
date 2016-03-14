@@ -94,8 +94,9 @@ class MessageBus::Rack::Middleware
         client.subscribe(k, v)
       end
     else
-      body = env["rack.input"].read
-      JSON.parse(body).each do |k,v|
+      request = Rack::Request.new(env)
+      data = request.content_type.include?('application/json') ? JSON.parse(request.body.read) : request.POST
+      data.each do |k,v|
         if k == "__seq".freeze
           client.seq = v.to_i
         else
