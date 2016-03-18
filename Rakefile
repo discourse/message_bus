@@ -5,6 +5,7 @@ require 'bundler/gem_tasks'
 require 'bundler/setup'
 require 'jasmine'
 
+ENV['JASMINE_CONFIG_PATH'] ||= File.join(Dir.pwd, 'spec', 'assets', 'support', 'jasmine.yml')
 load 'jasmine/tasks/jasmine.rake'
 
 Bundler.require(:default, :test)
