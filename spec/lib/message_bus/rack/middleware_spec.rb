@@ -38,7 +38,7 @@ describe MessageBus::Rack::Middleware do
 
   module LongPolling
     extend Minitest::Spec::DSL
-    
+
     before do
       @bus.long_polling_enabled = true
     end
@@ -298,6 +298,15 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
+    end
+
+    it "can decode a JSON encoded request" do
+      id = @bus.last_id('/foo')
+      @bus.publish("/foo", {json: true})
+      post( "/message-bus/1234",
+            JSON.generate({'/foo' => id}),
+            { "CONTENT_TYPE" => "application/json" })
+      JSON.parse(last_response.body).first["data"].must_equal({'json' => true})
     end
 
     describe "messagebus.channels env support" do

@@ -4,7 +4,7 @@
 window.MessageBus = (function() {
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
-  var me, started, stopped, longPoller, pollTimeout, paused, later;
+  var me, started, stopped, longPoller, pollTimeout, paused, later, jQuery;
 
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -25,9 +25,8 @@ window.MessageBus = (function() {
   paused = false;
   later = [];
   chunkedBackoff = 0;
-
+  jQuery = window.jQuery;
   var hiddenProperty;
-
 
   (function(){
     var prefixes = ["","webkit","ms","moz"];
@@ -161,38 +160,55 @@ window.MessageBus = (function() {
       }
     };
 
+    var setOnProgressListener = function(xhr) {
+      var position = 0;
+      // if it takes longer than 3000 ms to get first chunk, we have some proxy
+      // this is messing with us, so just backoff from using chunked for now
+      var chunkedTimeout = setTimeout(disableChunked,3000);
+      xhr.onprogress = function () {
+        clearTimeout(chunkedTimeout);
+        if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
+          // not chunked we are sending json back
+          chunked = false;
+          return;
+        }
+        position = handle_progress(xhr.responseText, position);
+      }
+    };
+    if (!me.ajax){
+      throw new Error("Either jQuery or the ajax adapter must be loaded");
+    }
     var req = me.ajax({
-      url: me.baseUrl + "message-bus/" + me.clientId + "/poll?" + (!longPoll ? "dlp=t" : ""),
+      url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
       data: data,
       cache: false,
       dataType: dataType,
       type: 'POST',
       headers: headers,
+      messageBus: {
+        chunked: chunked,
+        onProgressListener: function(xhr) {
+          var position = 0;
+          // if it takes longer than 3000 ms to get first chunk, we have some proxy
+          // this is messing with us, so just backoff from using chunked for now
+          var chunkedTimeout = setTimeout(disableChunked,3000);
+          return xhr.onprogress = function () {
+            clearTimeout(chunkedTimeout);
+            if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
+              chunked = false; // not chunked, we are sending json back
+            } else {
+              position = handle_progress(xhr.responseText, position);
+            }
+          }
+        }
+      },
       xhr: function() {
-         var xhr = jQuery.ajaxSettings.xhr();
-
-         if (!chunked) {
-            return xhr;
-         }
-
-         var position = 0;
-
-         // if it takes longer than 3000 ms to get first chunk, we have some proxy
-         // this is messing with us, so just backoff from using chunked for now
-         var chunkedTimeout = setTimeout(disableChunked,3000);
-
-         xhr.onprogress = function () {
-           clearTimeout(chunkedTimeout);
-
-           if(xhr.getResponseHeader('Content-Type') === 'application/json; charset=utf-8') {
-             // not chunked we are sending json back
-             chunked = false;
-             return;
-           }
-           position = handle_progress(xhr.responseText, position);
-         }
-
-         return xhr;
+        var xhr = jQuery.ajaxSettings.xhr();
+        if (!chunked) {
+          return xhr;
+        }
+        this.messageBus.onProgressListener(xhr);
+        return xhr;
       },
       success: function(messages) {
          if (!chunked) {
@@ -257,9 +273,7 @@ window.MessageBus = (function() {
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
-    // TODO we can make the dependency on $ and jQuery conditional
-    // all we really need is an implementation of ajax
-    ajax: ($ && $.ajax),
+    ajax: (jQuery && jQuery.ajax) || MessageBus.ajaxImplementation,
 
     diagnostics: function(){
       console.log("Stopped: " + stopped + " Started: " + started);
