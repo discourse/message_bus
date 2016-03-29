@@ -4,11 +4,13 @@
 // Only implements methods & options used by MessageBus
 (function(global, undefined) {
   'use strict';
+  if (!global.MessageBus){
+      throw new Error("MessageBus must be loaded before the ajax adapter");
+  }
 
   var cacheBuster =  Math.random() * 10000 | 0;
-  var MessageBus = global.MessageBus || (global.MessageBus = {});
 
-  MessageBus.ajaxImplementation = function(options){
+  global.MessageBus.ajax = function(options){
     var XHRImpl = global.MessageBus.xhrImplementation || global.XMLHttpRequest;
     var xhr = new XHRImpl();
     xhr.dataType = options.dataType;

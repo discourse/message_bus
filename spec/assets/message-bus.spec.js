@@ -65,4 +65,13 @@ describe("Messagebus", function() {
     })
   });
 
+  it('removes itself from root namespace when noConflict is called', function(){
+    expect(window.MessageBus).not.toBeUndefined();
+    var mb = window.MessageBus;
+    expect(mb).toEqual(window.MessageBus.noConflict());
+    expect(window.MessageBus).toBeUndefined();
+    // reset it so afterEach has something to work on
+    window.MessageBus = mb;
+  });
+
 });
