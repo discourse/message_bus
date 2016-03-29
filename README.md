@@ -174,7 +174,7 @@ backgroundCallbackInterval|60000|Interval to poll when long polling is disabled 
 maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
 alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
 baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
-ajax|$.ajax or MessageBus.ajaxImplementation|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `messsage-bus-ajax.js` file. `messsage-bus-ajax.js` must be loaded before `messsage-bus.js` if jQuery is not present.
+ajax|$.ajax or XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `messsage-bus-ajax.js` file. `messsage-bus-ajax.js` must be loaded after `messsage-bus.js` for it to be used.
 
 **API**:
 
@@ -191,6 +191,8 @@ ajax|$.ajax or MessageBus.ajaxImplementation|MessageBus will first attempt to us
 `MessageBus.subscribe(channel,func,lastId)` : Subscribe to a channel, optionally you may specify the id of the last message you received in the channel.
 
 `MessageBus.unsubscribe(channel,func)` : Unsubscribe callback from a particular channel
+
+`MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded.  Returns a reference to the MessageBus object.
 
 ## Running tests
 
