@@ -11,7 +11,7 @@
   var cacheBuster =  Math.random() * 10000 | 0;
 
   global.MessageBus.ajax = function(options){
-    var XHRImpl = global.MessageBus.xhrImplementation || global.XMLHttpRequest;
+    var XHRImpl = (global.MessageBus && global.MessageBus.xhrImplementation) || global.XMLHttpRequest;
     var xhr = new XHRImpl();
     xhr.dataType = options.dataType;
     var url = options.url;
