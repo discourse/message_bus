@@ -1,5 +1,13 @@
 29-02-2016
 
+- Version 2.0.0.beta.6
+
+- Feature: Support standalone opertion without depending on jQuery @nathanstitt
+- Feature: Support a noconflict mode @nathanstitt
+- Feature: Support JSON POST payload @nathanstitt
+
+29-02-2016
+
 - Version 2.0.0.beta.5
 
 - Fix: JavaScript unsubscribe was not updating publicly visible MessageBus.callbacks @sam
