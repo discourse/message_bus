@@ -274,7 +274,7 @@
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
-    ajax: (jQuery && jQuery.ajax) || MessageBus.ajaxImplementation,
+    ajax: (jQuery && jQuery.ajax),
     noConflict: function(){
       global.MessageBus = global.MessageBus.previousMessageBus;
       return this;
