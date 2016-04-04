@@ -2,6 +2,7 @@ base_image: "discourse/base:1.0.15"
 
 update_pups: false
 
+
 params:
   home: /var/www/message_bus
 
@@ -10,11 +11,15 @@ templates:
 
 expose:
   - "80:80"
+  - "443:443"
 
 volumes:
   - volume:
      host: /var/docker/shared/chat
      guest: /shared
+  - volume:
+     host: /etc/letsencrypt
+     guest: /etc/letsencrypt
 
 hooks:
   after_redis:
@@ -45,6 +50,10 @@ hooks:
         filename: /etc/nginx/nginx.conf
         from: pid /run/nginx.pid;
         to: daemon off;
+    - exec:
+        cmd:
+          - "mkdir -p /shared/ssl"
+          - "[ -e /shared/ssl/dhparams.pem ] || openssl dhparam -out /shared/ssl/dhparams.pem 2048"
     - file:
         path: /etc/nginx/conf.d/chat.conf
         contents: |
@@ -53,11 +62,25 @@ hooks:
           }
           server {
             listen 80;
+            rewrite ^ https://chat.samsaffron.com$request_uri? permanent;
+          }
+          server {
+            listen 443 ssl http2;
+            ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+            ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA;
+            ssl_prefer_server_ciphers on; 
+            ssl_session_tickets off;
+            ssl_session_timeout 1d;
+            ssl_session_cache shared:SSL:1m; 
+            ssl_dhparam /shared/ssl/dhparams.pem;
+            ssl_certificate /etc/letsencrypt/live/chat.samsaffron.com/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/chat.samsaffron.com/privkey.pem;
             gzip on;
             gzip_types application/json text/css application/x-javascript;
             gzip_min_length 1000;
             server_name chat.samsaffron.com;
             keepalive_timeout 65;
+            root /shared/letsencrypt;
 
             location /message-bus/ {
               proxy_set_header Host $http_host;
@@ -69,7 +92,6 @@ hooks:
               proxy_pass http://chat;
               break;
             }
-
 
             location / {
               try_files $uri @chat;
