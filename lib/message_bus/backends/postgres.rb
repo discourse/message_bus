@@ -52,11 +52,11 @@ class MessageBus::Postgres::Client
   end
 
   def backlog(channel, backlog_id)
-    hold{|conn| exec_prepared(conn, 'channel_backlog', [channel, backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}}
+    hold{|conn| exec_prepared(conn, 'channel_backlog', [channel, backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}} || []
   end
 
   def global_backlog(backlog_id)
-    hold{|conn| exec_prepared(conn, 'global_backlog', [backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}}
+    hold{|conn| exec_prepared(conn, 'global_backlog', [backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}} || []
   end
 
   def get_value(channel, id)
@@ -279,8 +279,6 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def global_backlog(last_id = nil)
-    last_id = last_id.to_i
-
     items = client.global_backlog last_id.to_i
 
     items.map! do |id, channel, data|
