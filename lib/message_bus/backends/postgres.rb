@@ -157,7 +157,7 @@ class MessageBus::Postgres::Client
       conn = sync{@available.shift} || new_pg_connection
       sync{@allocated[Thread.current] = conn}
       yield conn
-    rescue PG::ConnectionBad => e
+    rescue PG::ConnectionBad, PG::UnableToSend => e
       # don't add this connection back to the pool
     ensure
       sync{@allocated.delete(Thread.current)}
