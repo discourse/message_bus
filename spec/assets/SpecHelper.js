@@ -24,7 +24,9 @@ var encodeChunks = function(xhr, chunks) {
 beforeEach(function () {
   var spec = this;
 
-  function MockedXMLHttpRequest(options){ this.options = options; }
+  function MockedXMLHttpRequest(){
+    this.headers = {};
+  };
   MockedXMLHttpRequest.prototype.send              = function(){
     this.readyState = 4
     this.responseText = encodeChunks(this, spec.responseChunks);
@@ -35,7 +37,9 @@ beforeEach(function () {
   }
   MockedXMLHttpRequest.prototype.open              = function(){ }
   MockedXMLHttpRequest.prototype.abort             = function(){ }
-  MockedXMLHttpRequest.prototype.setRequestHeader  = function(){ }
+  MockedXMLHttpRequest.prototype.setRequestHeader  = function(k,v){
+    this.headers[k] = v;
+  }
   MockedXMLHttpRequest.prototype.getResponseHeader = function(){
     return 'text/plain; charset=utf-8';
   }
