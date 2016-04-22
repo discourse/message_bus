@@ -166,7 +166,7 @@ that of the JavaScript client.
 
 All client settings are settable via `MessageBus.OPTION`
 
-Setting|Default|
+Setting|Default|Info
 ----|---|---|
 enableLongPolling|true|Allow long-polling (provided it is enable by the server)
 callbackInterval|15000|Safeguard to ensure background polling does not exceed this interval (in milliseconds)
