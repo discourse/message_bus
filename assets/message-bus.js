@@ -123,6 +123,9 @@
     var headers = {
       'X-SILENCE-LOGGER': 'true'
     };
+    for (var name in me.headers){
+      headers[name] = me.headers[name];
+    }
 
     if (!chunked){
       headers["Dont-Chunk"] = 'true';
@@ -274,6 +277,7 @@
     clientId: clientId,
     alwaysLongPoll: false,
     baseUrl: baseUrl,
+    headers: {},
     ajax: (jQuery && jQuery.ajax),
     noConflict: function(){
       global.MessageBus = global.MessageBus.previousMessageBus;

@@ -121,10 +121,7 @@ class Chat < Sinatra::Base
       $(function() {
         var name;
 
-        MessageBus.ajax = function(args){
-          args["headers"]["X-NAME"] = name;
-          return $.ajax(args);
-        };
+        MessageBus.headers["X-NAME"] = name;
 
         var enter = function(name, opts) {
            if (opts && opts.check) {

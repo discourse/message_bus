@@ -74,4 +74,17 @@ describe("Messagebus", function() {
     window.MessageBus = mb;
   });
 
+  testMB('sends using custom header', function(){
+    MessageBus.headers['X-MB-TEST-VALUE'] = '42';
+    this.perform(function(message, xhr){
+      expect(xhr.headers).toEqual({
+        'X-SILENCE-LOGGER': 'true',
+        'X-MB-TEST-VALUE': '42',
+        'Content-Type': 'application/json'
+      });
+    }).finally(function(){
+      MessageBus.headers = {};
+    })
+  });
+
 });
