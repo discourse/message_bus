@@ -49,6 +49,16 @@ MessageBus.subscribe "/channel" do |msg|
   # block called in a background thread when message is received
 end
 
+# subscribe to channel and receive the entire backlog
+MessageBus.subscribe "/channel", 0 do |msg|
+  # block called in a background thread when message is received
+end
+
+# subscribe to channel and receive the backlog starting at message 6
+MessageBus.subscribe "/channel", 5 do |msg|
+  # block called in a background thread when message is received
+end
+
 MessageBus.backlog "/channel", id
 # returns all messages after the id
 

@@ -1,3 +1,8 @@
+26-04-2016
+
+- Feature: Support custom HTTP headers without depending on jQuery @nathanstitt
+- Feature: Allow subscribe at a particular position from server side @sam
+
 29-02-2016
 
 - Version 2.0.0.beta.6

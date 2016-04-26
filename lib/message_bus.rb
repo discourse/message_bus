@@ -257,8 +257,14 @@ module MessageBus::Implementation
     channel.split(ENCODE_SITE_TOKEN)
   end
 
-  def subscribe(channel=nil, &blk)
-    subscribe_impl(channel, nil, &blk)
+  def subscribe(channel=nil, last_id=-1, &blk)
+    subscribe_impl(channel, nil, last_id, &blk)
+  end
+
+  # subscribe only on current site
+  def local_subscribe(channel=nil, last_id=-1, &blk)
+    site_id = site_id_lookup.call if site_id_lookup && ! global?(channel)
+    subscribe_impl(channel, site_id, last_id, &blk)
   end
 
   def unsubscribe(channel=nil, &blk)
@@ -268,12 +274,6 @@ module MessageBus::Implementation
   def local_unsubscribe(channel=nil, &blk)
     site_id = site_id_lookup.call if site_id_lookup
     unsubscribe_impl(channel, site_id, &blk)
-  end
-
-  # subscribe only on current site
-  def local_subscribe(channel=nil, &blk)
-    site_id = site_id_lookup.call if site_id_lookup && ! global?(channel)
-    subscribe_impl(channel, site_id, &blk)
   end
 
   def global_backlog(last_id=nil)
@@ -372,9 +372,44 @@ module MessageBus::Implementation
     msg.client_ids = parsed["client_ids"]
   end
 
-  def subscribe_impl(channel, site_id, &blk)
+  def replay_backlog(channel, last_id, site_id)
+    id = nil
+
+    backlog(channel, last_id, site_id).each do |m|
+      yield m
+      id = m.message_id
+    end
+
+    id
+  end
+
+  def subscribe_impl(channel, site_id, last_id, &blk)
 
     raise MessageBus::BusDestroyed if @destroyed
+
+    if last_id >= 0
+      # this gets a bit tricky, but we got to ensure ordering so we wrap the block
+      original_blk = blk
+      current_id = replay_backlog(channel, last_id, site_id, &blk)
+      just_yield = false
+
+      # we double check to ensure no messages snuck through while we were subscribing
+      blk = proc do |m|
+        if just_yield
+          original_blk.call m
+        else
+          if current_id && current_id == (m.message_id-1)
+            original_blk.call m
+            just_yield = true
+          else
+            current_id = replay_backlog(channel, current_id, site_id, &original_blk)
+            if (current_id == m.id)
+              just_yield = true
+            end
+          end
+        end
+      end
+    end
 
     @subscriptions ||= {}
     @subscriptions[site_id] ||= {}

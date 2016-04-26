@@ -18,6 +18,28 @@ describe MessageBus do
     @bus.destroy
   end
 
+  it "can subscribe from a point in time" do
+    @bus.publish("/minion", "banana")
+
+    data1 = []
+    data2 = []
+
+    @bus.subscribe("/minion") do |msg|
+      data1 << msg.data
+    end
+
+    @bus.subscribe("/minion", 0) do |msg|
+      data2 << msg.data
+    end
+
+    @bus.publish("/minion", "bananana")
+
+    wait_for(2000){ data2.length == 2 && data1.length == 1}
+
+    data1.must_equal ['bananana']
+    data2.must_equal ['banana', 'bananana']
+  end
+
   it "can transmit client_ids" do
     client_ids = nil
 
