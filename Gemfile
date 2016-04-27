@@ -9,4 +9,5 @@ group :test do
   gem 'http_parser.rb'
   gem 'thin'
   gem 'rack-test', require: 'rack/test'
+  gem 'jasmine'
 end
