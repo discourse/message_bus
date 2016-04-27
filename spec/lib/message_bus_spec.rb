@@ -28,16 +28,17 @@ describe MessageBus do
       data1 << msg.data
     end
 
-    @bus.subscribe("/minion", 0) do |msg|
+    @bus.subscribe("/minion", 1) do |msg|
       data2 << msg.data
     end
 
     @bus.publish("/minion", "bananana")
+    @bus.publish("/minion", "it's so fluffy")
 
-    wait_for(2000){ data2.length == 2 && data1.length == 1}
+    wait_for(2000){ data2.length == 3 && data1.length == 2 }
 
-    data1.must_equal ['bananana']
-    data2.must_equal ['banana', 'bananana']
+    data1.must_equal ['bananana', "it's so fluffy"]
+    data2.must_equal ['banana', 'bananana', "it's so fluffy"]
   end
 
   it "can transmit client_ids" do
