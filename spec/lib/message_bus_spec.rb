@@ -23,22 +23,30 @@ describe MessageBus do
 
     data1 = []
     data2 = []
+    data3 = []
 
     @bus.subscribe("/minion") do |msg|
       data1 << msg.data
     end
 
-    @bus.subscribe("/minion", 1) do |msg|
+    @bus.subscribe("/minion", 0) do |msg|
       data2 << msg.data
+    end
+
+    @bus.subscribe("/minion", 1) do |msg|
+      data3 << msg.data
     end
 
     @bus.publish("/minion", "bananana")
     @bus.publish("/minion", "it's so fluffy")
 
-    wait_for(2000){ data2.length == 3 && data1.length == 2 }
+    wait_for(2000) do
+      data3.length == 3 && data2.length == 3 && data1.length == 2
+    end
 
     data1.must_equal ['bananana', "it's so fluffy"]
     data2.must_equal ['banana', 'bananana', "it's so fluffy"]
+    data3.must_equal ['banana', 'bananana', "it's so fluffy"]
   end
 
   it "can transmit client_ids" do
