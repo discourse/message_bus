@@ -403,7 +403,7 @@ module MessageBus::Implementation
             just_yield = true
           else
             current_id = replay_backlog(channel, current_id, site_id, &original_blk)
-            if (current_id == m.id)
+            if (current_id == m.message_id)
               just_yield = true
             end
           end
