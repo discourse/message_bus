@@ -68,15 +68,29 @@ MessageBus.publish "/channel", "hello", user_ids: [1,2,3], group_ids: [4,5,6]
 # messages can be targetted at particular clients (using MessageBus.clientId)
 MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
 
-# message bus determines the user ids and groups based on env
+# MessageBus determines the user ids and groups based on env. How that data is calculated is entirely up to you.
 
 MessageBus.configure(user_id_lookup: proc do |env|
-  # return the user id here
+  # Supply the method body for extracting and returning a unique user id.
+
+  # Example: Returning a user_id cookie from the request.
+  request = Rack::Request.new(env)
+  request.cookies["user_id"]
+
+  # Example 2: Using the IP address as a unique identifier
+  request = Rack::Request.new(env)
+  request.ip
 end)
 
 MessageBus.configure(group_ids_lookup: proc do |env|
-  # return the group ids the user belongs to
-  # can be nil or []
+  # Supply the method body for extracting and returning groups to which that user belongs.
+  # Can be [] or nil.
+
+  # Example:
+  request = Rack::Request.new(env)
+  user_id = request.cookies["user_id"]
+  user = User.find(user_id)
+  user.groups.map(&:name)
 end)
 ```
 
