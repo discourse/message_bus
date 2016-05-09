@@ -71,6 +71,10 @@ MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
 # message bus determines the user ids and groups based on env
 
 MessageBus.configure(user_id_lookup: proc do |env|
+  # this lookup occurs on JS-client poolings, so that server can retrieve backlog 
+  # for the client considering/matching/filtering user_ids set on published messages
+  # if user_id is not set on publish time, any user_id returned here will receive the message
+  
   # return the user id here
 end)
 
