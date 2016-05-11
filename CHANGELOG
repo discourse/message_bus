@@ -1,11 +1,16 @@
 11-05-2016
 
-- Version 2.0.0.beta.8
+- Version 2.0.0.beta.10
+- Fix: for https://github.com/rubygems/rubygems/issues/1448
+
+11-05-2016
+
+- Version 2.0.0.beta.9
 - Fix: requests without content type were erroring out, breaks CORS
 
 27-04-2016
 
-- Version 2.0.0.beta.7
+- Version 2.0.0.beta.8
 - Fix: exception raised sometimes when subscribing at a particular position
 
 26-04-2016
