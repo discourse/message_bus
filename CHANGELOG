@@ -1,5 +1,10 @@
 11-05-2016
 
+- Version 2.0.0.beta.11
+- Fix: for https://github.com/rubygems/rubygems/issues/1448 which is still broken, build under Ruby 2.0
+
+11-05-2016
+
 - Version 2.0.0.beta.10
 - Fix: for https://github.com/rubygems/rubygems/issues/1448
 
