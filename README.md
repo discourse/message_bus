@@ -82,6 +82,16 @@ MessageBus.configure(group_ids_lookup: proc do |env|
   # return the group ids the user belongs to
   # can be nil or []
 end)
+
+# example of message bus to set user_ids from an initializer in Rails and Devise:
+# config/inializers/message_bus.rb
+MessageBus.user_id_lookup do |env|
+  req = Rack::Request.new(env)
+  if req.session && req.session["warden.user.user.key"] && req.session["warden.user.user.key"][0][0]
+    user = User.find(req.session["warden.user.user.key"][0][0])
+    user.id
+  end
+end
 ```
 
 ### Transport
