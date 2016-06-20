@@ -481,7 +481,11 @@ module MessageBus::Implementation
           fork do
             Process.kill('TERM', pid)
             sleep 10
-            Process.kill('KILL', pid)
+            begin
+              Process.kill('KILL', pid)
+            rescue Errno::ESRCH
+              MessageBus.logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
+            end
           end
 
           sleep 10
