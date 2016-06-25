@@ -303,9 +303,9 @@
     },
 
     status: function() {
-      if (started) {
+      if (started == true) {
         return "Started";
-      } else if (stopped) {
+      } else if (stopped == true) {
         return "Not Started";
       } else {
         console.log("Error cannot determine status. Please restart.");
