@@ -302,6 +302,17 @@
       later = [];
     },
 
+    status: function() {
+      if (started) {
+        return "Started";
+      } else if (stopped) {
+        return "Not Started";
+      } else {
+        console.log("Error cannot determine status. Please restart.");
+        return "Error cannot determine status. Please restart.";
+      }
+    },
+
     stop: function() {
       stopped = true;
       started = false;
