@@ -30,4 +30,7 @@ class MessageBus::Message
       self.send(key)  
     end  
   end
+  def ==(other)
+    (@global_id == other.global_id) || (@message_id == other.message_id) || (@channel == other.channel) || (@data == other.data)
+  end  
 end
