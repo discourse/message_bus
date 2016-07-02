@@ -290,6 +290,13 @@
       console.log(callbacks);
       console.log("Total ajax calls: " + totalAjaxCalls + " Recent failure count: " + failCount + " Total failures: " + totalAjaxFailures);
       console.log("Last ajax call: " + (new Date() - lastAjax) / 1000  + " seconds ago") ;
+      if (started == true) {
+        return "Started";
+      } else if (stopped == true) {
+        return "Stopped";
+      } else if (paused == true) {
+        return "Paused"
+      }
     },
 
     pause: function() {
@@ -300,17 +307,6 @@
       paused = false;
       processMessages(later);
       later = [];
-    },
-
-    status: function() {
-      if (started == true) {
-        return "Started";
-      } else if (stopped == true) {
-        return "Not Started";
-      } else {
-        console.log("Error cannot determine status. Please restart.");
-        return "Error cannot determine status. Please restart.";
-      }
     },
 
     stop: function() {
