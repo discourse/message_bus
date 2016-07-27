@@ -352,6 +352,18 @@
       poll();
     },
 
+    "status": function() {
+      if (paused) {
+         return "paused";
+      } else if (started) {
+         return "started";
+      } else if (stopped) {
+        return "stopped";
+      } else {
+        throw "Cannot determine current status";
+      }
+    },
+
     // Subscribe to a channel
     subscribe: function(channel, func, lastId) {
 

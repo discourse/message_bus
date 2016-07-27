@@ -212,6 +212,8 @@ headers|{}|Extra headers to be include with request.  Properties and values of o
 
 `MessageBus.start()` : Must be called to startup the MessageBus poller
 
+`MessageBus.status()` : Return status (started, paused, stopped)
+
 `MessageBus.subscribe(channel,func,lastId)` : Subscribe to a channel, optionally you may specify the id of the last message you received in the channel. The callback accepts three arguments: `func(payload, globalId, messageId)`. You may save globalId or messageId of received messages and use then at a later time when client needs to subscribe, receiving the backlog just after that Id.
 
 `MessageBus.unsubscribe(channel,func)` : Unsubscribe callback from a particular channel

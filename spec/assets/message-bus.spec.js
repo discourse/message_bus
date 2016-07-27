@@ -20,6 +20,16 @@ describe("Messagebus", function() {
     });
   });
 
+  it('returns status', function(done){
+    MessageBus.pause();
+    expect(MessageBus.status()).toMatch("paused");
+    MessageBus.resume();
+    expect(MessageBus.status()).toMatch("started");
+    MessageBus.stop();
+    expect(MessageBus.status()).toMatch("stopped");
+    done();
+  });
+
   it('stores messages when paused, then delivers them when resumed', function(done){
     MessageBus.pause()
     spyOn(this.MockedXMLHttpRequest.prototype, 'send').and.callThrough();
