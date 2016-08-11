@@ -301,7 +301,7 @@ For more information see [Passenger documentation](https://www.phusionpassenger.
 #### Puma
 ```ruby
 # path/to/your/config/puma.rb
-require 'message_bus'
+require 'message_bus' # omit this line for Rails 5
 on_worker_boot do
   MessageBus.after_fork
 end
