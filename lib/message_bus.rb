@@ -154,6 +154,11 @@ module MessageBus::Implementation
     @config[:is_admin_lookup]
   end
 
+  def on_middleware_error(&blk)
+    configure(on_middleware_error: blk) if blk
+    @config[:on_middleware_error]
+  end
+
   def extra_response_headers_lookup(&blk)
     configure(extra_response_headers_lookup: blk) if blk
     @config[:extra_response_headers_lookup]

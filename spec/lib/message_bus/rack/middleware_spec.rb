@@ -309,6 +309,28 @@ describe MessageBus::Rack::Middleware do
       JSON.parse(last_response.body).first["data"].must_equal({'json' => true})
     end
 
+    describe "on_middleware_error handling" do
+      it "allows error handling of middleware failures" do
+
+        @bus.on_middleware_error do |env, err|
+          if ArgumentError === err
+            [407,{},[]]
+          end
+        end
+
+        @bus.group_ids_lookup do |env|
+          raise ArgumentError
+        end
+
+        post( "/message-bus/1234",
+            JSON.generate({'/foo' => 1}),
+            { "CONTENT_TYPE" => "application/json" })
+
+        last_response.status.must_equal 407
+
+      end
+    end
+
     describe "messagebus.channels env support" do
       let(:extra_middleware) do
         Class.new do

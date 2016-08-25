@@ -181,6 +181,13 @@ class MessageBus::Rack::Middleware
     else
       [200, headers, ["[]"]]
     end
+
+  rescue => e
+    if @bus.on_middleware_error && result=@bus.on_middleware_error.call(env, e)
+      result
+    else
+      raise
+    end
   end
 
   def close_db_connection!

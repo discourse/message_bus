@@ -1,3 +1,9 @@
+25-08-2016
+
+- Version 2.0.2
+- Feature: Add on_middleware_error callback for remapping middleware errors to HTTP results
+
+
 25-07-2016
 
 - Feature: Add JavaScript MessageBus.status() function

@@ -83,6 +83,12 @@ MessageBus.configure(group_ids_lookup: proc do |env|
   # can be nil or []
 end)
 
+MessageBus.configure(on_middleware_error: proc do |env, e|
+   # If you wish to add special handling based on error
+   # return a rack result array: [status, headers, body]
+   # If you just want to pass it on return nil
+end)
+
 # example of message bus to set user_ids from an initializer in Rails and Devise:
 # config/inializers/message_bus.rb
 MessageBus.user_id_lookup do |env|
