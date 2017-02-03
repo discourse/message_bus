@@ -200,7 +200,7 @@ Setting|Default|Info
 ----|---|---|
 enableLongPolling|true|Allow long-polling (provided it is enable by the server)
 callbackInterval|15000|Safeguard to ensure background polling does not exceed this interval (in milliseconds)
-backgroundCallbackInterval|60000|Interval to poll when long polling is disabled (either explicitly or due to browser being in backgroud)
+backgroundCallbackInterval|60000|Interval to poll when long polling is disabled (either explicitly or due to browser being in background)
 maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
 alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
 baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
