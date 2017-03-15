@@ -122,14 +122,12 @@ class MessageBus::Redis::ReliablePubSub
     backlog_id
 
   rescue Redis::CommandError => e
-    if queue_in_memory &&
-          e.message =~ /^READONLY/
-
+    if queue_in_memory && e.message =~ /^READONLY/
       @lock.synchronize do
         @in_memory_backlog << [channel,data]
         if @in_memory_backlog.length > @max_in_memory_publish_backlog
           @in_memory_backlog.delete_at(0)
-          MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full")
+          MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
         end
       end
 
@@ -169,10 +167,10 @@ class MessageBus::Redis::ReliablePubSub
           if e.message =~ /^READONLY/
             try_again = true
           else
-            MessageBus.logger.warn("Dropping undeliverable message #{e}")
+            MessageBus.logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
           end
         rescue => e
-          MessageBus.logger.warn("Dropping undeliverable message #{e}")
+          MessageBus.logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
         end
 
         @in_memory_backlog.delete_at(0) unless try_again
