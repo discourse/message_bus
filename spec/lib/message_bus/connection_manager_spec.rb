@@ -53,7 +53,7 @@ describe MessageBus::ConnectionManager do
     m = MessageBus::Message.new(1,1,"test","data")
     m.site_id = 9
     @manager.notify_clients(m)
-    @resp.sent.must_equal nil
+    assert_nil @resp.sent
   end
 
   it "should notify clients on the correct site" do
@@ -69,8 +69,8 @@ describe MessageBus::ConnectionManager do
     m.site_id = 10
     @manager.notify_clients(m)
     parsed = JSON.parse(@resp.sent)
-    parsed[0]["site_id"].must_equal nil
-    parsed[0]["user_id"].must_equal nil
+    assert_nil parsed[0]["site_id"]
+    assert_nil parsed[0]["user_id"]
   end
 
   it "should not deliver unselected" do
@@ -78,7 +78,7 @@ describe MessageBus::ConnectionManager do
     m.user_ids = [5]
     m.site_id = 10
     @manager.notify_clients(m)
-    @resp.sent.must_equal nil
+    assert_nil @resp.sent
   end
 end
 

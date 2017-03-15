@@ -28,7 +28,7 @@ describe PUB_SUB_CLASS do
 
       3.times do
         result = @bus.publish "/foo", "bar"
-        result.must_equal nil
+        assert_nil result
       end
 
       @bus.pub_redis.slaveof "no", "one"

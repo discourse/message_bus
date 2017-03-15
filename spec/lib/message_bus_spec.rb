@@ -159,7 +159,7 @@ describe MessageBus do
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")
     @bus.last_message("/bob").data.must_equal "marley"
-    @bus.last_message("/nothing").must_equal nil
+    assert_nil @bus.last_message("/nothing")
   end
 
   describe "global subscriptions" do
