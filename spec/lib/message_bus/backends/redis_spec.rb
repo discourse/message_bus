@@ -31,7 +31,7 @@ describe PUB_SUB_CLASS do
 
       3.times do
         result = @bus.publish "/foo", "bar"
-        result.must_equal nil
+        assert_nil result
         Thread.list.length.must_equal (current_threads_length + 1)
       end
 
