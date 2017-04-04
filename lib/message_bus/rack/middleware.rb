@@ -60,8 +60,7 @@ class MessageBus::Rack::Middleware
   PATH_INFO = 'PATH_INFO'.freeze
   CONTENT_TYPE = 'Content-Type'.freeze
   SLASH = '/'.freeze
-  BUS_REGEX = /^\/message-bus\//.freeze
-  USE_MATCH = BUS_REGEX.respond_to?(:match?)
+  BUS_MATCH_URL = '/message-bus/'.freeze
   BROADCAST = '/message-bus/broadcast'.freeze
   DIAGNOSTICS = '/message-bus/_diagnostics'.freeze
   CHANNEL = 'channel'.freeze
@@ -84,7 +83,7 @@ class MessageBus::Rack::Middleware
   OPTIONS = 'OPTIONS'.freeze
   OK='OK'.freeze
   QUERY_STRING='QUERY_STRING'.freeze
-  DLP_REGEX=/dlp=t/.freeze
+  DLP_QUERY='dlp=t'.freeze
   HTTP_1_1= 'HTTP/1.1'.freeze
   HTTP_VERSION='HTTP_VERSION'.freeze
   HTTP_CHUNK = 'HTTP_DONT_CHUNK'.freeze
@@ -100,7 +99,7 @@ class MessageBus::Rack::Middleware
   
   def call(env)
 
-    return @app.call(env) unless USE_MATCH ? BUS_REGEX.match?(env[PATH_INFO]) : env[PATH_INFO] =~ BUS_REGEX
+    return @app.call(env) unless env[PATH_INFO].starts_with?(BUS_MATCH_URL)
 
     # special debug/test route
     if @bus.allow_broadcast? && env[PATH_INFO] == BROADCAST
@@ -162,9 +161,8 @@ class MessageBus::Rack::Middleware
     if env[REQUEST_METHOD] == OPTIONS
       return [200, headers, [OK]]
     end
-
     long_polling = @bus.long_polling_enabled? &&
-                   (USE_MATCH ? !DLP_REGEX.match?(env[QUERY_STRING]) : env[QUERY_STRING] !~ DLP_REGEX) &&
+                   !env[QUERY_STRING].starts_with?(DLP_QUERY) &&
                    @connection_manager.client_count < @bus.max_active_clients
 
     allow_chunked = env[HTTP_VERSION] == HTTP_1_1
