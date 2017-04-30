@@ -14,6 +14,18 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ### http://chat.samsaffron.com
 
+
+## Want to help?
+
+If you are looking to contribute to this project here are some ideas
+
+- Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis. 
+- Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
+- Improve general documentation (Add examples, refine existing examples)
+- Make MessageBus a nice website
+- Add optional transports for websocket and shared web workers
+- Add `# frozen_string_literal: true` to all non test files and adjust code to allow for it. 
+
 ## Can you handle concurrent requests?
 
 **Yes**, MessageBus uses Rack Hijack, this interface allows us to take control of the underlying socket. MessageBus can handle thousands of concurrent long polls on all popular Ruby webservers. MessageBus runs as middleware in your Rack (or by extension Rails) application and does not require a dedicated server. Background work is minimized to ensure it does not interfere with existing non MessageBus traffic.
@@ -324,12 +336,3 @@ end
 
 ###
 
-## Want to help?
-
-If you are looking to contribute to this project here are some ideas
-
-- Add a test suite for JavaScript message-bus.js
-- Build backends for other providers (zeromq, rabbitmq, disque)
-- Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
-- Improve general documentation (Add examples, refine existing examples)
-- Make MessageBus a nice website
