@@ -277,6 +277,7 @@
     callbacks: callbacks,
     clientId: clientId,
     alwaysLongPoll: false,
+    longPoller: longPoller,
     baseUrl: baseUrl,
     headers: {},
     ajax: (jQuery && jQuery.ajax),
@@ -334,7 +335,7 @@
           data[callbacks[i].channel] = callbacks[i].last_id;
         }
 
-        me.longPoll = longPoller(poll,data);
+        me.longPoll = me.longPoller(poll,data);
       };
 
 
