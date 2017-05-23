@@ -19,12 +19,12 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 If you are looking to contribute to this project here are some ideas
 
-- Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis. 
+- Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis.
 - Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
 - Improve general documentation (Add examples, refine existing examples)
 - Make MessageBus a nice website
 - Add optional transports for websocket and shared web workers
-- Add `# frozen_string_literal: true` to all non test files and adjust code to allow for it. 
+- Add `# frozen_string_literal: true` to all non test files and adjust code to allow for it.
 
 ## Can you handle concurrent requests?
 
@@ -83,10 +83,10 @@ MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
 # message bus determines the user ids and groups based on env
 
 MessageBus.configure(user_id_lookup: proc do |env|
-  # this lookup occurs on JS-client poolings, so that server can retrieve backlog 
+  # this lookup occurs on JS-client poolings, so that server can retrieve backlog
   # for the client considering/matching/filtering user_ids set on published messages
   # if user_id is not set on publish time, any user_id returned here will receive the message
-  
+
   # return the user id here
 end)
 
@@ -334,5 +334,17 @@ after_fork do |server, worker|
 end
 ```
 
-###
+### Middleware stack in Rails
 
+MessageBus middleware has to show up after the session middleware, but depending on how the Rails app is configured that might be either `ActionDispatch::Session::CookieStore` or `ActionDispatch::Session::ActiveRecordStore`. To handle both cases, the middleware is inserted before `ActionDispatch::Flash`.
+
+For APIs or apps that have `ActionDispatch::Flash` deleted from the stack the middleware is pushed to the bottom.
+
+Should you want to manipulate the default behavior please refer to [Rails MiddlewareStackProxy documentation](http://api.rubyonrails.org/classes/Rails/Configuration/MiddlewareStackProxy.html) and alter the order of the middlewares in stack in `app/config/initializers/message_bus.rb`
+
+```ruby
+# config/initializers/message_bus.rb
+Rails.application.config do |config|
+  # do anything you wish with config.middleware here
+end
+```
