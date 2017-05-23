@@ -236,7 +236,7 @@
         var interval;
         try {
           if (gotData || aborted) {
-            interval = 100;
+            interval = shouldLongPoll() ? me.callbackInterval : me.backgroundCallbackInterval;
           } else {
             interval = me.callbackInterval;
             if (failCount > 2) {
