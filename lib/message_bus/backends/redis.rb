@@ -81,44 +81,54 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   def publish(channel, data, queue_in_memory=true)
-    redis = pub_redis
-    backlog_id_key = backlog_id_key(channel)
-    backlog_key = backlog_key(channel)
-
-    global_id = nil
+    log_data = {}
     backlog_id = nil
+    log_data[:publish_seconds] = Benchmark.realtime do
+      redis = pub_redis
+      backlog_id_key = backlog_id_key(channel)
+      backlog_key = backlog_key(channel)
 
-    redis.multi do |m|
-      global_id = m.incr(global_id_key)
-      backlog_id = m.incr(backlog_id_key)
-    end
+      global_id = nil
+      backlog_id = nil
 
-    global_id = global_id.value
-    backlog_id = backlog_id.value
-
-    msg = MessageBus::Message.new global_id, backlog_id, channel, data
-    payload = msg.encode
-
-    redis.multi do |m|
-
-      redis.zadd backlog_key, backlog_id, payload
-      redis.expire backlog_key, @max_backlog_age
-
-      redis.zadd global_backlog_key, global_id, backlog_id.to_s << "|" << channel
-      redis.expire global_backlog_key, @max_backlog_age
-
-      redis.publish redis_channel_name, payload
-
-      if backlog_id > @max_backlog_size
-        redis.zremrangebyscore backlog_key, 1, backlog_id - @max_backlog_size
+      redis.multi do |m|
+        global_id = m.incr(global_id_key)
+        backlog_id = m.incr(backlog_id_key)
       end
 
-      if global_id > @max_global_backlog_size
-        redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
+      global_id = global_id.value
+      backlog_id = backlog_id.value
+
+
+      msg = MessageBus::Message.new global_id, backlog_id, channel, data
+      payload = msg.encode
+
+      redis.multi do |m|
+
+        redis.zadd backlog_key, backlog_id, payload
+        redis.expire backlog_key, @max_backlog_age
+
+        redis.zadd global_backlog_key, global_id, backlog_id.to_s << "|" << channel
+        redis.expire global_backlog_key, @max_backlog_age
+
+        redis.publish redis_channel_name, payload
+
+        if backlog_id > @max_backlog_size
+          log_data[:publish_backlog_trim_seconds] = Benchmark.realtime do
+            redis.zremrangebyscore backlog_key, 1, backlog_id - @max_backlog_size
+          end.round(3)
+        end
+
+        if global_id > @max_global_backlog_size
+          log_data[:publish_global_backlog_trim_seconds] = Benchmark.realtime do
+            redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
+          end.round(3)
+        end
+
       end
 
-    end
-
+    end.round(3)
+    MessageBus.logger.info "[message_bus#publish] #{log_data.map{|k,v| "#{k}=#{v}"}.join(' ')}"
     backlog_id
 
   rescue Redis::CommandError => e
@@ -188,43 +198,59 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   def backlog(channel, last_id = nil)
-    redis = pub_redis
-    backlog_key = backlog_key(channel)
-    items = redis.zrangebyscore backlog_key, last_id.to_i + 1, "+inf"
+    log_data = {}
+    items = nil
+    log_data[:backlog_seconds] = Benchmark.realtime do
+      redis = pub_redis
+      backlog_key = backlog_key(channel)
+      items = redis.zrangebyscore backlog_key, last_id.to_i + 1, "+inf"
 
-    items.map do |i|
-      MessageBus::Message.decode(i)
-    end
+      items.map do |i|
+        MessageBus::Message.decode(i)
+      end
+    end.round(3)
+    MessageBus.logger.info "[message_bus#backlog] #{hash_to_kv_string(log_data)}"
+    items
   end
 
   def global_backlog(last_id = nil)
-    last_id = last_id.to_i
-    redis = pub_redis
+    log_data = {}
+    items = nil
+    log_data[:backlog_seconds] = Benchmark.realtime do
+      last_id = last_id.to_i
+      redis = pub_redis
 
-    items = redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
+      items = redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
 
-    items.map! do |i|
-      pipe = i.index "|"
-      message_id = i[0..pipe].to_i
-      channel = i[pipe+1..-1]
-      m = get_message(channel, message_id)
-      m
-    end
+      items.map! do |i|
+        pipe = i.index "|"
+        message_id = i[0..pipe].to_i
+        channel = i[pipe+1..-1]
+        m = get_message(channel, message_id)
+        m
+      end
 
-    items.compact!
+      items.compact!
+    end.round(3)
+    MessageBus.logger.info "[message_bus#global_backlog] #{hash_to_kv_string(log_data)}"
     items
   end
 
   def get_message(channel, message_id)
-    redis = pub_redis
-    backlog_key = backlog_key(channel)
-
-    items = redis.zrangebyscore backlog_key, message_id, message_id
-    if items && items[0]
-      MessageBus::Message.decode(items[0])
-    else
-      nil
-    end
+    log_data = {}
+    return_val = nil
+    log_data[:get_message_seconds] = Benchmark.realtime do
+      redis = pub_redis
+      backlog_key = backlog_key(channel)
+      items = redis.zrangebyscore backlog_key, message_id, message_id
+      return_val = if items && items[0]
+                     MessageBus::Message.decode(items[0])
+                   else
+                     nil
+                   end
+    end.round(3)
+    MessageBus.logger.info "[message_bus#get_message] #{hash_to_kv_string(log_data)}"
+    return_val
   end
 
   def subscribe(channel, last_id = nil)
@@ -340,6 +366,10 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   private
+
+  def hash_to_kv_string(x)
+    log_data.map{|k,v| "#{k}=#{v}".freeze}.join(' '.freeze)
+  end
 
   def is_readonly?
     key = "__mb_is_readonly".freeze
