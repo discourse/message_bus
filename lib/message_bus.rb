@@ -129,7 +129,7 @@ module MessageBus::Implementation
 
   # Allow us to inject a redis db
   def redis_config=(config)
-    configure(config.merge(:backend=>:redis))
+    configure(config.merge(backend: redis))
   end
 
   alias redis_config config
@@ -228,17 +228,17 @@ module MessageBus::Implementation
 
     raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
 
-    encoded_data = JSON.dump({
+    encoded_data = JSON.dump(
       data: data,
       user_ids: user_ids,
       group_ids: group_ids,
       client_ids: client_ids
-    })
+    )
 
     reliable_pub_sub.publish(encode_channel_name(channel), encoded_data)
   end
 
-  def blocking_subscribe(channel=nil, &blk)
+  def blocking_subscribe(channel = nil, &blk)
     if channel
       reliable_pub_sub.subscribe(encode_channel_name(channel), &blk)
     else
@@ -249,7 +249,7 @@ module MessageBus::Implementation
   ENCODE_SITE_TOKEN = "$|$"
 
   # encode channel name to include site
-  def encode_channel_name(channel, site_id=nil)
+  def encode_channel_name(channel, site_id = nil)
     if (site_id || site_id_lookup) && !global?(channel)
       raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
       "#{channel}#{ENCODE_SITE_TOKEN}#{site_id || site_id_lookup.call}"
@@ -262,50 +262,50 @@ module MessageBus::Implementation
     channel.split(ENCODE_SITE_TOKEN)
   end
 
-  def subscribe(channel=nil, last_id=-1, &blk)
+  def subscribe(channel = nil, last_id = -1, &blk)
     subscribe_impl(channel, nil, last_id, &blk)
   end
 
   # subscribe only on current site
-  def local_subscribe(channel=nil, last_id=-1, &blk)
+  def local_subscribe(channel = nil, last_id = -1, &blk)
     site_id = site_id_lookup.call if site_id_lookup && ! global?(channel)
     subscribe_impl(channel, site_id, last_id, &blk)
   end
 
-  def unsubscribe(channel=nil, &blk)
+  def unsubscribe(channel = nil, &blk)
     unsubscribe_impl(channel, nil, &blk)
   end
 
-  def local_unsubscribe(channel=nil, &blk)
+  def local_unsubscribe(channel = nil, &blk)
     site_id = site_id_lookup.call if site_id_lookup
     unsubscribe_impl(channel, site_id, &blk)
   end
 
-  def global_backlog(last_id=nil)
+  def global_backlog(last_id = nil)
     backlog(nil, last_id)
   end
 
-  def backlog(channel=nil, last_id=nil, site_id=nil)
+  def backlog(channel = nil, last_id = nil, site_id = nil)
     old =
       if channel
-        reliable_pub_sub.backlog(encode_channel_name(channel,site_id), last_id)
+        reliable_pub_sub.backlog(encode_channel_name(channel, site_id), last_id)
       else
         reliable_pub_sub.global_backlog(last_id)
       end
 
-    old.each{ |m|
+    old.each do |m|
       decode_message!(m)
-    }
+    end
     old
   end
 
-  def last_id(channel,site_id=nil)
-    reliable_pub_sub.last_id(encode_channel_name(channel,site_id))
+  def last_id(channel , site_id = nil)
+    reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
   end
 
   def last_message(channel)
     if last_id = last_id(channel)
-      messages = backlog(channel, last_id-1)
+      messages = backlog(channel, last_id - 1)
       if messages
         messages[0]
       end
@@ -326,7 +326,7 @@ module MessageBus::Implementation
     reliable_pub_sub.after_fork
     ensure_subscriber_thread
     # will ensure timer is running
-    timer.queue{}
+    timer.queue {}
   end
 
   def listening?
@@ -403,7 +403,7 @@ module MessageBus::Implementation
         if just_yield
           original_blk.call m
         else
-          if current_id && current_id == (m.message_id-1)
+          if current_id && current_id == (m.message_id - 1)
             original_blk.call m
             just_yield = true
           else
@@ -418,14 +418,14 @@ module MessageBus::Implementation
 
     @subscriptions ||= {}
     @subscriptions[site_id] ||= {}
-    @subscriptions[site_id][channel] ||=  []
+    @subscriptions[site_id][channel] ||= []
     @subscriptions[site_id][channel] << blk
     ensure_subscriber_thread
 
     attempts = 100
     while attempts > 0 && !reliable_pub_sub.subscribed
       sleep 0.001
-      attempts-=1
+      attempts -= 1
     end
 
     raise MessageBus::BusDestroyed if @destroyed
@@ -443,7 +443,6 @@ module MessageBus::Implementation
     end
 
   end
-
 
   def ensure_subscriber_thread
     @mutex.synchronize do
@@ -473,7 +472,7 @@ module MessageBus::Implementation
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
         # going for x3 keepalives missed for a restart, need to ensure this only very rarely happens
         # note: after_fork will sort out a bad @last_message date, but thread will be dead anyway
-        if (Time.now - (@last_message || Time.now)) > keepalive_interval*3
+        if (Time.now - (@last_message || Time.now)) > keepalive_interval * 3
           MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting process"
           # No other clean way to remove this thread, its listening on a socket
           #   no data is arriving
@@ -530,7 +529,7 @@ module MessageBus::Implementation
           locals = locals[msg.channel] if locals
         end
 
-        multi_each(globals,locals, global_globals, local_globals) do |c|
+        multi_each(globals, locals, global_globals, local_globals) do |c|
           begin
             c.call msg
           rescue => e
@@ -544,7 +543,7 @@ module MessageBus::Implementation
     end
   end
 
-  def multi_each(*args,&block)
+  def multi_each(*args, &block)
     args.each do |a|
       a.each(&block) if a
     end
