@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module MessageBus; module Rails; end; end
 
 # rails engine for asset pipeline

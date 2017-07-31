@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # there is also another in cramp this is from https://github.com/macournoyer/thin_async/blob/master/lib/thin/async.rb
 module Thin
   unless defined?(DeferrableBody)
@@ -40,7 +41,7 @@ module Thin
     attr_reader :headers, :callback, :closed
     attr_accessor :status
 
-    def initialize(env, status=200, headers={})
+    def initialize(env, status = 200, headers = {})
       @callback = env['async.callback']
       @body = DeferrableBody.new
       @status = status

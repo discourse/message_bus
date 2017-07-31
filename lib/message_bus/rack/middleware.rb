@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'json'
 
 # our little message bus, accepts long polling and polling
@@ -48,10 +49,10 @@ class MessageBus::Rack::Middleware
   def self.backlog_to_json(backlog)
     m = backlog.map do |msg|
       {
-        :global_id => msg.global_id,
-        :message_id => msg.message_id,
-        :channel => msg.channel,
-        :data => msg.data
+        global_id: msg.global_id,
+        message_id: msg.message_id,
+        channel: msg.channel,
+        data: msg.data
       }
     end.to_a
     JSON.dump(m)
@@ -62,13 +63,13 @@ class MessageBus::Rack::Middleware
     return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
 
     # special debug/test route
-    if @bus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'.freeze
-        parsed = Rack::Request.new(env)
-        @bus.publish parsed["channel".freeze], parsed["data".freeze]
-        return [200,{"Content-Type".freeze => "text/html".freeze},["sent"]]
+    if @bus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'
+      parsed = Rack::Request.new(env)
+      @bus.publish parsed["channel"], parsed["data"]
+      return [200, { "Content-Type" => "text/html" }, ["sent"]]
     end
 
-    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'.freeze
+    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
       diags = MessageBus::Rack::Diagnostics.new(@app, message_bus: @bus)
       return diags.call(env)
     end
@@ -97,8 +98,8 @@ class MessageBus::Rack::Middleware
       request = Rack::Request.new(env)
       is_json = request.content_type && request.content_type.include?('application/json')
       data = is_json ? JSON.parse(request.body.read) : request.POST
-      data.each do |k,v|
-        if k == "__seq".freeze
+      data.each do |k, v|
+        if k == "__seq"
           client.seq = v.to_i
         else
           client.subscribe(k, v)
@@ -113,7 +114,7 @@ class MessageBus::Rack::Middleware
     headers["Expires"] = "0"
 
     if @bus.extra_response_headers_lookup
-      @bus.extra_response_headers_lookup.call(env).each do |k,v|
+      @bus.extra_response_headers_lookup.call(env).each do |k, v|
         headers[k] = v
       end
     end
@@ -123,11 +124,11 @@ class MessageBus::Rack::Middleware
     end
 
     long_polling = @bus.long_polling_enabled? &&
-                   env['QUERY_STRING'] !~ /dlp=t/.freeze &&
+                   env['QUERY_STRING'] !~ /dlp=t/ &&
                    @connection_manager.client_count < @bus.max_active_clients
 
-    allow_chunked = env['HTTP_VERSION'.freeze] == 'HTTP/1.1'.freeze
-    allow_chunked &&= !env['HTTP_DONT_CHUNK'.freeze]
+    allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
+    allow_chunked &&= !env['HTTP_DONT_CHUNK']
     allow_chunked &&= @bus.chunked_encoding_enabled?
 
     client.use_chunked = allow_chunked
@@ -159,7 +160,7 @@ class MessageBus::Rack::Middleware
         response = Thin::AsyncResponse.new(env)
       end
 
-      headers.each do |k,v|
+      headers.each do |k, v|
         response.headers[k] = v
       end
 
@@ -183,7 +184,7 @@ class MessageBus::Rack::Middleware
     end
 
   rescue => e
-    if @bus.on_middleware_error && result=@bus.on_middleware_error.call(env, e)
+    if @bus.on_middleware_error && result = @bus.on_middleware_error.call(env, e)
       result
     else
       raise
@@ -203,7 +204,7 @@ class MessageBus::Rack::Middleware
   def add_client_with_timeout(client)
     @connection_manager.add_client(client)
 
-    client.cleanup_timer = MessageBus.timer.queue( @bus.long_polling_interval.to_f / 1000) {
+    client.cleanup_timer = MessageBus.timer.queue(@bus.long_polling_interval.to_f / 1000) {
       begin
         client.cleanup_timer = nil
         client.ensure_closed!

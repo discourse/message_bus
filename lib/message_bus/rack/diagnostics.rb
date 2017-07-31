@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module MessageBus::Rack; end
 
 class MessageBus::Rack::Diagnostics
@@ -48,7 +49,7 @@ class MessageBus::Rack::Diagnostics
   </body>
 </html>
 HTML
-    return [200, {"content-type" => "text/html;"}, [html]]
+    return [200, { "content-type" => "text/html;" }, [html]]
   end
 
   def translate_handlebars(name, content)
@@ -80,7 +81,7 @@ HTML
 
     if route =~ /^\/hup\//
       hostname, pid = route.split('/hup/')[1].split('/')
-      @bus.publish('/_diagnostics/hup', {hostname: hostname, pid: pid.to_i})
+      @bus.publish('/_diagnostics/hup', hostname: hostname, pid: pid.to_i)
       return [200, {}, ['ok']]
     end
 
@@ -89,9 +90,9 @@ HTML
       content = asset_contents(asset)
       split = asset.split('.')
       if split[1] == 'handlebars'
-        content = translate_handlebars(split[0],content)
+        content = translate_handlebars(split[0], content)
       end
-      return [200, {'content-type' => 'text/javascript;'}, [content]]
+      return [200, { 'content-type' => 'text/javascript;' }, [content]]
     end
 
     return [404, {}, ['not found']]

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'pg'
 
 module MessageBus::Postgres; end
@@ -30,37 +31,41 @@ class MessageBus::Postgres::Client
     @pid = Process.pid
   end
 
-  def add(channel, value)
-    hold{|conn| exec_prepared(conn, 'insert_message', [channel, value]){|r| r.getvalue(0,0).to_i}}
+  def add (channel, value)
+    hold { |conn| exec_prepared(conn, 'insert_message', [channel, value]) { |r| r.getvalue(0, 0).to_i } }
   end
 
   def clear_global_backlog(backlog_id, num_to_keep)
     if backlog_id > num_to_keep
-      hold{|conn| exec_prepared(conn, 'clear_global_backlog', [backlog_id - num_to_keep])}
+      hold { |conn| exec_prepared(conn, 'clear_global_backlog', [backlog_id - num_to_keep]) }
       nil
     end
   end
 
   def clear_channel_backlog(channel, backlog_id, num_to_keep)
-    hold{|conn| exec_prepared(conn, 'clear_channel_backlog', [channel, backlog_id, num_to_keep])}
+    hold { |conn| exec_prepared(conn, 'clear_channel_backlog', [channel, backlog_id, num_to_keep]) }
     nil
   end
 
   def expire(max_backlog_age)
-    hold{|conn| exec_prepared(conn, 'expire', [max_backlog_age])}
+    hold { |conn| exec_prepared(conn, 'expire', [max_backlog_age]) }
     nil
   end
 
   def backlog(channel, backlog_id)
-    hold{|conn| exec_prepared(conn, 'channel_backlog', [channel, backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}} || []
+    hold do |conn|
+      exec_prepared(conn, 'channel_backlog', [channel, backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
+    end || []
   end
 
   def global_backlog(backlog_id)
-    hold{|conn| exec_prepared(conn, 'global_backlog', [backlog_id]){|r| r.values.each{|a| a[0] = a[0].to_i}}} || []
+    hold do |conn|
+      exec_prepared(conn, 'global_backlog', [backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
+    end || []
   end
 
   def get_value(channel, id)
-    hold{|conn| exec_prepared(conn, 'get_message', [channel, id]){|r| r.getvalue(0,0)}}
+    hold { |conn| exec_prepared(conn, 'get_message', [channel, id]) { |r| r.getvalue(0, 0) } }
   end
 
   def reconnect
@@ -78,37 +83,37 @@ class MessageBus::Postgres::Client
     end
   end
 
-  def max_id(channel=nil)
+  def max_id(channel = nil)
     block = proc do |r|
       if r.ntuples > 0
-        r.getvalue(0,0).to_i
+        r.getvalue(0, 0).to_i
       else
         0
       end
     end
 
     if channel
-      hold{|conn| exec_prepared(conn, 'max_channel_id', [channel], &block)}
+      hold { |conn| exec_prepared(conn, 'max_channel_id', [channel], &block) }
     else
-      hold{|conn| exec_prepared(conn, 'max_id', &block)}
+      hold { |conn| exec_prepared(conn, 'max_id', &block) }
     end
   end
 
   def publish(channel, data)
-    hold{|conn| exec_prepared(conn, 'publish', [channel, data])}
+    hold { |conn| exec_prepared(conn, 'publish', [channel, data]) }
   end
 
   def subscribe(channel)
     obj = Object.new
-    sync{@listening_on[channel] = obj}
+    sync { @listening_on[channel] = obj }
     listener = Listener.new
     yield listener
-    
+
     conn = raw_pg_connection
     conn.exec "LISTEN #{channel}"
     listener.do_sub.call
     while listening_on?(channel, obj)
-      conn.wait_for_notify(10) do |_,_,payload|
+      conn.wait_for_notify(10) do |_, _, payload|
         break unless listening_on?(channel, obj)
         listener.do_message.call(nil, payload)
       end
@@ -120,7 +125,7 @@ class MessageBus::Postgres::Client
   end
 
   def unsubscribe
-    sync{@listening_on.clear}
+    sync { @listening_on.clear }
   end
 
   private
@@ -149,22 +154,22 @@ class MessageBus::Postgres::Client
       end
     end
 
-    if conn = sync{@allocated[Thread.current]}
+    if conn = sync { @allocated[Thread.current] }
       return yield(conn)
     end
-      
+
     begin
-      conn = sync{@available.shift} || new_pg_connection
-      sync{@allocated[Thread.current] = conn}
+      conn = sync { @available.shift } || new_pg_connection
+      sync { @allocated[Thread.current] = conn }
       yield conn
     rescue PG::ConnectionBad, PG::UnableToSend => e
       # don't add this connection back to the pool
     ensure
-      sync{@allocated.delete(Thread.current)}
+      sync { @allocated.delete(Thread.current) }
       if Process.pid != current_pid
-        sync{INHERITED_CONNECTIONS << conn}
+        sync { INHERITED_CONNECTIONS << conn }
       elsif conn && !e
-        sync{@available << conn}
+        sync { @available << conn }
       end
     end
   end
@@ -197,11 +202,11 @@ class MessageBus::Postgres::Client
   end
 
   def listening_on?(channel, obj)
-    sync{@listening_on[channel]} == obj
+    sync { @listening_on[channel] } == obj
   end
 
   def sync
-    @mutex.synchronize{yield}
+    @mutex.synchronize { yield }
   end
 end
 
@@ -251,7 +256,7 @@ class MessageBus::Postgres::ReliablePubSub
     client.reset!
   end
 
-  def publish(channel, data, queue_in_memory=true)
+  def publish(channel, data, queue_in_memory = true)
     client = self.client
     backlog_id = client.add(channel, data)
     msg = MessageBus::Message.new backlog_id, backlog_id, channel, data
@@ -322,7 +327,7 @@ class MessageBus::Postgres::ReliablePubSub
     @subscribed = false
   end
 
-  def global_subscribe(last_id=nil, &blk)
+  def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
     highest_id = last_id
 
@@ -345,7 +350,7 @@ class MessageBus::Postgres::ReliablePubSub
           @subscribed = false
         end
 
-        on.message do |c,m|
+        on.message do |c, m|
           if m == UNSUB_MESSAGE
             @subscribed = false
             return

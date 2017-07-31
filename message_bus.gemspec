@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # -*- encoding: utf-8 -*-
 require File.expand_path('../lib/message_bus/version', __FILE__)
 
@@ -10,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.license       = "MIT"
 
   gem.files         = `git ls-files`.split($\)
-  gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
+  gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "message_bus"
   gem.require_paths = ["lib"]

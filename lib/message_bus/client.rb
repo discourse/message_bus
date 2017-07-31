@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
@@ -45,21 +46,21 @@ class MessageBus::Client
 
   def ensure_first_chunk_sent
     if use_chunked && @chunks_sent == 0
-      write_chunk("[]".freeze)
+      write_chunk("[]")
     end
   end
 
   def ensure_closed!
     return unless in_async?
     if use_chunked
-      write_chunk("[]".freeze)
+      write_chunk("[]")
       if @io
-        @io.write("0\r\n\r\n".freeze)
+        @io.write("0\r\n\r\n")
         @io.close
         @io = nil
       end
       if @async_response
-        @async_response << ("0\r\n\r\n".freeze)
+        @async_response << ("0\r\n\r\n")
         @async_response.done
         @async_response = nil
       end
@@ -117,7 +118,7 @@ class MessageBus::Client
 
   def backlog
     r = []
-    @subscriptions.each do |k,v|
+    @subscriptions.each do |k, v|
       next if v.to_i < 0
       messages = @bus.backlog(k, v, site_id)
       messages.each do |msg|
@@ -126,7 +127,7 @@ class MessageBus::Client
     end
     # stats message for all newly subscribed
     status_message = nil
-    @subscriptions.each do |k,v|
+    @subscriptions.each do |k, v|
       if v.to_i == -1
         status_message ||= {}
         @subscriptions[k] = status_message[k] = @bus.last_id(k, site_id)
@@ -139,9 +140,8 @@ class MessageBus::Client
 
   protected
 
-
   # heavily optimised to avoid all uneeded allocations
-  NEWLINE="\r\n".freeze
+  NEWLINE = "\r\n".freeze
   COLON_SPACE = ": ".freeze
   HTTP_11 = "HTTP/1.1 200 OK\r\n".freeze
   CONTENT_LENGTH = "Content-Length: ".freeze
@@ -154,7 +154,7 @@ class MessageBus::Client
 
   def write_headers
     @io.write(HTTP_11)
-    @headers.each do |k,v|
+    @headers.each do |k, v|
       next if k == "Content-Type"
       @io.write(k)
       @io.write(COLON_SPACE)

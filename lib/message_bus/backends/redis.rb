@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'redis'
 # the heart of the message bus, it acts as 2 things
 #
@@ -80,7 +81,7 @@ class MessageBus::Redis::ReliablePubSub
     end
   end
 
-  def publish(channel, data, queue_in_memory=true)
+  def publish(channel, data, queue_in_memory = true)
     redis = pub_redis
     backlog_id_key = backlog_id_key(channel)
     backlog_key = backlog_key(channel)
@@ -124,7 +125,7 @@ class MessageBus::Redis::ReliablePubSub
   rescue Redis::CommandError => e
     if queue_in_memory && e.message =~ /^READONLY/
       @lock.synchronize do
-        @in_memory_backlog << [channel,data]
+        @in_memory_backlog << [channel, data]
         if @in_memory_backlog.length > @max_in_memory_publish_backlog
           @in_memory_backlog.delete_at(0)
           MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
@@ -134,7 +135,7 @@ class MessageBus::Redis::ReliablePubSub
       if @flush_backlog_thread == nil
         @lock.synchronize do
           if @flush_backlog_thread == nil
-            @flush_backlog_thread = Thread.new{ensure_backlog_flushed}
+            @flush_backlog_thread = Thread.new { ensure_backlog_flushed }
           end
         end
       end
@@ -162,7 +163,7 @@ class MessageBus::Redis::ReliablePubSub
         end
 
         begin
-          publish(*@in_memory_backlog[0],false)
+          publish(*@in_memory_backlog[0], false)
         rescue Redis::CommandError => e
           if e.message =~ /^READONLY/
             try_again = true
@@ -206,7 +207,7 @@ class MessageBus::Redis::ReliablePubSub
     items.map! do |i|
       pipe = i.index "|"
       message_id = i[0..pipe].to_i
-      channel = i[pipe+1..-1]
+      channel = i[pipe + 1..-1]
       m = get_message(channel, message_id)
       m
     end
@@ -275,7 +276,7 @@ class MessageBus::Redis::ReliablePubSub
     end
   end
 
-  def global_subscribe(last_id=nil, &blk)
+  def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
     highest_id = last_id
 
@@ -290,7 +291,6 @@ class MessageBus::Redis::ReliablePubSub
         retry
       end
     end
-
 
     begin
       @redis_global = new_redis_connection
@@ -311,7 +311,7 @@ class MessageBus::Redis::ReliablePubSub
           @subscribed = false
         end
 
-        on.message do |c,m|
+        on.message do |c, m|
           if m == UNSUB_MESSAGE
             @redis_global.unsubscribe
             return
@@ -342,7 +342,7 @@ class MessageBus::Redis::ReliablePubSub
   private
 
   def is_readonly?
-    key = "__mb_is_readonly".freeze
+    key = "__mb_is_readonly"
 
     begin
       # in case we are not connected to the correct server

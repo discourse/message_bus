@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module MessageBus::Memory; end
 
 class MessageBus::Memory::Client
@@ -33,7 +34,7 @@ class MessageBus::Memory::Client
     end
     msg = MessageBus::Message.new id, id, channel, value
     payload = msg.encode
-    listeners.each{|l| l.push(payload)}
+    listeners.each { |l| l.push(payload) }
     id
   end
 
@@ -42,7 +43,7 @@ class MessageBus::Memory::Client
       oldest = backlog_id - num_to_keep
       sync do
         @channels.each_value do |entries|
-          entries.delete_if{|id, _| id <= oldest}
+          entries.delete_if { |id, _| id <= oldest }
         end
       end
       nil
@@ -51,24 +52,24 @@ class MessageBus::Memory::Client
 
   def clear_channel_backlog(channel, backlog_id, num_to_keep)
     oldest = backlog_id - num_to_keep
-    sync{chan(channel).delete_if{|id, _| id <= oldest}}
+    sync { chan(channel).delete_if { |id, _| id <= oldest } }
     nil
   end
 
   def backlog(channel, backlog_id)
-    sync{chan(channel).select{|id, _| id > backlog_id}}
+    sync { chan(channel).select { |id, _| id > backlog_id } }
   end
 
   def global_backlog(backlog_id)
     sync do
       @channels.dup.flat_map do |channel, messages|
-        messages.select{|id, _| id > backlog_id}.map{|id, value| [id, channel, value]}
+        messages.select { |id, _| id > backlog_id }.map { |id, value| [id, channel, value] }
       end.sort
     end
   end
 
   def get_value(channel, id)
-    sync{chan(channel).find{|i, _| i == id}.last}
+    sync { chan(channel).find { |i, _| i == id }.last }
   end
 
   # Dangerous, drops the message_bus table containing the backlog if it exists.
@@ -79,7 +80,7 @@ class MessageBus::Memory::Client
     end
   end
 
-  def max_id(channel=nil)
+  def max_id(channel = nil)
     if channel
       sync do
         if entry = chan(channel).last
@@ -87,7 +88,7 @@ class MessageBus::Memory::Client
         end
       end
     else
-      sync{@global_id - 1}
+      sync { @global_id - 1 }
     end || 0
   end
 
@@ -113,7 +114,7 @@ class MessageBus::Memory::Client
   end
 
   def unsubscribe
-    sync{@listeners.each{|l| l.push(nil)}}
+    sync { @listeners.each { |l| l.push(nil) } }
   end
 
   private
@@ -123,7 +124,7 @@ class MessageBus::Memory::Client
   end
 
   def sync
-    @mutex.synchronize{yield}
+    @mutex.synchronize { yield }
   end
 end
 
@@ -163,7 +164,7 @@ class MessageBus::Memory::ReliablePubSub
     client.reset!
   end
 
-  def publish(channel, data, queue_in_memory=true)
+  def publish(channel, data, queue_in_memory = true)
     client = self.client
     backlog_id = client.add(channel, data)
     if backlog_id % clear_every == 0
@@ -232,7 +233,7 @@ class MessageBus::Memory::ReliablePubSub
     @subscribed = false
   end
 
-  def global_subscribe(last_id=nil, &blk)
+  def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
     highest_id = last_id
 
@@ -254,7 +255,7 @@ class MessageBus::Memory::ReliablePubSub
           @subscribed = false
         end
 
-        on.message do |c,m|
+        on.message do |c, m|
           m = MessageBus::Message.decode m
 
           # we have 3 options

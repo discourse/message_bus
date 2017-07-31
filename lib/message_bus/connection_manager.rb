@@ -1,10 +1,11 @@
+# frozen_string_literal: true
 require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
   require 'monitor'
   include MonitorMixin
 
-  def initialize(bus=nil)
+  def initialize(bus = nil)
     @clients = {}
     @subscriptions = {}
     @bus = bus || MessageBus
@@ -53,7 +54,7 @@ class MessageBus::ConnectionManager
 
         @clients[client.client_id] = client
         @subscriptions[client.site_id] ||= {}
-        client.subscriptions.each do |k,v|
+        client.subscriptions.each do |k, v|
           subscribe_client(client, k)
         end
       end
@@ -79,7 +80,7 @@ class MessageBus::ConnectionManager
     end
   end
 
-  def subscribe_client(client,channel)
+  def subscribe_client(client, channel)
     synchronize do
       set = @subscriptions[client.site_id][channel]
       unless set
