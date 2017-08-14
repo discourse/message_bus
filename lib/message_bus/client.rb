@@ -98,7 +98,7 @@ class MessageBus::Client
     else
       write_and_close json
     end
-  rescue Errno::EPIPE => e
+  rescue IOError, SystemCallError
     # client went away
     @io = nil
   end
