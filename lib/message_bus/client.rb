@@ -98,9 +98,6 @@ class MessageBus::Client
     else
       write_and_close json
     end
-  rescue IOError, SystemCallError
-    # client went away
-    @io = nil
   end
 
   def subscriptions
@@ -170,12 +167,16 @@ class MessageBus::Client
     else
       @io.write(TYPE_JSON)
     end
+    true
+  rescue IOError, SystemCallError
+    # client went away
+    @io = nil
+    false
   end
 
   def write_chunk(data)
     @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id} (chunked)"
-    if @io && !@wrote_headers
-      write_headers
+    if @io && !@wrote_headers && write_headers
       @io.write(CHUNKED_ENCODING)
       # this is required otherwise chrome will delay onprogress calls
       @io.write(NO_SNIFF)
@@ -208,14 +209,15 @@ class MessageBus::Client
   def write_and_close(data)
     @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
-      write_headers
-      @io.write(CONTENT_LENGTH)
-      @io.write(data.bytes.to_a.length)
-      @io.write(NEWLINE)
-      @io.write(NEWLINE)
-      @io.write(data)
-      @io.close
-      @io = nil
+      if write_headers
+        @io.write(CONTENT_LENGTH)
+        @io.write(data.bytes.to_a.length)
+        @io.write(NEWLINE)
+        @io.write(NEWLINE)
+        @io.write(data)
+        @io.close
+        @io = nil
+      end
     else
       @async_response << data
       @async_response.done
