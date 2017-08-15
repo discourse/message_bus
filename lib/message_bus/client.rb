@@ -98,9 +98,6 @@ class MessageBus::Client
     else
       write_and_close json
     end
-  rescue Errno::EPIPE => e
-    # client went away
-    @io = nil
   end
 
   def subscriptions
