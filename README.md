@@ -348,3 +348,39 @@ Rails.application.config do |config|
   # do anything you wish with config.middleware here
 end
 ```
+
+#### Error Handling
+
+The internet is a chaotic environment and clients can drop off for a vareity of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:
+
+```
+Errno::EPIPE: Broken pipe
+  from message_bus/client.rb:159:in `write'
+  from message_bus/client.rb:159:in `write_headers'
+  from message_bus/client.rb:178:in `write_chunk'
+  from message_bus/client.rb:49:in `ensure_first_chunk_sent'
+  from message_bus/rack/middleware.rb:150:in `block in call'
+  from message_bus/client.rb:21:in `block in synchronize'
+  from message_bus/client.rb:21:in `synchronize'
+  from message_bus/client.rb:21:in `synchronize'
+  from message_bus/rack/middleware.rb:147:in `call'
+  ...
+```
+
+The user doesn't see anything, but depending on your traffic you may acquire quite a few of these in your logs.
+
+You can rescue from errors that occur in MessageBus's middleware stack by adding a config option:
+
+```ruby
+MessageBus.configure(on_middleware_error: proc do |env, e|
+  # env contains the Rack environment at the time of error
+  # e contains the exception that was raised
+  if Errno::EPIPE === e
+    [422, {}, [""]]
+  else
+    raise e
+  end
+end)
+```
+
+
