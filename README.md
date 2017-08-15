@@ -351,7 +351,7 @@ end
 
 #### Error Handling
 
-The internet is a chaotic environment and clients can drop off for a vareity of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:
+The internet is a chaotic environment and clients can drop off for a variety of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:
 
 ```
 Errno::EPIPE: Broken pipe
