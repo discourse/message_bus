@@ -49,15 +49,6 @@ describe MessageBus::Client do
       JSON.parse(payload)
     end
 
-    it "gracefully handles broken client pipes" do
-      r,w = IO.pipe
-      @client.io = w
-      r.close
-      @client << MessageBus::Message.new(1, 1, '/test', 'test')
-
-      assert_nil @client.io
-    end
-
     it "can chunk replies" do
       @client.use_chunked = true
       r,w = IO.pipe
