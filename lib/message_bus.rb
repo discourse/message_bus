@@ -130,7 +130,7 @@ module MessageBus::Implementation
 
   # Allow us to inject a redis db
   def redis_config=(config)
-    configure(config.merge(backend: redis))
+    configure(config.merge(backend: :redis))
   end
 
   alias redis_config config
