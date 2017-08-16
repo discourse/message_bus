@@ -1,6 +1,6 @@
 16-08-2017
 
-- Version 2.0.4
+- Version 2.0.5
 
 - Quick fix, build on earlier version of Ruby cause https://github.com/rubygems/rubygems/issues/1448 is still open
 
