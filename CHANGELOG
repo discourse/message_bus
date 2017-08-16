@@ -1,3 +1,12 @@
+16-08-2017
+
+- Version 2.0.3
+- Fix: broken MessageBus.redis_config
+- Perf: publish status message for filtered messages
+- Perf: add frozen strings to save on memory
+- Feature: improved logging when messages are dropped
+- Fix: handle missing actiondispatch flash
+
 25-08-2016
 
 - Version 2.0.2
