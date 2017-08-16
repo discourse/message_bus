@@ -260,7 +260,12 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.must_equal 0
+      parsed.length.must_equal 1
+
+      message = parsed.first
+
+      message["channel"].must_equal "/__status"
+      message["data"].must_equal("/foo" => 1)
 
       @bus.user_id_lookup do |env|
         1
@@ -286,7 +291,10 @@ describe MessageBus::Rack::Middleware do
       }
 
       parsed = JSON.parse(last_response.body)
-      parsed.length.must_equal 0
+      message = parsed.first
+
+      message["channel"].must_equal "/__status"
+      message["data"].must_equal("/foo" => 1)
 
       @bus.group_ids_lookup do |env|
         [1,7,4,100]

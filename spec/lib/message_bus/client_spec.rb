@@ -5,10 +5,14 @@ describe MessageBus::Client do
 
   describe "subscriptions" do
 
+    def setup_client(client_id)
+      MessageBus::Client.new client_id: client_id, message_bus: @bus
+    end
+
     before do
       @bus = MessageBus::Instance.new
       @bus.configure(MESSAGE_BUS_CONFIG)
-      @client = MessageBus::Client.new client_id: 'abc', message_bus: @bus
+      @client = setup_client('abc')
     end
 
     after do
@@ -117,6 +121,25 @@ describe MessageBus::Client do
       log = @client.backlog
       log.length.must_equal 1
       log[0].data.must_equal("/hello" => 0)
+    end
+
+    it 'provides status updates to clients that are not allowed to a message' do
+      another_client = setup_client('def')
+      clients = [@client, another_client]
+
+      clients.each { |client| client.subscribe('/hello', nil) }
+
+      @bus.publish("/hello", "world", client_ids: ['abc'])
+
+      log = @client.backlog
+      log.length.must_equal 1
+      log[0].channel.must_equal '/hello'
+      log[0].data.must_equal 'world'
+
+      log = another_client.backlog
+      log.length.must_equal 1
+      log[0].channel.must_equal '/__status'
+      log[0].data.must_equal({ '/hello' => 1 })
     end
 
     it "should provide a list of subscriptions" do
