@@ -22,6 +22,19 @@ describe MessageBus do
     @bus.off?.must_equal true
   end
 
+  it "can call destroy twice" do
+    @bus.destroy
+    @bus.destroy
+  end
+
+  it "can be turned on after destroy" do
+    @bus.destroy
+
+    @bus.on
+
+    @bus.after_fork
+  end
+
   it "can subscribe from a point in time" do
     @bus.publish("/minion", "banana")
 

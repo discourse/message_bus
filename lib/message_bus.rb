@@ -163,7 +163,7 @@ module MessageBus::Implementation
   # Enables publication to the bus
   # @return [void]
   def on
-    @off = false
+    @destroyed = @off = false
   end
 
   # Overrides existing configuration
@@ -495,6 +495,8 @@ module MessageBus::Implementation
     reliable_pub_sub.global_unsubscribe
 
     @mutex.synchronize do
+      return if @destroyed
+
       @subscriptions ||= {}
       @destroyed = true
     end
