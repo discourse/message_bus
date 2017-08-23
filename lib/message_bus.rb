@@ -125,7 +125,7 @@ module MessageBus::Implementation
   end
 
   def on
-    @off = false
+    @destroyed = @off = false
   end
 
   def configure(config)
@@ -319,6 +319,8 @@ module MessageBus::Implementation
 
   def destroy
     @mutex.synchronize do
+      return if @destroyed
+
       @subscriptions ||= {}
       reliable_pub_sub.global_unsubscribe
       @destroyed = true
