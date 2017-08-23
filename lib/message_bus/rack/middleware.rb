@@ -36,7 +36,7 @@ class MessageBus::Rack::Middleware
     @app = app
     @bus = config[:message_bus] || MessageBus
     @connection_manager = MessageBus::ConnectionManager.new(@bus)
-    self.start_listener
+    self.start_listener unless @bus.off?
   end
 
   def stop_listener

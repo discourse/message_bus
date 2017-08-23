@@ -116,6 +116,10 @@ module MessageBus::Implementation
     @config[:long_polling_interval] || 25 * 1000
   end
 
+  def off?
+    @off
+  end
+
   def off
     @off = true
   end
