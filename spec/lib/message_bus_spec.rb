@@ -16,6 +16,12 @@ describe MessageBus do
     @bus.destroy
   end
 
+  it "can be turned off" do
+    @bus.off
+
+    @bus.off?.must_equal true
+  end
+
   it "can subscribe from a point in time" do
     @bus.publish("/minion", "banana")
 

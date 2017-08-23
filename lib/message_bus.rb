@@ -149,6 +149,11 @@ module MessageBus::Implementation
     @config[:long_polling_interval] || 25 * 1000
   end
 
+  # @return [Boolean] whether the bus is disabled or not
+  def off?
+    @off
+  end
+
   # Disables publication to the bus
   # @return [void]
   def off
