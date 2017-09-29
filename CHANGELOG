@@ -4,6 +4,7 @@ TBD
 
 - Fix: correct after_fork so it correctly disconnnects redis
 - Fix: correct message_bus #destroy used in tests to clean up spec (deadlock)
+- Fix: deliver backlog unconditionally when polling (and not long polling)
 
 16-08-2017
 

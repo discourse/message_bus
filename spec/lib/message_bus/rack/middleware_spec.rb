@@ -6,7 +6,7 @@ require 'rack/test'
 
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
-  let(:extra_middleware){nil}
+  let(:extra_middleware) { nil }
 
   before do
     bus = @bus = MessageBus::Instance.new
@@ -15,10 +15,10 @@ describe MessageBus::Rack::Middleware do
 
     e_m = extra_middleware
     builder = Rack::Builder.new {
-      use FakeAsyncMiddleware, :message_bus => bus
+      use FakeAsyncMiddleware, message_bus: bus
       use e_m if e_m
-      use MessageBus::Rack::Middleware, :message_bus => bus
-      run lambda {|env| [500, {'Content-Type' => 'text/html'}, 'should not be called' ]}
+      use MessageBus::Rack::Middleware, message_bus: bus
+      run lambda { |env| [500, { 'Content-Type' => 'text/html' }, 'should not be called' ] }
     }
 
     @async_middleware = builder.to_app
@@ -63,11 +63,11 @@ describe MessageBus::Rack::Middleware do
       bus = @bus
 
       @bus.extra_response_headers_lookup do |env|
-        {"FOO" => "BAR"}
+        { "FOO" => "BAR" }
       end
 
       Thread.new do
-        wait_for(2000) {middleware.in_async?}
+        wait_for(2000) { middleware.in_async? }
         bus.publish "/foo", "םוֹלשָׁ"
       end
 
@@ -119,13 +119,13 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should get a 200 with html for an authorized user" do
-      def @bus.is_admin_lookup; proc{|_| true} end
+      def @bus.is_admin_lookup; proc { |_| true } end
       get "/message-bus/_diagnostics"
       last_response.status.must_equal 200
     end
 
     it "should get the script it asks for" do
-      def @bus.is_admin_lookup; proc{|_| true} end
+      def @bus.is_admin_lookup; proc { |_| true } end
       get "/message-bus/_diagnostics/assets/message-bus.js"
       last_response.status.must_equal 200
       last_response.content_type.must_equal "text/javascript;"
@@ -140,16 +140,15 @@ describe MessageBus::Rack::Middleware do
 
     it "should include access control headers" do
       @bus.extra_response_headers_lookup do |env|
-        {"FOO" => "BAR"}
+        { "FOO" => "BAR" }
       end
 
       client_id = "ABCD"
 
       # client always keeps a list of channels with last message id they got on each
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => nil,
         '/bar' => nil
-      }
 
       last_response.headers["FOO"].must_equal "BAR"
     end
@@ -158,39 +157,47 @@ describe MessageBus::Rack::Middleware do
       client_id = "ABCD"
 
       # client always keeps a list of channels with last message id they got on each
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => nil,
         '/bar' => nil
-      }
+
       last_response.ok?.must_equal true
     end
 
     it "should correctly understand that -1 means stuff from now onwards" do
 
-      @bus.publish('foo', 'bar')
+      # even if allow chunked
+      @bus.chunked_encoding_enabled = true
 
-      post "/message-bus/ABCD", {
-        '/foo' => -1
-      }
+      @bus.publish('/foo', 'bar')
+      @bus.publish('/baz', 'test')
+      @bus.publish('/boom', 'bang')
+
+      post "/message-bus/ABCD",
+        '/foo' => -1,
+        '/baz' => @bus.last_id('/baz') + 1,
+        '/boom' => -1
+
       last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
+
       parsed.length.must_equal 1
       parsed[0]["channel"].must_equal "/__status"
-      parsed[0]["data"]["/foo"].must_equal@bus.last_id("/foo")
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
+      parsed[0]["data"]["/boom"].must_equal @bus.last_id("/boom")
 
     end
 
     it "should respond with the data if messages exist in the backlog" do
-      id =@bus.last_id('/foo')
+      id = @bus.last_id('/foo')
 
       @bus.publish("/foo", "barbs")
       @bus.publish("/foo", "borbs")
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id,
         '/bar' => nil
-      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 2
@@ -202,16 +209,15 @@ describe MessageBus::Rack::Middleware do
 
       seq = 0
       @bus.site_id_lookup do
-        (seq+=1).to_s
+        (seq += 1).to_s
       end
 
       # published on channel 1
       msg = @bus.publish("/foo", "test")
 
       # subscribed on channel 2
-      post "/message-bus/ABCD", {
-        '/foo' => (msg-1)
-      }
+      post "/message-bus/ABCD",
+        '/foo' => (msg - 1)
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
@@ -222,14 +228,13 @@ describe MessageBus::Rack::Middleware do
 
       seq = 0
       @bus.site_id_lookup do
-        (seq+=1).to_s
+        (seq += 1).to_s
       end
 
       msg = @bus.publish("/global/foo", "test")
 
-      post "/message-bus/ABCD", {
-        '/global/foo' => (msg-1)
-      }
+      post "/message-bus/ABCD",
+        '/global/foo' => (msg - 1)
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -237,27 +242,25 @@ describe MessageBus::Rack::Middleware do
 
     it "should not get consumed messages" do
       @bus.publish("/foo", "barbs")
-      id =@bus.last_id('/foo')
+      id = @bus.last_id('/foo')
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id
-      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
     end
 
     it "should filter by user correctly" do
-      id =@bus.publish("/foo", "test", user_ids: [1])
+      id = @bus.publish("/foo", "test", user_ids: [1])
       @bus.user_id_lookup do |env|
         0
       end
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id - 1
-      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -271,24 +274,22 @@ describe MessageBus::Rack::Middleware do
         1
       end
 
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id - 1
-      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
     end
 
     it "should filter by group correctly" do
-      id =@bus.publish("/foo", "test", group_ids: [3,4,5])
+      id = @bus.publish("/foo", "test", group_ids: [3, 4, 5])
       @bus.group_ids_lookup do |env|
-        [0,1,2]
+        [0, 1, 2]
       end
 
       client_id = "ABCD"
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id - 1
-      }
 
       parsed = JSON.parse(last_response.body)
       message = parsed.first
@@ -297,12 +298,11 @@ describe MessageBus::Rack::Middleware do
       message["data"].must_equal("/foo" => 1)
 
       @bus.group_ids_lookup do |env|
-        [1,7,4,100]
+        [1, 7, 4, 100]
       end
 
-      post "/message-bus/#{client_id}", {
+      post "/message-bus/#{client_id}",
         '/foo' => id - 1
-      }
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
@@ -310,11 +310,11 @@ describe MessageBus::Rack::Middleware do
 
     it "can decode a JSON encoded request" do
       id = @bus.last_id('/foo')
-      @bus.publish("/foo", {json: true})
-      post( "/message-bus/1234",
-            JSON.generate({'/foo' => id}),
-            { "CONTENT_TYPE" => "application/json" })
-      JSON.parse(last_response.body).first["data"].must_equal({'json' => true})
+      @bus.publish("/foo", json: true)
+      post("/message-bus/1234",
+            JSON.generate('/foo' => id),
+            "CONTENT_TYPE" => "application/json")
+      JSON.parse(last_response.body).first["data"].must_equal('json' => true)
     end
 
     describe "on_middleware_error handling" do
@@ -322,7 +322,7 @@ describe MessageBus::Rack::Middleware do
 
         @bus.on_middleware_error do |env, err|
           if ArgumentError === err
-            [407,{},[]]
+            [407, {}, []]
           end
         end
 
@@ -330,9 +330,9 @@ describe MessageBus::Rack::Middleware do
           raise ArgumentError
         end
 
-        post( "/message-bus/1234",
-            JSON.generate({'/foo' => 1}),
-            { "CONTENT_TYPE" => "application/json" })
+        post("/message-bus/1234",
+            JSON.generate('/foo' => 1),
+            "CONTENT_TYPE" => "application/json")
 
         last_response.status.must_equal 407
 
@@ -349,7 +349,7 @@ describe MessageBus::Rack::Middleware do
           end
 
           def call(env)
-            @app.call(env.merge('message_bus.channels'=>{'/foo'=>0}))
+            @app.call(env.merge('message_bus.channels' => { '/foo' => 0 }))
           end
         end
       end
@@ -359,16 +359,14 @@ describe MessageBus::Rack::Middleware do
         foo_id = @bus.publish("/foo", "testfoo")
         bar_id = @bus.publish("/bar", "testbar")
 
-        post "/message-bus/ABCD", {
+        post "/message-bus/ABCD",
           '/foo' => foo_id - 1
-        }
 
         parsed = JSON.parse(last_response.body)
         parsed.first['data'].must_equal 'testfoo'
 
-        post "/message-bus/ABCD", {
+        post "/message-bus/ABCD",
           '/bar' => bar_id - 1
-        }
 
         parsed = JSON.parse(last_response.body)
         parsed.first['data'].must_equal 'testfoo'

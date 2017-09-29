@@ -180,7 +180,7 @@ class MessageBus::Rack::Middleware
 
       throw :async
     else
-      [200, headers, ["[]"]]
+      [200, headers, [self.class.backlog_to_json(backlog)]]
     end
 
   rescue => e
