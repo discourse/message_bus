@@ -214,27 +214,33 @@ describe MessageBus do
 
   unless MESSAGE_BUS_CONFIG[:backend] == :memory
     it "should support forking properly do" do
-      data = nil
+      data = []
       @bus.subscribe do |msg|
-        data = msg.data
+        data << msg.data
       end
 
       @bus.publish("/hello", "world")
-
-      wait_for(2000) { data }
+      wait_for(2000) { data.length > 0 }
 
       if child = Process.fork
-        wait_for(2000) { data == "ready" }
+
+        wait_for(2000) { data.include?("ready") }
+        data.must_include "ready"
+
         @bus.publish("/hello", "world1")
-        wait_for(2000) { data == "got it" }
-        data.must_equal "got it"
+
+        wait_for(2000) { data.include?("got it") }
+        data.must_include "got it"
         Process.wait(child)
+
       else
         begin
           @bus.after_fork
           @bus.publish("/hello", "ready")
-          wait_for(2000) { data == "world1" }
-          if (data == "world1")
+
+          wait_for(2000) { data.include? "world1" }
+
+          if (data.include? "world1")
             @bus.publish("/hello", "got it")
           end
 

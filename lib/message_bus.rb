@@ -313,10 +313,13 @@ module MessageBus::Implementation
     end
   end
 
+  # mostly used in tests to detroy entire bus
   def destroy
+    return if @destroyed
+    reliable_pub_sub.global_unsubscribe
+
     @mutex.synchronize do
       @subscriptions ||= {}
-      reliable_pub_sub.global_unsubscribe
       @destroyed = true
     end
     @subscriber_thread.join if @subscriber_thread

@@ -45,7 +45,7 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   def after_fork
-    pub_redis.client.reconnect
+    pub_redis.disconnect!
   end
 
   def redis_channel_name
@@ -270,7 +270,8 @@ class MessageBus::Redis::ReliablePubSub
 
   def global_unsubscribe
     if @redis_global
-      pub_redis.publish(redis_channel_name, UNSUB_MESSAGE)
+      # new connection to avoid deadlock
+      new_redis_connection.publish(redis_channel_name, UNSUB_MESSAGE)
       @redis_global.disconnect
       @redis_global = nil
     end

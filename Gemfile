@@ -10,4 +10,5 @@ group :test do
   gem 'thin'
   gem 'rack-test', require: 'rack/test'
   gem 'jasmine'
+  gem 'redis', path: '../redis-rb'
 end

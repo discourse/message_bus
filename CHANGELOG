@@ -1,3 +1,10 @@
+TBD
+
+- Version 2.0.6
+
+- Fix: correct after_fork so it correctly disconnnects redis
+- Fix: correct message_bus #destroy used in tests to clean up spec (deadlock)
+
 16-08-2017
 
 - Version 2.0.5
