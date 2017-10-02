@@ -17,4 +17,8 @@ class MessageBus::Message < Struct.new(:global_id, :message_id, :channel , :data
   def encode
     global_id.to_s << "|" << message_id.to_s << "|" << channel.gsub("|", "$$123$$") << "|" << data
   end
+
+  def encode_without_ids
+    channel.gsub("|", "$$123$$") << "|" << data
+  end
 end

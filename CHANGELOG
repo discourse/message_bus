@@ -1,3 +1,11 @@
+02-10-2017
+
+- Version 2.0.7
+
+- Fix/Feature: use LUA script for publishing to bus, this eliminates a race condition
+   and ensures that we are never stuck in a multi transaction by mistake
+
+
 29-09-2017
 
 - Version 2.0.6

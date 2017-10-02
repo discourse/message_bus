@@ -1,5 +1,8 @@
 # frozen_string_literal: true
+#
 require 'redis'
+require 'digest'
+
 # the heart of the message bus, it acts as 2 things
 #
 # 1. A channel multiplexer
@@ -81,46 +84,70 @@ class MessageBus::Redis::ReliablePubSub
     end
   end
 
+  LUA_PUBLISH = <<LUA
+
+  local start_payload = ARGV[1]
+  local max_backlog_age = ARGV[2]
+  local max_backlog_size = tonumber(ARGV[3])
+  local max_global_backlog_size = tonumber(ARGV[4])
+  local channel = ARGV[5]
+
+  local global_id_key = KEYS[1]
+  local backlog_id_key = KEYS[2]
+  local backlog_key = KEYS[3]
+  local global_backlog_key = KEYS[4]
+  local redis_channel_name = KEYS[5]
+
+  local global_id = redis.call("INCR", global_id_key)
+  local backlog_id = redis.call("INCR", backlog_id_key)
+  local payload = string.format("%i|%i|%s", global_id, backlog_id, start_payload)
+  local global_backlog_message = string.format("%i|%s", backlog_id, channel)
+
+  redis.call("ZADD", backlog_key, backlog_id, payload)
+  redis.call("EXPIRE", backlog_key, max_backlog_age)
+
+  redis.call("ZADD", global_backlog_key, global_id, global_backlog_message)
+  redis.call("EXPIRE", global_backlog_key, max_backlog_age)
+
+  redis.call("PUBLISH", redis_channel_name, payload)
+
+  if backlog_id > max_backlog_size then
+    redis.call("ZREMRANGEBYSCORE", backlog_key, 1, backlog_id - max_backlog_size)
+  end
+
+  if global_id > max_global_backlog_size then
+    redis.call("ZREMRANGEBYSCORE", global_backlog_key, 1, global_id - max_global_backlog_size)
+  end
+
+  return backlog_id
+
+LUA
+
+  LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)
+
   def publish(channel, data, queue_in_memory = true)
     redis = pub_redis
     backlog_id_key = backlog_id_key(channel)
     backlog_key = backlog_key(channel)
 
-    global_id = nil
-    backlog_id = nil
+    msg = MessageBus::Message.new nil, nil, channel, data
 
-    redis.multi do |m|
-      global_id = m.incr(global_id_key)
-      backlog_id = m.incr(backlog_id_key)
-    end
-
-    global_id = global_id.value
-    backlog_id = backlog_id.value
-
-    msg = MessageBus::Message.new global_id, backlog_id, channel, data
-    payload = msg.encode
-
-    redis.multi do |m|
-
-      redis.zadd backlog_key, backlog_id, payload
-      redis.expire backlog_key, @max_backlog_age
-
-      redis.zadd global_backlog_key, global_id, backlog_id.to_s << "|" << channel
-      redis.expire global_backlog_key, @max_backlog_age
-
-      redis.publish redis_channel_name, payload
-
-      if backlog_id > @max_backlog_size
-        redis.zremrangebyscore backlog_key, 1, backlog_id - @max_backlog_size
-      end
-
-      if global_id > @max_global_backlog_size
-        redis.zremrangebyscore global_backlog_key, 1, global_id - @max_global_backlog_size
-      end
-
-    end
-
-    backlog_id
+    cached_eval(redis, LUA_PUBLISH, LUA_PUBLISH_SHA1,
+               argv: [
+                 msg.encode_without_ids,
+                 max_backlog_age,
+                 max_backlog_size,
+                 max_global_backlog_size,
+                 channel
+               ],
+               keys: [
+                 global_id_key,
+                 backlog_id_key,
+                 backlog_key,
+                 global_backlog_key,
+                 redis_channel_name
+               ]
+    )
 
   rescue Redis::CommandError => e
     if queue_in_memory && e.message =~ /^READONLY/
@@ -341,6 +368,18 @@ class MessageBus::Redis::ReliablePubSub
   end
 
   private
+
+  def cached_eval(redis, script, script_sha1, params)
+    begin
+      redis.evalsha script_sha1, params
+    rescue Redis::CommandError => e
+      if e.to_s =~ /^NOSCRIPT/
+        redis.eval script, params
+      else
+        raise
+      end
+    end
+  end
 
   def is_readonly?
     key = "__mb_is_readonly"
