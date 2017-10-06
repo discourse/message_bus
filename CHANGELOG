@@ -1,3 +1,9 @@
+06-10-2017
+
+- Version 2.0.8
+
+- Fix: Make redis readonly detection more robust
+
 02-10-2017
 
 - Version 2.0.7
