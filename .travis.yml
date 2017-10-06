@@ -2,10 +2,10 @@ before_install: gem install bundler
 language: ruby
 rvm:
   - 2.0
-  - 2.1.10
-  - 2.2.8
-  - 2.3.5
-  - 2.4.2
+  - 2.1
+  - 2.2
+  - 2.3
+  - 2.4
 gemfile:
   - Gemfile
 addons:
