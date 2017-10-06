@@ -150,7 +150,7 @@ LUA
     )
 
   rescue Redis::CommandError => e
-    if queue_in_memory && e.message =~ /^READONLY/
+    if queue_in_memory && e.message =~ /READONLY/
       @lock.synchronize do
         @in_memory_backlog << [channel, data]
         if @in_memory_backlog.length > @max_in_memory_publish_backlog
