@@ -216,7 +216,7 @@ backgroundCallbackInterval|60000|Interval to poll when long polling is disabled 
 maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
 alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
 baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
-ajax|$.ajax or XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `messsage-bus-ajax.js` file. `messsage-bus-ajax.js` must be loaded after `messsage-bus.js` for it to be used.
+ajax|$.ajax or XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `message-bus-ajax.js` file. `message-bus-ajax.js` must be loaded after `message-bus.js` for it to be used.
 headers|{}|Extra headers to be include with request.  Properties and values of object must be valid values for HTTP Headers, i.e. no spaces and control characters.
 **API**:
 
