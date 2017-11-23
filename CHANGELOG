@@ -3,6 +3,7 @@
 - Version 2.0.9
 
 - PERF: faster serialization of messages
+- FEATURE: on backend flush web clients will resume and continue to get all new messages
 
 06-10-2017
 

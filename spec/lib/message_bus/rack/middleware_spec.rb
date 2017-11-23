@@ -164,6 +164,26 @@ describe MessageBus::Rack::Middleware do
       last_response.ok?.must_equal true
     end
 
+    # this means we recover from redis reset
+    it "should understand that larger than position is the same as -1" do
+      @bus.publish('/foo', 'bar')
+      @bus.publish('/baz', 'test')
+      @bus.publish('/boom', 'bang')
+
+      post "/message-bus/ABCD",
+        '/foo' => 1_000_000,
+        '/baz' => @bus.last_id('/baz') + 1,
+        '/boom' => 1_000_000
+
+      last_response.ok?.must_equal true
+      parsed = JSON.parse(last_response.body)
+
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
+      parsed[0]["data"]["/boom"].must_equal @bus.last_id("/boom")
+    end
+
     it "should correctly understand that -1 means stuff from now onwards" do
 
       # even if allow chunked

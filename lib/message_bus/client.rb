@@ -124,12 +124,18 @@ class MessageBus::Client
       next if v.to_i < 0
       messages = @bus.backlog(k, v, site_id)
 
-      messages.each do |msg|
-        if allowed?(msg)
-          r << msg
-        else
-          new_message_ids ||= {}
-          new_message_ids[k] = msg.message_id
+      if messages.length == 0
+        if v.to_i > @bus.last_id(k, site_id)
+          @subscriptions[k] = -1
+        end
+      else
+        messages.each do |msg|
+          if allowed?(msg)
+            r << msg
+          else
+            new_message_ids ||= {}
+            new_message_ids[k] = msg.message_id
+          end
         end
       end
     end
