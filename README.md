@@ -24,7 +24,10 @@ If you are looking to contribute to this project here are some ideas
 - Improve general documentation (Add examples, refine existing examples)
 - Make MessageBus a nice website
 - Add optional transports for websocket and shared web workers
-- Add `# frozen_string_literal: true` to all non test files and adjust code to allow for it.
+
+## Ruby version support
+
+MessageBus only support officially supported versions of Ruby, as of 11-2017 this means we only support Ruby version 2.2 and up.
 
 ## Can you handle concurrent requests?
 

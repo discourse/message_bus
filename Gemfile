@@ -10,8 +10,7 @@ group :test do
   gem 'thin'
   gem 'rack-test', require: 'rack/test'
   gem 'jasmine'
-  gem 'redis'
 end
 
-gem 'redis', '3.3.5', platform: :mri_20
-gem 'rack', '1.6.4', platform: :mri_20
+gem 'redis'
+gem 'rack'
