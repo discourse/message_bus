@@ -10,7 +10,20 @@ load 'jasmine/tasks/jasmine.rake'
 
 Bundler.require(:default, :test)
 
-task :default => [:spec]
+task default: :spec
+
+module CustomBuild
+  def build_gem
+    puts `cp assets/message-bus* vendor/assets/javascripts`
+    super
+  end
+end
+
+module Bundler
+  class GemHelper
+    prepend CustomBuild
+  end
+end
 
 run_spec = proc do |backend|
   begin
@@ -21,9 +34,9 @@ run_spec = proc do |backend|
   end
 end
 
-task :spec => [:spec_redis, :spec_postgres, :spec_memory, :spec_client_js]
+task spec: [:spec_redis, :spec_postgres, :spec_memory, :spec_client_js]
 
-task :spec_client_js => 'jasmine:ci'
+task spec_client_js: 'jasmine:ci'
 
 task :spec_redis do
   run_spec.call('redis')
