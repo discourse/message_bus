@@ -14,7 +14,7 @@ task default: :spec
 
 module CustomBuild
   def build_gem
-    puts `cp assets/message-bus* vendor/assets/javascripts`
+    `cp assets/message-bus* vendor/assets/javascripts`
     super
   end
 end
