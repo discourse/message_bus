@@ -211,6 +211,38 @@ if MESSAGE_BUS_CONFIG[:backend] == :redis
       got.map { |m| m.data }.must_equal ["2"]
     end
 
+    it "should cope with a redis reset cleanly" do
+
+      @bus.publish("/foo", "1")
+      got = []
+
+      t = Thread.new do
+        new_test_bus.subscribe("/foo") do |msg|
+          got << msg
+        end
+      end
+
+      # sleep 50ms to allow the bus to correctly subscribe,
+      #   I thought about adding a subscribed callback, but outside of testing it matters less
+      sleep 0.05
+
+      @bus.publish("/foo", "2")
+
+      @bus.pub_redis.flushdb
+
+      @bus.publish("/foo", "3")
+
+      wait_for(100) do
+        got.length == 2
+      end
+
+      t.kill
+
+      got.map { |m| m.data }.must_equal ["2", "3"]
+      got[1].global_id.must_equal 1
+
+    end
+
     it "should allow us to get last id on a channel" do
       @bus.last_id("/foo").must_equal 0
       @bus.publish("/foo", "1")
