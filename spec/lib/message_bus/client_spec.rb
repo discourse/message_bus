@@ -29,7 +29,7 @@ describe MessageBus::Client do
 
       while line = lines.shift
         break if line == ""
-        name,val = line.split(": ")
+        name, val = line.split(": ")
         headers[name] = val
       end
 
@@ -39,7 +39,7 @@ describe MessageBus::Client do
         break if length == 0
         rest = lines.join("\r\n")
         chunks << rest[0...length]
-        lines = (rest[length+2..-1] || "").split("\r\n")
+        lines = (rest[length + 2..-1] || "").split("\r\n")
       end
 
       # split/join gets tricky
@@ -49,15 +49,15 @@ describe MessageBus::Client do
     end
 
     def parse_chunk(data)
-      payload,_ = data.split(/\r\n\|\r\n/m)
+      payload, _ = data.split(/\r\n\|\r\n/m)
       JSON.parse(payload)
     end
 
     it "can chunk replies" do
       @client.use_chunked = true
-      r,w = IO.pipe
+      r, w = IO.pipe
       @client.io = w
-      @client.headers = {"Content-Type" => "application/json; charset=utf-8"}
+      @client.headers = { "Content-Type" => "application/json; charset=utf-8" }
       @client << MessageBus::Message.new(1, 1, '/test', 'test')
       @client << MessageBus::Message.new(2, 2, '/test', "a|\r\n|\r\n|b")
 
@@ -84,7 +84,7 @@ describe MessageBus::Client do
 
       data[-5..-1].must_equal "0\r\n\r\n"
 
-      _,_,chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" << data)
+      _, _, chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" << data)
 
       chunks.length.must_equal 2
 
@@ -116,6 +116,18 @@ describe MessageBus::Client do
       log[0].data.must_equal("/hello" => 0)
     end
 
+    it "allows negative subscribes to look behind" do
+
+      @bus.publish '/hello', 'world'
+      @bus.publish '/hello', 'sam'
+
+      @client.subscribe('/hello', -2)
+
+      log = @client.backlog
+      log.length.must_equal(1)
+      log[0].data.must_equal("sam")
+    end
+
     it "provides status" do
       @client.subscribe('/hello', -1)
       log = @client.backlog
@@ -139,7 +151,7 @@ describe MessageBus::Client do
       log = another_client.backlog
       log.length.must_equal 1
       log[0].channel.must_equal '/__status'
-      log[0].data.must_equal({ '/hello' => 1 })
+      log[0].data.must_equal('/hello' => 1)
     end
 
     it "should provide a list of subscriptions" do
@@ -158,7 +170,7 @@ describe MessageBus::Client do
 
     it "allows only client_id in list if message contains client_ids" do
       @message = MessageBus::Message.new(1, 2, '/test', 'hello')
-      @message.client_ids = ["1","2"]
+      @message.client_ids = ["1", "2"]
       @client.client_id = "2"
       @client.allowed?(@message).must_equal true
 
@@ -168,23 +180,23 @@ describe MessageBus::Client do
 
     describe "targetted at group" do
       before do
-        @message = MessageBus::Message.new(1,2,'/test', 'hello')
-        @message.group_ids = [1,2,3]
+        @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+        @message.group_ids = [1, 2, 3]
       end
 
       it "denies users that are not members of group" do
-        @client.group_ids = [77,0,10]
+        @client.group_ids = [77, 0, 10]
         @client.allowed?(@message).must_equal false
       end
 
       it "allows users that are members of group" do
-        @client.group_ids = [1,2,3]
+        @client.group_ids = [1, 2, 3]
         @client.allowed?(@message).must_equal true
       end
 
       it "allows all users if groups not set" do
         @message.group_ids = nil
-        @client.group_ids = [77,0,10]
+        @client.group_ids = [77, 0, 10]
         @client.allowed?(@message).must_equal true
       end
 

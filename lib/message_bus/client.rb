@@ -121,11 +121,19 @@ class MessageBus::Client
     new_message_ids = nil
 
     @subscriptions.each do |k, v|
-      next if v.to_i < 0
-      messages = @bus.backlog(k, v, site_id)
+      id = v.to_i
+
+      if id < -1
+        last_id = @bus.last_id(k, site_id)
+        id = last_id + id + 1
+        id = 0 if id < 0
+      end
+
+      next if id < 0
+      messages = @bus.backlog(k, id, site_id)
 
       if messages.length == 0
-        if v.to_i > @bus.last_id(k, site_id)
+        if id > @bus.last_id(k, site_id)
           @subscriptions[k] = -1
         end
       else

@@ -196,10 +196,28 @@ MessageBus.start(); // call once at startup
 
 // how often do you want the callback to fire in ms
 MessageBus.callbackInterval = 500;
+
+// you will get all new messages sent to channel
 MessageBus.subscribe("/channel", function(data){
   // data shipped from server
 });
 
+
+// you will get all new messages sent to channel (-1 is implicit)
+MessageBus.subscribe("/channel", function(data){
+  // data shipped from server
+}, -1);
+
+
+// all messages AFTER message id 7 AND all new messages
+MessageBus.subscribe("/channel", function(data){
+  // data shipped from server
+}, 7);
+
+// last 2 messages in channel AND all new messages
+MessageBus.subscribe("/channel", function(data){
+  // data shipped from server
+}, -3);
 ```
 
 There is also a Ruby implementation of the client library, at

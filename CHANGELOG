@@ -1,3 +1,10 @@
+18-12-2017
+
+- Version 2.1.0
+
+- FEATURE: you can now lookup last N messages on channel on subscribe from JavaScript
+   Subscribe at position (-1 - numberOfMessages) from the client
+
 24-11-2017
 
 - Version 2.0.9
