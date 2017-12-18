@@ -1,5 +1,11 @@
 18-12-2017
 
+- Version 2.1.1
+
+- FEATURE: allow setting of max_backlog_size and max_backlog_age on publish for redis provider
+
+18-12-2017
+
 - Version 2.1.0
 
 - FEATURE: you can now lookup last N messages on channel on subscribe from JavaScript

@@ -125,7 +125,12 @@ LUA
 
   LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)
 
-  def publish(channel, data, queue_in_memory = true)
+  def publish(channel, data, opts = nil)
+    queue_in_memory = (opts && opts[:queue_in_memory]) != false
+
+    max_backlog_age = (opts && opts[:max_backlog_age]) || self.max_backlog_age
+    max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
+
     redis = pub_redis
     backlog_id_key = backlog_id_key(channel)
     backlog_key = backlog_key(channel)
@@ -190,7 +195,8 @@ LUA
         end
 
         begin
-          publish(*@in_memory_backlog[0], false)
+          # TODO recover special options
+          publish(*@in_memory_backlog[0], queue_in_memory: false)
         rescue Redis::CommandError => e
           if e.message =~ /^READONLY/
             try_again = true

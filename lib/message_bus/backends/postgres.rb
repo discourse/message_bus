@@ -31,7 +31,7 @@ class MessageBus::Postgres::Client
     @pid = Process.pid
   end
 
-  def add (channel, value)
+  def add(channel, value)
     hold { |conn| exec_prepared(conn, 'insert_message', [channel, value]) { |r| r.getvalue(0, 0).to_i } }
   end
 
@@ -256,7 +256,10 @@ class MessageBus::Postgres::ReliablePubSub
     client.reset!
   end
 
-  def publish(channel, data, queue_in_memory = true)
+  def publish(channel, data, opts = nil)
+
+    # TODO in memory queue?
+
     client = self.client
     backlog_id = client.add(channel, data)
     msg = MessageBus::Message.new backlog_id, backlog_id, channel, data

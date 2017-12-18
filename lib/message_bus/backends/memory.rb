@@ -164,7 +164,7 @@ class MessageBus::Memory::ReliablePubSub
     client.reset!
   end
 
-  def publish(channel, data, queue_in_memory = true)
+  def publish(channel, data, opts = nil)
     client = self.client
     backlog_id = client.add(channel, data)
     if backlog_id % clear_every == 0

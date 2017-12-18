@@ -236,7 +236,16 @@ module MessageBus::Implementation
       client_ids: client_ids
     )
 
-    reliable_pub_sub.publish(encode_channel_name(channel), encoded_data)
+    channel_opts = nil
+
+    if opts && ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
+      channel_opts = {
+        max_backlog_size: size,
+        max_backlog_age: age
+      }
+    end
+
+    reliable_pub_sub.publish(encode_channel_name(channel), encoded_data, channel_opts)
   end
 
   def blocking_subscribe(channel = nil, &blk)

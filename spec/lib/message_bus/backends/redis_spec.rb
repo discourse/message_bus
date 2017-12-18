@@ -52,6 +52,24 @@ if MESSAGE_BUS_CONFIG[:backend] == :redis
       @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :>, 0
     end
 
+    it "can set backlog age on publish" do
+      @bus.max_backlog_age = 100
+
+      @bus.publish "/foo", "bar", max_backlog_age: 50
+      @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :<=, 50
+      @bus.pub_redis.ttl(@bus.backlog_key("/foo")).must_be :>, 0
+    end
+
+    it "can set backlog size on publish" do
+      @bus.max_backlog_size = 100
+
+      @bus.publish "/foo", "bar", max_backlog_size: 2
+      @bus.publish "/foo", "bar", max_backlog_size: 2
+      @bus.publish "/foo", "bar", max_backlog_size: 2
+
+      @bus.backlog("/foo").length.must_equal 2
+    end
+
     it "should be able to access the backlog" do
       @bus.publish "/foo", "bar"
       @bus.publish "/foo", "baz"
