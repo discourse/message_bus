@@ -48,6 +48,32 @@
     }
   };
 
+  var hasLocalStorage = (function() {
+    try {
+      localStorage.setItem("mbTestLocalStorage", Date.now());
+      localStorage.removeItem("mbTestLocalStorage");
+      return true;
+    } catch(e) {
+      return false;
+    }
+  })();
+
+  var updateLastAjax = function() {
+    if (hasLocalStorage) {
+      localStorage.setItem("__mbLastAjax", Date.now());
+    }
+  }
+
+  var hiddenTabShouldWait = function() {
+    if (hasLocalStorage && isHidden()) {
+      var lastAjaxCall = parseInt(localStorage.getItem("__mbLastAjax"), 10);
+      var deltaAjax = Date.now() - lastAjaxCall;
+
+      return deltaAjax >= 0 && deltaAjax < me.minHiddenPollInterval;
+    }
+    return false;
+  }
+
   var hasonprogress = (new XMLHttpRequest()).onprogress === null;
   var allowChunked = function(){
     return me.enableChunkedEncoding && hasonprogress;
@@ -182,6 +208,9 @@
     if (!me.ajax){
       throw new Error("Either jQuery or the ajax adapter must be loaded");
     }
+
+    updateLastAjax();
+
     var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
       data: data,
@@ -260,7 +289,10 @@
           }
         }
 
-        pollTimeout = setTimeout(function(){pollTimeout=null; poll();}, interval);
+        pollTimeout = setTimeout(function(){
+          pollTimeout = null;
+          poll();
+        }, interval);
         me.longPoll = null;
       }
     });
@@ -269,6 +301,8 @@
   };
 
   me = {
+    /* shared between all tabs */
+    minHiddenPollInterval: 1500,
     enableChunkedEncoding: true,
     enableLongPolling: true,
     callbackInterval: 15000,
@@ -322,9 +356,11 @@
           return;
         }
 
-        if (callbacks.length === 0) {
+        if (callbacks.length === 0 || hiddenTabShouldWait()) {
           if(!delayPollTimeout) {
-            delayPollTimeout = setTimeout(function(){ delayPollTimeout = null; poll();}, 500);
+            delayPollTimeout = setTimeout(function() {
+              delayPollTimeout = null; poll();
+            }, parseInt(500 + Math.random() * 500));
           }
           return;
         }

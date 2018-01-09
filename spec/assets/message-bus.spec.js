@@ -40,11 +40,11 @@ describe("Messagebus", function() {
       expect(spec.MockedXMLHttpRequest.prototype.send).toHaveBeenCalled()
       expect(onMessageSpy).not.toHaveBeenCalled()
       MessageBus.resume()
-    }, 510) // greater than delayPollTimeout of 500
+    }, 1010) // greater than delayPollTimeout of 500 + 500 random
     setTimeout(function(){
       expect(onMessageSpy).toHaveBeenCalled()
       done()
-    }, 550) // greater than first timeout above
+    }, 1050) // greater than first timeout above
   });
 
   it('can unsubscribe from callbacks', function(done){

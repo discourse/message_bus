@@ -1,3 +1,11 @@
+09-01-2018
+
+- Version 2.1.2
+
+- FEATURE: minHiddenPollInterval set to 1500ms out of the box, ensures we never do hidden tab
+   polls at a high rate if tons of tabs are open
+- FEATURE: added random 500ms to delayed polls to increase tab entropy
+
 18-12-2017
 
 - Version 2.1.1

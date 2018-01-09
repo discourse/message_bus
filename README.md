@@ -239,6 +239,9 @@ alwaysLongPoll|false|For debugging you may want to disable the "is browser in ba
 baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
 ajax|$.ajax or XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `message-bus-ajax.js` file. `message-bus-ajax.js` must be loaded after `message-bus.js` for it to be used.
 headers|{}|Extra headers to be include with request.  Properties and values of object must be valid values for HTTP Headers, i.e. no spaces and control characters.
+minHiddenPollInterval|1500|Time to wait between poll requests performed by background or hidden tabs and windows, shared state via localStorage
+enableChunkedEncoding|true|Allow streaming of message bus data over the HTTP channel
+
 **API**:
 
 `MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus
