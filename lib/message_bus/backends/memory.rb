@@ -277,7 +277,7 @@ class MessageBus::Memory::ReliablePubSub
         end
       end
     rescue => error
-      MessageBus.logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
+      @config[:logger].warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
       sleep 1
       retry
     end
