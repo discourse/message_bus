@@ -36,7 +36,7 @@ class MessageBus::ConnectionManager
         end
 
       rescue => e
-        MessageBus.logger.error "notify clients crash #{e} : #{e.backtrace}"
+        @bus.logger.error "notify clients crash #{e} : #{e.backtrace}"
       end
     end
   end

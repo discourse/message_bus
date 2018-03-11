@@ -195,6 +195,11 @@ module MessageBus::Implementation
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
+
+      # Make sure logger is loaded before config is
+      # passed to backend.
+      logger
+
       @config[:reliable_pub_sub] ||= begin
         @config[:backend_options] ||= {}
         require "message_bus/backends/#{backend}"
@@ -208,7 +213,7 @@ module MessageBus::Implementation
   end
 
   def enable_diagnostics
-    MessageBus::Diagnostics.enable
+    MessageBus::Diagnostics.enable(self)
   end
 
   def publish(channel, data, opts = nil)
@@ -472,7 +477,7 @@ module MessageBus::Implementation
       begin
         global_subscribe_thread unless @destroyed
       rescue => e
-        MessageBus.logger.warn "Unexpected error in subscriber thread #{e}"
+        logger.warn "Unexpected error in subscriber thread #{e}"
       end
     end
 
@@ -486,7 +491,7 @@ module MessageBus::Implementation
         # going for x3 keepalives missed for a restart, need to ensure this only very rarely happens
         # note: after_fork will sort out a bad @last_message date, but thread will be dead anyway
         if (Time.now - (@last_message || Time.now)) > keepalive_interval * 3
-          MessageBus.logger.warn "Global messages on #{Process.pid} timed out, restarting process"
+          logger.warn "Global messages on #{Process.pid} timed out, restarting process"
           # No other clean way to remove this thread, its listening on a socket
           #   no data is arriving
           #
@@ -501,7 +506,7 @@ module MessageBus::Implementation
             begin
               Process.kill('KILL', pid)
             rescue Errno::ESRCH
-              MessageBus.logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
+              logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
             end
           end
 
@@ -546,11 +551,11 @@ module MessageBus::Implementation
           begin
             c.call msg
           rescue => e
-            MessageBus.logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
+            logger.warn "failed to deliver message, skipping #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
           end
         end
       rescue => e
-        MessageBus.logger.warn "failed to process message #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
+        logger.warn "failed to process message #{msg.inspect}\n ex: #{e} backtrace: #{e.backtrace}"
       end
       @global_id = msg.global_id
     end

@@ -23,14 +23,14 @@ class MessageBus::Diagnostics
     end
   end
 
-  def self.enable
+  def self.enable(bus = MessageBus)
     full_path = full_process_path
     start_time = Time.now.to_f
     hostname = self.hostname
 
     # it may make sense to add a channel per machine/host to streamline
     #  process to process comms
-    MessageBus.subscribe('/_diagnostics/hup') do |msg|
+    bus.subscribe('/_diagnostics/hup') do |msg|
       if Process.pid == msg.data["pid"] && hostname == msg.data["hostname"]
         $shutdown = true
         sleep 4
@@ -38,16 +38,16 @@ class MessageBus::Diagnostics
       end
     end
 
-    MessageBus.subscribe('/_diagnostics/discover') do |msg|
-      MessageBus.on_connect.call msg.site_id if MessageBus.on_connect
-      MessageBus.publish '/_diagnostics/process-discovery', {
+    bus.subscribe('/_diagnostics/discover') do |msg|
+      bus.on_connect.call msg.site_id if bus.on_connect
+      bus.publish '/_diagnostics/process-discovery', {
         pid: Process.pid,
         process_name: $0,
         full_path: full_path,
         uptime: (Time.now.to_f - start_time).to_i,
         hostname: hostname
       }, user_ids: [msg.data["user_id"]]
-      MessageBus.on_disconnect.call msg.site_id if MessageBus.on_disconnect
+      bus.on_disconnect.call msg.site_id if bus.on_disconnect
     end
   end
 end

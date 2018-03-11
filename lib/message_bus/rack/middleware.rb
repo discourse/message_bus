@@ -24,7 +24,7 @@ class MessageBus::Rack::Middleware
         if thin_running
           EM.next_tick(&run)
         else
-          MessageBus.timer.queue(&run)
+          @bus.timer.queue(&run)
         end
 
         @started_listener = true
@@ -204,7 +204,7 @@ class MessageBus::Rack::Middleware
   def add_client_with_timeout(client)
     @connection_manager.add_client(client)
 
-    client.cleanup_timer = MessageBus.timer.queue(@bus.long_polling_interval.to_f / 1000) {
+    client.cleanup_timer = @bus.timer.queue(@bus.long_polling_interval.to_f / 1000) {
       begin
         client.cleanup_timer = nil
         client.ensure_closed!

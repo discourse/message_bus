@@ -30,6 +30,7 @@ class MessageBus::Redis::ReliablePubSub
   # max_backlog_size is per multiplexed channel
   def initialize(redis_config = {}, max_backlog_size = 1000)
     @redis_config = redis_config.dup
+    @logger = @redis_config[:logger]
     unless @redis_config[:enable_redis_logger]
       @redis_config[:logger] = nil
     end
@@ -160,7 +161,7 @@ LUA
         @in_memory_backlog << [channel, data]
         if @in_memory_backlog.length > @max_in_memory_publish_backlog
           @in_memory_backlog.delete_at(0)
-          MessageBus.logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
+          @logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
         end
       end
 
@@ -201,10 +202,10 @@ LUA
           if e.message =~ /^READONLY/
             try_again = true
           else
-            MessageBus.logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+            @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
           end
         rescue => e
-          MessageBus.logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+          @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
         end
 
         @in_memory_backlog.delete_at(0) unless try_again
@@ -367,7 +368,7 @@ LUA
         end
       end
     rescue => error
-      MessageBus.logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
+      @logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
       sleep 1
       retry
     end
