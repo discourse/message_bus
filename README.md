@@ -19,6 +19,7 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 If you are looking to contribute to this project here are some ideas
 
+- MAKE THIS README BETTER!
 - Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis.
 - Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
 - Improve general documentation (Add examples, refine existing examples)
@@ -57,6 +58,9 @@ Server to Server messaging
 
 ```ruby
 message_id = MessageBus.publish "/channel", "message"
+
+# last id in a channel
+id = MessageBus.last_id("/channel")
 
 # in another process / spot
 
@@ -281,6 +285,24 @@ You can configure redis setting in `config/initializers/message_bus.rb`, like
 MessageBus.configure(backend: :redis, url: "redis://:p4ssw0rd@10.0.1.1:6380/15")
 ```
 The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
+
+#### Data Retention
+
+Out of the box Redis keeps track of 2000 messages in the global backlog and 1000 messages in a per-channel backlog. Per-channel backlogs get cleared automatically after 7 days of inactivity.
+
+This is configurable via accessors on the ReliablePubSub instance.
+
+```
+# only store 100 messages per channel
+MessageBus.reliabe_pub_sub.max_backlog_size = 100
+
+# only store 100 global messages
+MessageBus.reliabe_pub_sub.max_global_backlog_size = 100
+
+# flush per-channel backlog after 100 seconds of inactivity
+MessageBus.reliabe_pub_sub.max_backlog_age = 100
+
+```
 
 ### PostgreSQL
 
