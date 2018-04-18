@@ -146,13 +146,13 @@ location /message-bus/ {
 
 If you wish to disable chunked encoding run:
 
-```
+```ruby
 MessageBus.enableChunkedEncoding = false; // in your JavaScript
 ```
 
 Or
 
-```
+```ruby
 MessageBus.configure(chunked_encoding_enabled: false) // in Ruby
 ```
 
@@ -292,7 +292,7 @@ Out of the box Redis keeps track of 2000 messages in the global backlog and 1000
 
 This is configurable via accessors on the ReliablePubSub instance.
 
-```
+```ruby
 # only store 100 messages per channel
 MessageBus.reliabe_pub_sub.max_backlog_size = 100
 
