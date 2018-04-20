@@ -1,3 +1,9 @@
+20-04-2018
+
+- Version 2.1.3
+
+- FIX: Subtle issue where poll timeout may not be cleared causing multiple concurrent polls
+
 09-01-2018
 
 - Version 2.1.2
