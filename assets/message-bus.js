@@ -289,6 +289,9 @@
           }
         }
 
+        if (pollTimeout) {
+          clearTimeout(pollTimeout);
+        }
         pollTimeout = setTimeout(function(){
           pollTimeout = null;
           poll();
