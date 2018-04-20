@@ -7,6 +7,8 @@
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
   var me, started, stopped, longPoller, pollTimeout, paused, later, jQuery, interval, chunkedBackoff;
 
+  var ajaxInProgress = false;
+
   uniqueId = function() {
     return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r, v;
@@ -132,7 +134,13 @@
     return false;
   };
 
-  longPoller = function(poll,data){
+  longPoller = function(poll, data) {
+
+    if (ajaxInProgress) {
+      // never allow concurrent ajax reqs
+      return;
+    }
+
     var gotData = false;
     var aborted = false;
     lastAjax = new Date();
@@ -211,6 +219,7 @@
 
     updateLastAjax();
 
+    ajaxInProgress = true;
     var req = me.ajax({
       url: me.baseUrl + "message-bus/" + me.clientId + "/poll" + (!longPoll ? "?dlp=t" : ""),
       data: data,
@@ -262,6 +271,9 @@
         }
       },
       complete: function() {
+
+        ajaxInProgress = false;
+
         var interval;
         try {
           if (gotData || aborted) {
@@ -362,7 +374,8 @@
         if (callbacks.length === 0 || hiddenTabShouldWait()) {
           if(!delayPollTimeout) {
             delayPollTimeout = setTimeout(function() {
-              delayPollTimeout = null; poll();
+              delayPollTimeout = null;
+              poll();
             }, parseInt(500 + Math.random() * 500));
           }
           return;
@@ -373,7 +386,7 @@
           data[callbacks[i].channel] = callbacks[i].last_id;
         }
 
-        me.longPoll = longPoller(poll,data);
+        me.longPoll = longPoller(poll, data);
       };
 
 
@@ -381,7 +394,11 @@
       if(document.addEventListener && 'hidden' in document){
         me.visibilityEvent = global.document.addEventListener('visibilitychange', function(){
           if(!document.hidden && !me.longPoll && pollTimeout){
+
             clearTimeout(pollTimeout);
+            clearTimeout(delayPollTimeout);
+
+            delayPollTimeout = null;
             pollTimeout = null;
             poll();
           }

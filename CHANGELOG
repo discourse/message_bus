@@ -1,8 +1,9 @@
 20-04-2018
 
-- Version 2.1.3
+- Version 2.1.4
 
 - FIX: Subtle issue where poll timeout may not be cleared causing multiple concurrent polls
+- FIX: Add extra protection for poller to ensure there is never a case where multiple ajax happens concurrently
 
 09-01-2018
 
