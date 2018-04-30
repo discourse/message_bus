@@ -436,6 +436,10 @@
         lastId = -1;
       }
 
+      if (typeof(channel) !== "string") {
+        throw "Channel name must be a string!";
+      }
+
       callbacks.push({
         channel: channel,
         func: func,
