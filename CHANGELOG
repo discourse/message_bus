@@ -1,3 +1,9 @@
+16-05-2018
+
+- Version 2.1.5
+
+- FIX: In some cases a 30 second initial delay could happen cause client lost info about long poller
+
 20-04-2018
 
 - Version 2.1.4
