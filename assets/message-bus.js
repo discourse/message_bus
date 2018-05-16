@@ -386,7 +386,11 @@
           data[callbacks[i].channel] = callbacks[i].last_id;
         }
 
-        me.longPoll = longPoller(poll, data);
+        // could possibly already be started
+        // notice the delay timeout above
+        if (!me.longPoll) {
+          me.longPoll = longPoller(poll, data);
+        }
       };
 
 
