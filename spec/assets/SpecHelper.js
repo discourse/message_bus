@@ -27,6 +27,7 @@ beforeEach(function () {
   function MockedXMLHttpRequest(){
     this.headers = {};
   };
+
   MockedXMLHttpRequest.prototype.send              = function(){
     this.readyState = 4
     this.responseText = encodeChunks(this, spec.responseChunks);
@@ -35,21 +36,38 @@ beforeEach(function () {
     if (this.onprogress){ this.onprogress(); }
     this.onreadystatechange()
   }
+
   MockedXMLHttpRequest.prototype.open              = function(){ }
-  MockedXMLHttpRequest.prototype.abort             = function(){ }
+
+  MockedXMLHttpRequest.prototype.abort             = function(){
+    this.readyState = 4
+    this.responseText = '';
+    this.statusText = '';
+    this.status = 400;
+    this.onreadystatechange()
+  }
+
   MockedXMLHttpRequest.prototype.setRequestHeader  = function(k,v){
     this.headers[k] = v;
   }
+
   MockedXMLHttpRequest.prototype.getResponseHeader = function(){
     return 'text/plain; charset=utf-8';
   }
+
   MessageBus.xhrImplementation = MockedXMLHttpRequest
   this.MockedXMLHttpRequest = MockedXMLHttpRequest
-  MessageBus.start()
+
   this.responseChunks = [
     {channel: '/test', data: {password: 'MessageBusRocks!'}}
   ];
 
+  MessageBus.start();
+});
+
+afterEach(function(){
+  MessageBus.stop()
+  MessageBus.callbacks.splice(0, MessageBus.callbacks.length)
 });
 
 window.testMB = function(description, testFn, path, data){
@@ -88,10 +106,3 @@ window.testMB = function(description, testFn, path, data){
 
 }
 
-afterEach(function(){
-  MessageBus.stop()
-  if (MessageBus.longPoll){
-    MessageBus.longPoll.abort();
-  }
-  MessageBus.callbacks.splice(0, MessageBus.callbacks.length)
-});

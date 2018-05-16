@@ -6,6 +6,7 @@
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
   var callbacks, clientId, failCount, shouldLongPoll, queue, responseCallbacks, uniqueId, baseUrl;
   var me, started, stopped, longPoller, pollTimeout, paused, later, jQuery, interval, chunkedBackoff;
+  var delayPollTimeout;
 
   var ajaxInProgress = false;
 
@@ -303,11 +304,16 @@
 
         if (pollTimeout) {
           clearTimeout(pollTimeout);
-        }
-        pollTimeout = setTimeout(function(){
           pollTimeout = null;
-          poll();
-        }, interval);
+        }
+
+        if (started) {
+          pollTimeout = setTimeout(function(){
+            pollTimeout = null;
+            poll();
+          }, interval);
+        }
+
         me.longPoll = null;
       }
     });
@@ -354,11 +360,18 @@
     stop: function() {
       stopped = true;
       started = false;
+      if (delayPollTimeout) {
+        clearTimeout(delayPollTimeout);
+        delayPollTimeout = null;
+      }
+      if (me.longPoll) {
+        me.longPoll.abort();
+      }
     },
 
     // Start polling
     start: function() {
-      var poll, delayPollTimeout;
+      var poll;
 
       if (started) return;
       started = true;
