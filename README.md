@@ -294,13 +294,13 @@ This is configurable via accessors on the ReliablePubSub instance.
 
 ```ruby
 # only store 100 messages per channel
-MessageBus.reliabe_pub_sub.max_backlog_size = 100
+MessageBus.reliable_pub_sub.max_backlog_size = 100
 
 # only store 100 global messages
-MessageBus.reliabe_pub_sub.max_global_backlog_size = 100
+MessageBus.reliable_pub_sub.max_global_backlog_size = 100
 
 # flush per-channel backlog after 100 seconds of inactivity
-MessageBus.reliabe_pub_sub.max_backlog_age = 100
+MessageBus.reliable_pub_sub.max_backlog_age = 100
 
 ```
 
