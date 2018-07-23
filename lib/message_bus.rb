@@ -368,9 +368,10 @@ module MessageBus::Implementation
   # @yieldparam [MessageBus::Message] message each message as it is delivered
   #
   # @return [void]
-  def blocking_subscribe(channel = nil, &blk)
+  def blocking_subscribe(channel = nil, site_id = nil, &blk)
     if channel
-      reliable_pub_sub.subscribe(encode_channel_name(channel), &blk)
+      encoded_channel_name = encode_channel_name(channel, site_id)
+      reliable_pub_sub.subscribe(encoded_channel_name, &blk)
     else
       reliable_pub_sub.global_subscribe(&blk)
     end
