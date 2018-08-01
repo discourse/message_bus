@@ -346,10 +346,10 @@ module MessageBus::Implementation
 
     channel_opts = nil
 
-    if opts && ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
+    if opts && (opts[:max_backlog_age] || opts[:max_backlog_size])
       channel_opts = {
-        max_backlog_size: size,
-        max_backlog_age: age
+        max_backlog_age: opts[:max_backlog_age],
+        max_backlog_size: opts[:max_backlog_size]
       }
     end
 
