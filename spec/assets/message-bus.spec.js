@@ -84,6 +84,12 @@ describe("Messagebus", function() {
     window.MessageBus = mb;
   });
 
+  it('respects minPollInterval setting with defaults', function(){
+    expect(MessageBus.minPollInterval).toEqual(100);
+    MessageBus.minPollInterval = 1000;
+    expect(MessageBus.minPollInterval).toEqual(1000);
+  });
+
   testMB('sends using custom header', function(){
     MessageBus.headers['X-MB-TEST-VALUE'] = '42';
     this.perform(function(message, xhr){
