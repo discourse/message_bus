@@ -278,7 +278,7 @@
         var interval;
         try {
           if (gotData || aborted) {
-            interval = 100;
+            interval = me.minPollInterval;
           } else {
             interval = me.callbackInterval;
             if (failCount > 2) {
@@ -328,6 +328,7 @@
     enableLongPolling: true,
     callbackInterval: 15000,
     backgroundCallbackInterval: 60000,
+    minPollInterval: 100,
     maxPollInterval: 3 * 60 * 1000,
     callbacks: callbacks,
     clientId: clientId,
