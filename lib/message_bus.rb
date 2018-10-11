@@ -226,10 +226,12 @@ module MessageBus::Implementation
     group_ids = nil
     client_ids = nil
 
+    site_id = nil
     if opts
       user_ids = opts[:user_ids]
       group_ids = opts[:group_ids]
       client_ids = opts[:client_ids]
+      site_id = opts[:site_id]
     end
 
     raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
@@ -250,7 +252,8 @@ module MessageBus::Implementation
       }
     end
 
-    reliable_pub_sub.publish(encode_channel_name(channel), encoded_data, channel_opts)
+    encoded_channel_name = encode_channel_name(channel, site_id)
+    reliable_pub_sub.publish(encoded_channel_name, encoded_data, channel_opts)
   end
 
   def blocking_subscribe(channel = nil, &blk)

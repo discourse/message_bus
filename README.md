@@ -165,13 +165,19 @@ Polling also requires no special setup, MessageBus will fallback to polling afte
 MessageBus can be used in an environment that hosts multiple sites by multiplexing channels. To use this mode
 
 ```ruby
-# define a site_id lookup method
+# define a site_id lookup method, which is executed
+# when `MessageBus.publish` is called
 MessageBus.configure(site_id_lookup: proc do
   some_method_that_returns_site_id_string
 end)
 
 # you may post messages just to this site
 MessageBus.publish "/channel", "some message"
+
+# you can also choose to pass the `site_id`.
+# This takes precendence over whatever `site_id_lookup`
+# returns
+MessageBus.publish "/channel", "some message", site_id: "site-id"
 
 # you may publish messages to ALL sites using the /global/ prefix
 MessageBus.publish "/global/channel", "will go to all sites"

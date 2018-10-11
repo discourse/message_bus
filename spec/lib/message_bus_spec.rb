@@ -159,6 +159,26 @@ describe MessageBus do
     assert_nil @bus.last_message("/nothing")
   end
 
+  describe "#publish" do
+    it "allows publishing to a explicit site" do
+      data, site_id, channel = nil
+
+      @bus.subscribe do |msg|
+        data = msg.data
+        site_id = msg.site_id
+        channel = msg.channel
+      end
+
+      @bus.publish("/chuck", "norris", site_id: "law-and-order")
+
+      wait_for(2000) { data }
+
+      data.must_equal 'norris'
+      site_id.must_equal 'law-and-order'
+      channel.must_equal '/chuck'
+    end
+  end
+
   describe "global subscriptions" do
     before do
       seq = 0

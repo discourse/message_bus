@@ -1,3 +1,7 @@
+Unreleased
+
+- FEATURE: `MesssageBus.publish` accepts option `site_id` to publish to a site
+
 16-05-2018
 
 - Version 2.1.5
