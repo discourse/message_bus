@@ -13,7 +13,7 @@ describe MessageBus::TimerThread do
   it "allows you to queue every jobs" do
     i = 0
     m = Mutex.new
-    every = @timer.every(0.001){m.synchronize{i += 1 if i < 3}}
+    every = @timer.every(0.001) { m.synchronize { i += 1 if i < 3 } }
     # allow lots of time, cause in test mode stuff can be slow
     wait_for(1000) do
       m.synchronize do
@@ -27,7 +27,7 @@ describe MessageBus::TimerThread do
 
   it "allows you to cancel timers" do
     success = true
-    @timer.queue(0.005){success=false}.cancel
+    @timer.queue(0.005) { success = false }.cancel
     sleep(0.006)
     success.must_equal true
   end
@@ -45,7 +45,7 @@ describe MessageBus::TimerThread do
       4 == results.length
     }
 
-    results.must_equal [0,1,2,3]
+    results.must_equal [0, 1, 2, 3]
   end
 
   it "should call the error callback if something goes wrong" do
