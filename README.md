@@ -14,7 +14,6 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ### http://chat.samsaffron.com
 
-
 ## Want to help?
 
 If you are looking to contribute to this project here are some ideas
@@ -118,6 +117,18 @@ MessageBus.user_id_lookup do |env|
   end
 end
 ```
+
+### Debugging
+
+When setting up MessageBus, it's good to manually check the channels before integrating the client.
+
+You can `curl` MessageBus. This is helpful when trying to debug what may be doing wrong. This uses https://chat.samsaffron.com.
+
+```
+curl -H "Content-Type: application/x-www-form-urlencoded" -X POST --data "/message=0" https://chat.samsaffron.com/message-bus/client-id/poll\?dlp\=t
+```
+
+You should see a reply with the messages of that channel you requested for (`/message`) starting at the message ID (`0`). `dlp=t` disables long-polling: we do not want this request to stay open.
 
 ### Transport
 
