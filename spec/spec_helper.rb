@@ -16,7 +16,7 @@ if backend == :postgres
 end
 puts "Running with backend: #{backend}"
 
-def wait_for(timeout_milliseconds)
+def wait_for(timeout_milliseconds=2000)
   timeout = (timeout_milliseconds + 0.0) / 1000
   finish = Time.now + timeout
 
