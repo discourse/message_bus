@@ -5,6 +5,7 @@ gemspec
 
 group :test do
   gem 'minitest'
+  gem 'minitest-hooks'
   gem 'rake'
   gem 'http_parser.rb'
   gem 'thin'
@@ -14,3 +15,4 @@ end
 
 gem 'redis'
 gem 'rack'
+gem 'concurrent-ruby' # for distributed-cache
