@@ -231,7 +231,7 @@ module MessageBus::Implementation
       raise ::MessageBus::BusDestroyed if @destroyed
     end
 
-    if (user_ids || group_ids) && global?(channel)
+    if [user_ids, group_ids].any? && global?(channel)
       raise ::MessageBus::InvalidMessage
     end
 
