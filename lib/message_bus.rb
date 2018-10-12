@@ -216,25 +216,26 @@ module MessageBus::Implementation
     MessageBus::Diagnostics.enable(self)
   end
 
-  def publish(channel, data, opts = nil)
+  def publish(
+    channel,
+    data,
+    max_backlog_size: nil,
+    max_backlog_age: nil,
+    user_ids: nil,
+    group_ids: nil,
+    client_ids: nil,
+    site_id: nil
+  )
     return if @off
     @mutex.synchronize do
       raise ::MessageBus::BusDestroyed if @destroyed
     end
 
-    user_ids = nil
-    group_ids = nil
-    client_ids = nil
-
-    site_id = nil
-    if opts
-      user_ids = opts[:user_ids]
-      group_ids = opts[:group_ids]
-      client_ids = opts[:client_ids]
-      site_id = opts[:site_id]
+    if [user_ids, group_ids].any? && global?(channel)
+      raise ::MessageBus::InvalidMessage
     end
 
-    raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
+    encoded_channel_name = encode_channel_name(channel, site_id)
 
     encoded_data = JSON.dump(
       data: data,
@@ -243,17 +244,10 @@ module MessageBus::Implementation
       client_ids: client_ids
     )
 
-    channel_opts = nil
-
-    if opts && ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
-      channel_opts = {
-        max_backlog_size: size,
-        max_backlog_age: age
-      }
-    end
-
-    encoded_channel_name = encode_channel_name(channel, site_id)
-    reliable_pub_sub.publish(encoded_channel_name, encoded_data, channel_opts)
+    reliable_pub_sub.publish(encoded_channel_name, encoded_data, {
+      max_backlog_size: max_backlog_size,
+      max_backlog_age: max_backlog_age
+    })
   end
 
   def blocking_subscribe(channel = nil, &blk)
