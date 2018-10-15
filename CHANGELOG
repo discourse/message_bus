@@ -1,6 +1,11 @@
-Unreleased
+15-10-2018
+
+- Version 2.1.6
 
 - FEATURE: `MesssageBus.publish` accepts option `site_id` to publish to a site
+- FEATURE: Added MessageBus::DistributedCache for cross process caching
+- PERF: Use monotonic times in timer thread
+- FEATURE: min poll interval is now configurable client side
 
 16-05-2018
 

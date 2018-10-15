@@ -419,6 +419,8 @@ MessageBus ships with an optional DistributedCache object you can use to synchro
 It allows you a simple and efficient way of synchronizing a cache between processes.
 
 ```ruby
+require 'message_bus/distributed_cache'
+
 # process 1
 
 cache = MessageBus::DistributedCache.new("animals")
