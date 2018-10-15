@@ -139,19 +139,21 @@ describe MessageBus::Client do
       another_client = setup_client('def')
       clients = [@client, another_client]
 
-      clients.each { |client| client.subscribe('/hello', nil) }
+      channel = SecureRandom.hex
 
-      @bus.publish("/hello", "world", client_ids: ['abc'])
+      clients.each { |client| client.subscribe(channel, nil) }
+
+      @bus.publish(channel, "world", client_ids: ['abc'])
 
       log = @client.backlog
       log.length.must_equal 1
-      log[0].channel.must_equal '/hello'
+      log[0].channel.must_equal channel
       log[0].data.must_equal 'world'
 
       log = another_client.backlog
       log.length.must_equal 1
       log[0].channel.must_equal '/__status'
-      log[0].data.must_equal('/hello' => 1)
+      log[0].data.must_equal(channel => 1)
     end
 
     it "should provide a list of subscriptions" do
