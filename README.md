@@ -445,6 +445,18 @@ puts cache["frogs"]
 
 ```
 
+Automatically expiring the cache on app update:
+
+```ruby
+cache = MessageBus::DistributedCache.new("cache name", app_version: "12.1.7.ABDEB")
+cache["a"] = 77
+
+cache = MessageBus::DistributedCache.new("cache name", app_version: "12.1.7.ABDEF")
+
+puts cache["a"]
+# => nil
+```
+
 #### Error Handling
 
 The internet is a chaotic environment and clients can drop off for a variety of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:
