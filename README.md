@@ -413,6 +413,38 @@ Rails.application.config do |config|
 end
 ```
 
+### A Distributed Cache
+
+MessageBus ships with an optional DistributedCache object you can use to synchronize a cache between processes.
+It allows you a simple and efficient way of synchronizing a cache between processes.
+
+```ruby
+# process 1
+
+cache = MessageBus::DistributedCache.new("animals")
+
+# process 2
+
+cache = MessageBus::DistributedCache.new("animals")
+
+# process 1
+
+cache["frogs"] = 5
+
+# process 2
+
+puts cache["frogs"]
+# => 5
+
+cache["frogs"] = nil
+
+# process 1
+
+puts cache["frogs"]
+# => nil
+
+```
+
 #### Error Handling
 
 The internet is a chaotic environment and clients can drop off for a variety of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:

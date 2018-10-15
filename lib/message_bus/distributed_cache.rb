@@ -7,7 +7,6 @@
 require 'weakref'
 require 'base64'
 require 'securerandom'
-require 'concurrent/hash'
 
 module MessageBus
   class DistributedCache
@@ -159,7 +158,7 @@ module MessageBus
           DEFAULT_SITE_ID
         end
 
-      @data[site_id] ||= Concurrent::Hash.new
+      @data[site_id] ||= {}
     end
 
   end
