@@ -95,7 +95,7 @@ describe PUB_SUB_CLASS do
     end
 
     it "should be able to store messages in memory for a period while in read only" do
-      test_only :redis
+      test_only :redis, :redis_streams
       skip "This spec changes redis behavior that in turn means other specs run slow"
 
       @bus.pub_redis.slaveof "127.0.0.80", "666"
@@ -248,7 +248,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/hello", "planet"
 
     expected_messages = case MESSAGE_BUS_CONFIG[:backend]
-                        when :redis
+                        when :redis, :redis_streams
                           # Redis has channel-specific message IDs
                           [
                             MessageBus::Message.new(1, 1, "/foo", "bar"),
@@ -276,7 +276,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/bar", "b1"
 
     expected_messages = case MESSAGE_BUS_CONFIG[:backend]
-                        when :redis
+                        when :redis, :redis_streams
                           # Redis has channel-specific message IDs
                           [
                             MessageBus::Message.new(2, 2, "/foo", "b1"),
@@ -323,7 +323,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "should support clear_every setting" do
-    test_never :redis
+    test_never :redis, :redis_streams
 
     @bus.clear_every = 5
     @bus.max_global_backlog_size = 2

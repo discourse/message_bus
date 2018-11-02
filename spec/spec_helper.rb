@@ -13,7 +13,7 @@ MESSAGE_BUS_CONFIG = { backend: backend, logger: Logger.new(STDOUT) }
 require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
 case backend
-when :redis
+when :redis, :redis_streams
   MESSAGE_BUS_CONFIG.merge!(url: ENV['REDISURL'])
 when :postgres
   MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV['PGHOST'], user: ENV['PGUSER'] || ENV['USER'], password: ENV['PGPASSWORD'], dbname: ENV['PGDATABASE'] || 'message_bus_test' })
