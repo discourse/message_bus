@@ -6,6 +6,9 @@ AllCops:
 Style/AndOr:
   Enabled: true
 
+Layout/BlockAlignment:
+  Enabled: true
+
 # Do not use braces for hash literals when they are the last argument of a
 # method call.
 Style/BracesAroundHashParameters:
@@ -22,6 +25,12 @@ Layout/CommentIndentation:
 # No extra empty lines.
 Layout/EmptyLines:
   Enabled: true
+
+# Align `end` with the matching keyword or starting expression except for
+# assignments, where it should be aligned with the LHS.
+Layout/EndAlignment:
+  Enabled: true
+  EnforcedStyleAlignWith: variable
 
 # Use Ruby >= 1.9 syntax for hashes. Prefer { a: :b } over { :a => :b }.
 Style/HashSyntax:
@@ -79,15 +88,6 @@ Layout/TrailingBlankLines:
 # No trailing whitespace.
 Layout/TrailingWhitespace:
   Enabled: true
-
-Lint/BlockAlignment:
-  Enabled: true
-
-# Align `end` with the matching keyword or starting expression except for
-# assignments, where it should be aligned with the LHS.
-Lint/EndAlignment:
-  Enabled: true
-  EnforcedStyleAlignWith: variable
 
 # Use my_method(my_arg) not my_method( my_arg ) or my_method my_arg.
 Lint/RequireParentheses:
