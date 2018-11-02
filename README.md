@@ -27,7 +27,7 @@ If you are looking to contribute to this project here are some ideas
 
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby, as of 11-2017 this means we only support Ruby version 2.2 and up.
+MessageBus only support officially supported versions of Ruby, as of [2018-06-20](https://www.ruby-lang.org/en/news/2018/06/20/support-of-ruby-2-2-has-ended/) this means we only support Ruby version 2.3 and up.
 
 ## Can you handle concurrent requests?
 
