@@ -11,8 +11,11 @@ backend = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
 MESSAGE_BUS_CONFIG = {:backend=>backend}
 require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
-if backend == :postgres
-  MESSAGE_BUS_CONFIG.merge!(:backend_options=>{:user=>ENV['PGUSER'] || ENV['USER'], :dbname=>ENV['PGDATABASE'] || 'message_bus_test'})
+case backend
+when :redis
+  MESSAGE_BUS_CONFIG.merge!(url: ENV['REDISURL'])
+when :postgres
+  MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV['PGHOST'], user: ENV['PGUSER'] || ENV['USER'], password: ENV['PGPASSWORD'], dbname: ENV['PGDATABASE'] || 'message_bus_test'} )
 end
 puts "Running with backend: #{backend}"
 

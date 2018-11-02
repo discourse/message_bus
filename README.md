@@ -286,12 +286,13 @@ enableChunkedEncoding|true|Allow streaming of message bus data over the HTTP cha
 
 ## Running tests
 
-To run tests you need both Postgres and Redis installed. By default we will connect to the database `message_bus_test` with the current username. If you wish to override this:
+To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to localhost:6379 and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
 
 ```
 PGUSER=some_user PGDATABASE=some_db bundle exec rake
 ```
 
+We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
 
 ## Configuration
 
@@ -492,5 +493,3 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
   end
 end)
 ```
-
-
