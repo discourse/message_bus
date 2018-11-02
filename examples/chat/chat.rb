@@ -7,13 +7,12 @@ require 'json'
 
 $online = Hash.new
 
-
 MessageBus.subscribe "/presence" do |msg|
   if user = msg.data["enter"]
-     $online[user] = Time.now
+    $online[user] = Time.now
   end
   if user = msg.data["leave"]
-     $online.delete user
+    $online.delete user
   end
 end
 
@@ -22,7 +21,7 @@ MessageBus.user_id_lookup do |env|
   name = env["HTTP_X_NAME"]
   if name
     unless $online[name]
-      MessageBus.publish "/presence", {enter: name}
+      MessageBus.publish "/presence", enter: name
     end
     $online[name] = Time.now
   end
@@ -30,10 +29,10 @@ MessageBus.user_id_lookup do |env|
 end
 
 def expire_old_sessions
-  $online.each do |name,time|
-    if (Time.now - (5*60)) > time
-       puts "forcing leave for #{name} session timed out"
-       MessageBus.publish "/presence", {leave: name}
+  $online.each do |name, time|
+    if (Time.now - (5 * 60)) > time
+      puts "forcing leave for #{name} session timed out"
+       MessageBus.publish "/presence", leave: name
     end
   end
 rescue => e
@@ -49,7 +48,7 @@ end
 
 class Chat < Sinatra::Base
 
-  set :public_folder,  File.expand_path('../../../assets',__FILE__)
+  set :public_folder,  File.expand_path('../../../assets', __FILE__)
 
   use MessageBus::Rack::Middleware
 
@@ -60,17 +59,17 @@ class Chat < Sinatra::Base
       name = "#{params["name"]}#{i}"
       i += 1
     end
-    MessageBus.publish '/presence', {enter: name}
-    {users: $online.keys, name: name}.to_json
+    MessageBus.publish '/presence', enter: name
+    { users: $online.keys, name: name }.to_json
   end
 
   post '/leave' do
     #puts "Got leave for #{params["name"]}"
-    MessageBus.publish '/presence', {leave: params["name"]}
+    MessageBus.publish '/presence', leave: params["name"]
   end
 
   post '/message' do
-    msg = {data: params["data"][0..500], name: params["name"][0..100]}
+    msg = { data: params["data"][0..500], name: params["name"][0..100] }
     MessageBus.publish '/message', msg
 
     "OK"
@@ -78,7 +77,7 @@ class Chat < Sinatra::Base
 
   get '/' do
 
-<<HTML
+    <<HTML
 
 <html>
   <head>

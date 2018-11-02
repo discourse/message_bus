@@ -35,7 +35,7 @@ describe MessageBus::ConnectionManager do
   end
 
   it "should cancel the timer after its responds" do
-    m = MessageBus::Message.new(1,1,"test","data")
+    m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 10
     @manager.notify_clients(m)
     @client.cleanup_timer.cancelled.must_equal true
@@ -50,21 +50,21 @@ describe MessageBus::ConnectionManager do
   end
 
   it "should not notify clients on incorrect site" do
-    m = MessageBus::Message.new(1,1,"test","data")
+    m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 9
     @manager.notify_clients(m)
     assert_nil @resp.sent
   end
 
   it "should notify clients on the correct site" do
-    m = MessageBus::Message.new(1,1,"test","data")
+    m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 10
     @manager.notify_clients(m)
     @resp.sent.wont_equal nil
   end
 
   it "should strip site id and user id from the payload delivered" do
-    m = MessageBus::Message.new(1,1,"test","data")
+    m = MessageBus::Message.new(1, 1, "test", "data")
     m.user_ids = [1]
     m.site_id = 10
     @manager.notify_clients(m)
@@ -74,7 +74,7 @@ describe MessageBus::ConnectionManager do
   end
 
   it "should not deliver unselected" do
-    m = MessageBus::Message.new(1,1,"test","data")
+    m = MessageBus::Message.new(1, 1, "test", "data")
     m.user_ids = [5]
     m.site_id = 10
     @manager.notify_clients(m)
@@ -114,7 +114,7 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
 
     subscriber_threads = 10.times.map do |id|
       Thread.new do
-        m = MessageBus::Message.new(1,id,"test","data_#{id}")
+        m = MessageBus::Message.new(1, id, "test", "data_#{id}")
         m.site_id = 10
         @manager.notify_clients(m)
         1
