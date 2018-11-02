@@ -34,7 +34,7 @@ run_spec = proc do |backend|
   end
 end
 
-task spec: [:spec_redis, :spec_postgres, :spec_memory, :spec_client_js]
+task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js]
 
 task spec_client_js: 'jasmine:ci'
 
