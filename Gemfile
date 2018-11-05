@@ -13,6 +13,7 @@ group :test do
   gem 'jasmine'
 end
 
-gem 'redis'
 gem 'rack'
 gem 'concurrent-ruby' # for distributed-cache
+
+gem 'rubocop'

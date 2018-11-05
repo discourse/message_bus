@@ -8,6 +8,9 @@ require 'jasmine'
 ENV['JASMINE_CONFIG_PATH'] ||= File.join(Dir.pwd, 'spec', 'assets', 'support', 'jasmine.yml')
 load 'jasmine/tasks/jasmine.rake'
 
+require 'rubocop/rake_task'
+RuboCop::RakeTask.new
+
 Bundler.require(:default, :test)
 
 task default: :spec
@@ -34,7 +37,7 @@ run_spec = proc do |backend|
   end
 end
 
-task spec: [:spec_redis, :spec_postgres, :spec_memory, :spec_client_js]
+task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop]
 
 task spec_client_js: 'jasmine:ci'
 

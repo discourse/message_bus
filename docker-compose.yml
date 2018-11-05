@@ -1,0 +1,34 @@
+version: '3'
+volumes:
+  bundle_config:
+  bundle:
+  redis_data:
+  postgres_data:
+services:
+  tests:
+    build:
+      context: .
+    environment:
+      BUNDLE_TO: /usr/local/bundle
+      REDISURL: redis://redis:6379
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: "1234"
+    volumes:
+      - .:/usr/src/app
+      - bundle_config:/home/src/app/.bundle
+      - bundle:/usr/local/bundle
+    depends_on:
+      - postgres
+      - redis
+  redis:
+    image: redis:5.0
+    volumes:
+      - redis_data:/data
+  postgres:
+    image: postgres:11.0
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=message_bus_test
