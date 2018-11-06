@@ -267,9 +267,10 @@ describe MessageBus do
 
         @bus.publish("/hello", "world1")
 
+        Process.wait(child)
+
         wait_for(2000) { data.include?("got it") }
         data.must_include "got it"
-        Process.wait(child)
 
       else
         begin
