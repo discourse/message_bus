@@ -83,6 +83,11 @@ class MessageBus::Postgres::Client
     end
   end
 
+  # use with extreme care, will nuke all of the data
+  def expire_all_backlogs!
+    reset!
+  end
+
   def max_id(channel = nil)
     block = proc do |r|
       if r.ntuples > 0
@@ -254,6 +259,11 @@ class MessageBus::Postgres::ReliablePubSub
   # use with extreme care, will nuke all of the data
   def reset!
     client.reset!
+  end
+
+  # use with extreme care, will nuke all of the data
+  def expire_all_backlogs!
+    client.expire_all_backlogs!
   end
 
   def publish(channel, data, opts = nil)

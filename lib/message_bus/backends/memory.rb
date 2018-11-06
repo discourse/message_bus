@@ -80,6 +80,13 @@ class MessageBus::Memory::Client
     end
   end
 
+  # use with extreme care, will nuke all of the data
+  def expire_all_backlogs!
+    sync do
+      @channels = {}
+    end
+  end
+
   def max_id(channel = nil)
     if channel
       sync do
@@ -162,6 +169,11 @@ class MessageBus::Memory::ReliablePubSub
   # use with extreme care, will nuke all of the data
   def reset!
     client.reset!
+  end
+
+  # use with extreme care, will nuke all of the data
+  def expire_all_backlogs!
+    client.expire_all_backlogs!
   end
 
   def publish(channel, data, opts = nil)
