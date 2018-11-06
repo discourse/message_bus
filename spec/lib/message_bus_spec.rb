@@ -82,6 +82,24 @@ describe MessageBus do
 
   end
 
+  it "should recover from a backlog expiring" do
+    data = nil
+    @bus.subscribe("/chuck") do |msg|
+      data = msg.data
+    end
+    @bus.publish("/chuck", norris: true)
+    @bus.publish("/chuck", norris: true)
+    @bus.publish("/chuck", norris: true)
+
+    @bus.reliable_pub_sub.expire_all_backlogs!
+
+    @bus.publish("/chuck", yeager: true)
+
+    wait_for(2000) { data && data["yeager"] }
+
+    data["yeager"].must_equal true
+  end
+
   it "should automatically decode hashed messages" do
     data = nil
     @bus.subscribe("/chuck") do |msg|

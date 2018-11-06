@@ -85,6 +85,13 @@ class MessageBus::Redis::ReliablePubSub
     end
   end
 
+  # use with extreme care, will nuke all of the data
+  def expire_all_backlogs!
+    pub_redis.keys("__mb_*backlog_n").each do |k|
+      pub_redis.del k
+    end
+  end
+
   LUA_PUBLISH = <<LUA
 
   local start_payload = ARGV[1]
