@@ -167,7 +167,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "can set backlog age on publish" do
-    test_only :redis
+    test_only :redis, :postgres
 
     @bus.max_backlog_age = 100
 
