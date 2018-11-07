@@ -196,10 +196,8 @@ describe PUB_SUB_CLASS do
     @bus.global_backlog.to_a.must_equal expected_messages
   end
 
-  it "should cope with a redis reset cleanly" do
-    test_only :redis
-
-    @bus.publish("/foo", "1")
+  it "should cope with a storage reset cleanly" do
+    @bus.publish("/foo", "one")
     got = []
 
     t = Thread.new do
@@ -212,11 +210,11 @@ describe PUB_SUB_CLASS do
     #   I thought about adding a subscribed callback, but outside of testing it matters less
     sleep 0.05
 
-    @bus.publish("/foo", "2")
+    @bus.publish("/foo", "two")
 
-    @bus.pub_redis.flushdb
+    @bus.reset!
 
-    @bus.publish("/foo", "3")
+    @bus.publish("/foo", "three")
 
     wait_for(100) do
       got.length == 2
@@ -224,7 +222,7 @@ describe PUB_SUB_CLASS do
 
     t.kill
 
-    got.map { |m| m.data }.must_equal ["2", "3"]
+    got.map { |m| m.data }.must_equal ["two", "three"]
     got[1].global_id.must_equal 1
   end
 
