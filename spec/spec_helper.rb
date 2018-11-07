@@ -30,3 +30,8 @@ def wait_for(timeout_milliseconds = 2000)
   end.join
 
 end
+
+def test_only(*backends)
+  backend = MESSAGE_BUS_CONFIG[:backend]
+  skip "Test doesn't apply to #{backend}" unless backends.include?(backend)
+end
