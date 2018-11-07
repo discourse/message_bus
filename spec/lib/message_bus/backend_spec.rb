@@ -219,8 +219,6 @@ describe PUB_SUB_CLASS do
   end
 
   it "can set backlog size on publish" do
-    test_only :redis
-
     @bus.max_backlog_size = 100
 
     @bus.publish "/foo", "bar", max_backlog_size: 2

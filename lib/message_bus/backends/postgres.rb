@@ -268,7 +268,7 @@ class MessageBus::Postgres::ReliablePubSub
     client.expire_all_backlogs!
   end
 
-  def publish(channel, data, _opts = nil)
+  def publish(channel, data, opts = nil)
     # TODO in memory queue?
 
     client = self.client
@@ -277,9 +277,10 @@ class MessageBus::Postgres::ReliablePubSub
     payload = msg.encode
     client.publish postgresql_channel_name, payload
     if backlog_id % clear_every == 0
+      max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
       client.clear_global_backlog(backlog_id, @max_global_backlog_size)
       client.expire(@max_backlog_age)
-      client.clear_channel_backlog(channel, backlog_id, @max_backlog_size)
+      client.clear_channel_backlog(channel, backlog_id, max_backlog_size)
     end
 
     backlog_id
