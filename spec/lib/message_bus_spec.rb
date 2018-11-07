@@ -232,46 +232,45 @@ describe MessageBus do
 
   end
 
-  unless MESSAGE_BUS_CONFIG[:backend] == :memory
-    it "should support forking properly do" do
-      data = []
-      @bus.subscribe do |msg|
-        data << msg.data
-      end
+  it "should support forking properly do" do
+    test_never :memory
 
-      @bus.publish("/hello", "world")
-      wait_for(2000) { data.length > 0 }
+    data = []
+    @bus.subscribe do |msg|
+      data << msg.data
+    end
 
-      if child = Process.fork
+    @bus.publish("/hello", "world")
+    wait_for(2000) { data.length > 0 }
 
-        wait_for(2000) { data.include?("ready") }
-        data.must_include "ready"
+    if child = Process.fork
 
-        @bus.publish("/hello", "world1")
+      wait_for(2000) { data.include?("ready") }
+      data.must_include "ready"
 
-        wait_for(2000) { data.include?("got it") }
-        data.must_include "got it"
-        Process.wait(child)
+      @bus.publish("/hello", "world1")
 
-      else
-        begin
-          @bus.after_fork
-          @bus.publish("/hello", "ready")
+      wait_for(2000) { data.include?("got it") }
+      data.must_include "got it"
+      Process.wait(child)
 
-          wait_for(2000) { data.include? "world1" }
+    else
+      begin
+        @bus.after_fork
+        @bus.publish("/hello", "ready")
 
-          if (data.include? "world1")
-            @bus.publish("/hello", "got it")
-          end
+        wait_for(2000) { data.include? "world1" }
 
-          $stdout.reopen("/dev/null", "w")
-          $stderr.reopen("/dev/null", "w")
-
-        ensure
-          exit!(0)
+        if (data.include? "world1")
+          @bus.publish("/hello", "got it")
         end
-      end
 
+        $stdout.reopen("/dev/null", "w")
+        $stderr.reopen("/dev/null", "w")
+
+      ensure
+        exit!(0)
+      end
     end
   end
 end
