@@ -440,7 +440,7 @@
 
     // Subscribe to a channel
     // if lastId is 0 or larger, it will recieve messages AFTER that id
-    // if lastId is nagative it will perform lookbehind"
+    // if lastId is negative it will perform lookbehind
     // -1 will subscribe to all new messages
     // -2 will recieve last message + all new messages
     // -3 will recieve last 2 messages + all new messages
