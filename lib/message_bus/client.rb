@@ -102,10 +102,6 @@ class MessageBus::Client
     end
   end
 
-  def subscriptions
-    @subscriptions
-  end
-
   def allowed?(msg)
     allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
     allowed &&= !msg.client_ids || msg.client_ids.include?(self.client_id)
