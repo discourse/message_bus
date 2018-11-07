@@ -286,7 +286,7 @@ module MessageBus::Implementation
 
   # subscribe only on current site
   def local_subscribe(channel = nil, last_id = -1, &blk)
-    site_id = site_id_lookup.call if site_id_lookup && ! global?(channel)
+    site_id = site_id_lookup.call if site_id_lookup && !global?(channel)
     subscribe_impl(channel, site_id, last_id, &blk)
   end
 
@@ -317,7 +317,7 @@ module MessageBus::Implementation
     old
   end
 
-  def last_id(channel , site_id = nil)
+  def last_id(channel, site_id = nil)
     reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
   end
 

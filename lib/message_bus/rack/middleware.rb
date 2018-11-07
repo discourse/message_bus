@@ -138,7 +138,7 @@ class MessageBus::Rack::Middleware
     if backlog.length > 0 && !allow_chunked
       client.cancel
       @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
-      [200, headers, [self.class.backlog_to_json(backlog)] ]
+      [200, headers, [self.class.backlog_to_json(backlog)]]
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
       io = env['rack.hijack'].call
       # TODO disable client till deliver backlog is called

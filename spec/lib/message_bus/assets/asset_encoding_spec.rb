@@ -9,7 +9,7 @@ describe asset_file_names do
   end
 end
 
-asset_file_paths.each do | path |
+asset_file_paths.each do |path|
   describe "Asset file #{File.basename(path).inspect}" do
     it 'should be encodable as UTF8' do
       binary_data = File.open(path, 'rb') { |f| f.read }

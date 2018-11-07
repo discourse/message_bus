@@ -48,7 +48,7 @@ end
 
 class Chat < Sinatra::Base
 
-  set :public_folder,  File.expand_path('../../../assets', __FILE__)
+  set :public_folder, File.expand_path('../../../assets', __FILE__)
 
   use MessageBus::Rack::Middleware
 
@@ -64,7 +64,7 @@ class Chat < Sinatra::Base
   end
 
   post '/leave' do
-    #puts "Got leave for #{params["name"]}"
+    # puts "Got leave for #{params["name"]}"
     MessageBus.publish '/presence', leave: params["name"]
   end
 
