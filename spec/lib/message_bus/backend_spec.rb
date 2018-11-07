@@ -123,12 +123,15 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "bar"
 
     @bus.global_backlog.length.must_equal 1
+    @bus.backlog("/foo", 0).length.must_equal 1
 
     sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
 
     @bus.publish "/foo", "baz" # Force triggering backlog expiry: some backends don't expire backlogs on a timer, but do so at publication time.
 
-    @bus.global_backlog.length.must_equal 1 # Assert that the backlog did expire, and now has only the new publication in it.
+    # Assert that the backlog did expire, and now has only the new publication in it.
+    @bus.global_backlog.length.must_equal 1
+    @bus.backlog("/foo", 0).length.must_equal 1
 
     sleep 0.75 # Should now be at time =~ 2s
 
@@ -143,8 +146,11 @@ describe PUB_SUB_CLASS do
     when :postgres
       # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
       @bus.global_backlog.length.must_equal 2
+      @bus.backlog("/foo", 0).length.must_equal 2
     else
-      @bus.global_backlog.length.must_equal 3 # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+      # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+      @bus.global_backlog.length.must_equal 3
+      @bus.backlog("/foo", 0).length.must_equal 3
     end
   end
 
@@ -157,12 +163,15 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "bar", max_backlog_age: 1
 
     @bus.global_backlog.length.must_equal 1
+    @bus.backlog("/foo", 0).length.must_equal 1
 
     sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
 
     @bus.publish "/foo", "baz", max_backlog_age: 1 # Force triggering backlog expiry: some backends don't expire backlogs on a timer, but do so at publication time.
 
-    @bus.global_backlog.length.must_equal 1 # Assert that the backlog did expire, and now has only the new publication in it.
+    # Assert that the backlog did expire, and now has only the new publication in it.
+    @bus.global_backlog.length.must_equal 1
+    @bus.backlog("/foo", 0).length.must_equal 1
 
     sleep 0.75 # Should now be at time =~ 2s
 
@@ -173,7 +182,9 @@ describe PUB_SUB_CLASS do
 
     @bus.publish "/foo", "baz", max_backlog_age: 1 # Force triggering backlog expiry: some backends don't expire backlogs on a timer, but do so at publication time.
 
-    @bus.global_backlog.length.must_equal 3 # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+    # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+    @bus.global_backlog.length.must_equal 3
+    @bus.backlog("/foo", 0).length.must_equal 3
   end
 
   it "can set backlog size on publish" do
