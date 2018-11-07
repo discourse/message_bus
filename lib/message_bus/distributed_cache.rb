@@ -10,7 +10,6 @@ require 'securerandom'
 
 module MessageBus
   class DistributedCache
-
     DEFAULT_SITE_ID = 'default'
 
     class Manager
@@ -50,7 +49,6 @@ module MessageBus
             when "delete" then hash.delete(payload["key"])
             when "clear"  then hash.clear
             end
-
           rescue WeakRef::RefError
             @subscribers.delete_at(i)
           ensure
@@ -61,8 +59,10 @@ module MessageBus
 
       def ensure_subscribe!
         return if @subscribed
+
         @lock.synchronize do
           return if @subscribed
+
           @message_bus.subscribe(CHANNEL_NAME) do |message|
             @lock.synchronize do
               process_message(message)
@@ -160,6 +160,5 @@ module MessageBus
 
       @data[site_id] ||= {}
     end
-
   end
 end

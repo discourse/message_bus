@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module MessageBus::Memory; end
 
 class MessageBus::Memory::Client
@@ -247,6 +248,7 @@ class MessageBus::Memory::ReliablePubSub
 
   def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
+
     highest_id = last_id
 
     begin

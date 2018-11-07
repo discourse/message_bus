@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class MessageBus::Message < Struct.new(:global_id, :message_id, :channel, :data)
-
   attr_accessor :site_id, :user_ids, :group_ids, :client_ids
 
   def self.decode(encoded)

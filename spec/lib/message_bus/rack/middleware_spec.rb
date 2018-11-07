@@ -112,7 +112,6 @@ describe MessageBus::Rack::Middleware do
   end
 
   describe "diagnostics" do
-
     it "should return a 403 if a user attempts to get at the _diagnostics path" do
       get "/message-bus/_diagnostics"
       last_response.status.must_equal 403
@@ -130,7 +129,6 @@ describe MessageBus::Rack::Middleware do
       last_response.status.must_equal 200
       last_response.content_type.must_equal "text/javascript;"
     end
-
   end
 
   describe "polling" do
@@ -185,7 +183,6 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should correctly understand that -1 means stuff from now onwards" do
-
       # even if allow chunked
       @bus.chunked_encoding_enabled = true
 
@@ -205,7 +202,6 @@ describe MessageBus::Rack::Middleware do
       parsed[0]["channel"].must_equal "/__status"
       parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
       parsed[0]["data"]["/boom"].must_equal @bus.last_id("/boom")
-
     end
 
     it "should respond with the data if messages exist in the backlog" do
@@ -226,7 +222,6 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should have no cross talk" do
-
       seq = 0
       @bus.site_id_lookup do
         (seq += 1).to_s
@@ -241,11 +236,9 @@ describe MessageBus::Rack::Middleware do
 
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 0
-
     end
 
     it "should have global cross talk" do
-
       seq = 0
       @bus.site_id_lookup do
         (seq += 1).to_s
@@ -339,7 +332,6 @@ describe MessageBus::Rack::Middleware do
 
     describe "on_middleware_error handling" do
       it "allows error handling of middleware failures" do
-
         @bus.on_middleware_error do |env, err|
           if ArgumentError === err
             [407, {}, []]
@@ -355,7 +347,6 @@ describe MessageBus::Rack::Middleware do
             "CONTENT_TYPE" => "application/json")
 
         last_response.status.must_equal 407
-
       end
     end
 

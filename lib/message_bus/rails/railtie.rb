@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module MessageBus; module Rails; end; end
 
 # rails engine for asset pipeline
@@ -25,6 +26,7 @@ class MessageBus::Rails::Railtie < ::Rails::Railtie
 
   def api_only?(config)
     return false unless config.respond_to?(:api_only)
+
     config.api_only
   end
 

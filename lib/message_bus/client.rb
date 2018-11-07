@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
@@ -52,6 +53,7 @@ class MessageBus::Client
 
   def ensure_closed!
     return unless in_async?
+
     if use_chunked
       write_chunk("[]")
       if @io
@@ -130,6 +132,7 @@ class MessageBus::Client
       end
 
       next if id < 0
+
       messages = @bus.backlog(k, id, site_id)
 
       if messages.length == 0
@@ -180,6 +183,7 @@ class MessageBus::Client
     @io.write(HTTP_11)
     @headers.each do |k, v|
       next if k == "Content-Type"
+
       @io.write(k)
       @io.write(COLON_SPACE)
       @io.write(v)

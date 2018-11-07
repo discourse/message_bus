@@ -1,11 +1,11 @@
 # frozen_string_literal: true
+
 require 'json'
 
 # our little message bus, accepts long polling and polling
 module MessageBus::Rack; end
 
 class MessageBus::Rack::Middleware
-
   def start_listener
     unless @started_listener
 
@@ -59,7 +59,6 @@ class MessageBus::Rack::Middleware
   end
 
   def call(env)
-
     return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
 
     # special debug/test route
@@ -182,7 +181,6 @@ class MessageBus::Rack::Middleware
     else
       [200, headers, [self.class.backlog_to_json(backlog)]]
     end
-
   rescue => e
     if @bus.on_middleware_error && result = @bus.on_middleware_error.call(env, e)
       result

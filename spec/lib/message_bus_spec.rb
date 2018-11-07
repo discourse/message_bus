@@ -3,7 +3,6 @@ require 'message_bus'
 require 'redis'
 
 describe MessageBus do
-
   before do
     @bus = MessageBus::Instance.new
     @bus.site_id_lookup do
@@ -59,11 +58,9 @@ describe MessageBus do
     wait_for(2000) { client_ids }
 
     client_ids.must_equal ['a', 'b']
-
   end
 
   it "should recover from a redis flush" do
-
     data = nil
     @bus.subscribe("/chuck") do |msg|
       data = msg.data
@@ -79,7 +76,6 @@ describe MessageBus do
     wait_for(2000) { data && data["yeager"] }
 
     data["yeager"].must_equal true
-
   end
 
   it "should recover from a backlog expiring" do
@@ -129,7 +125,6 @@ describe MessageBus do
     site_id.must_equal 'magic'
     channel.must_equal '/chuck'
     user_ids.must_equal [1, 2, 3]
-
   end
 
   it "should get global messages if it subscribes to them" do
@@ -148,7 +143,6 @@ describe MessageBus do
     data.must_equal 'norris'
     site_id.must_equal 'magic'
     channel.must_equal '/chuck'
-
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
@@ -167,7 +161,6 @@ describe MessageBus do
     @bus.publish("/chuckles", "bar")
 
     @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['norris', 'foo']
-
   end
 
   it "allows you to look up last_message" do
@@ -211,7 +204,6 @@ describe MessageBus do
     end
 
     it "can subscribe globally" do
-
       data = nil
       @bus.subscribe do |message|
         data = message.data
@@ -224,7 +216,6 @@ describe MessageBus do
     end
 
     it "can subscribe to channel" do
-
       data = nil
       @bus.subscribe("/global/test") do |message|
         data = message.data
@@ -247,7 +238,6 @@ describe MessageBus do
         @bus.publish("/global/test", "test", user_ids: [1])
       end.must_raise(MessageBus::InvalidMessage)
     end
-
   end
 
   it "should support forking properly do" do

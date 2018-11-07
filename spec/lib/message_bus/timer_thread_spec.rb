@@ -33,7 +33,6 @@ describe MessageBus::TimerThread do
   end
 
   it "queues jobs in the correct order" do
-
     results = []
     (0..3).to_a.reverse.each do |i|
       @timer.queue(0.005 * i) do
@@ -69,5 +68,4 @@ describe MessageBus::TimerThread do
 
     error.class.must_equal NameError
   end
-
 end

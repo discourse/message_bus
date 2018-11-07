@@ -1,6 +1,6 @@
 # frozen_string_literal: true
-class MessageBus::TimerThread
 
+class MessageBus::TimerThread
   attr_reader :jobs
 
   class Cancelable
@@ -16,6 +16,7 @@ class MessageBus::TimerThread
     def initialize(job)
       @job = job
     end
+
     def cancel
       @job[1] = NOOP
     end
@@ -123,5 +124,4 @@ class MessageBus::TimerThread
       end
     end
   end
-
 end

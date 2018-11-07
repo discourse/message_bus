@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'pg'
 
 module MessageBus::Postgres; end
@@ -120,6 +121,7 @@ class MessageBus::Postgres::Client
     while listening_on?(channel, obj)
       conn.wait_for_notify(10) do |_, _, payload|
         break unless listening_on?(channel, obj)
+
         listener.do_message.call(nil, payload)
       end
     end
@@ -267,7 +269,6 @@ class MessageBus::Postgres::ReliablePubSub
   end
 
   def publish(channel, data, opts = nil)
-
     # TODO in memory queue?
 
     client = self.client
@@ -342,6 +343,7 @@ class MessageBus::Postgres::ReliablePubSub
 
   def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
+
     highest_id = last_id
 
     begin

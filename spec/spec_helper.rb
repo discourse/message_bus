@@ -28,7 +28,6 @@ def wait_for(timeout_milliseconds = 2000)
       sleep(0.001)
     end
   end.join
-
 end
 
 def test_only(*backends)
