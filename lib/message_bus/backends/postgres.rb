@@ -278,8 +278,9 @@ class MessageBus::Postgres::ReliablePubSub
     client.publish postgresql_channel_name, payload
     if backlog_id % clear_every == 0
       max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
+      max_backlog_age = (opts && opts[:max_backlog_age]) || self.max_backlog_age
       client.clear_global_backlog(backlog_id, @max_global_backlog_size)
-      client.expire(@max_backlog_age)
+      client.expire(max_backlog_age)
       client.clear_channel_backlog(channel, backlog_id, max_backlog_size)
     end
 
