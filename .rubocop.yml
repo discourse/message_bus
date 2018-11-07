@@ -46,6 +46,12 @@ Layout/SpaceAfterColon:
 Layout/SpaceAfterComma:
   Enabled: true
 
+Layout/SpaceAfterNot:
+  Enabled: true
+
+Layout/SpaceAroundBlockParameters:
+  Enabled: true
+
 Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: true
 
@@ -53,6 +59,9 @@ Layout/SpaceAroundKeyword:
   Enabled: true
 
 Layout/SpaceAroundOperators:
+  Enabled: true
+
+Layout/SpaceBeforeComma:
   Enabled: true
 
 Layout/SpaceBeforeFirstArg:
@@ -64,6 +73,9 @@ Style/MethodDefParentheses:
 
 # Use `foo {}` not `foo{}`.
 Layout/SpaceBeforeBlockBraces:
+  Enabled: true
+
+Layout/SpaceInsideArrayLiteralBrackets:
   Enabled: true
 
 # Use `foo { bar }` not `foo {bar}`.
@@ -102,3 +114,9 @@ Layout/AlignHash:
 
 Bundler/OrderedGems:
   Enabled: false
+
+Layout/ExtraSpacing:
+  Enabled: true
+
+Layout/LeadingCommentSpace:
+  Enabled: true

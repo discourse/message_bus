@@ -14,7 +14,7 @@ class MessageBus::Rack::Diagnostics
     @@asset_cache[name]
   end
 
-  def  generate_script_tag(name)
+  def generate_script_tag(name)
     "<script src='/message-bus/_diagnostics/assets/#{name}?#{file_hash(name)}' type='text/javascript'></script>"
   end
 
