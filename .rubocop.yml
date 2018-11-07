@@ -147,3 +147,21 @@ Layout/EmptyLinesAroundMethodBody:
 
 Layout/EmptyLinesAroundModuleBody:
   Enabled: true
+
+Layout/AlignParameters:
+  Enabled: true
+
+Layout/ClosingParenthesisIndentation:
+  Enabled: true
+
+Layout/IndentHeredoc:
+  Enabled: true
+
+Layout/IndentationConsistency:
+  Enabled: true
+
+Layout/MultilineMethodCallBraceLayout:
+  Enabled: true
+
+Layout/MultilineOperationIndentation:
+  Enabled: true

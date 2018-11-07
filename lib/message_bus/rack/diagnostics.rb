@@ -34,23 +34,23 @@ class MessageBus::Rack::Diagnostics
   end
 
   def index
-    html = <<HTML
-<!DOCTYPE html>
-<html>
-  <head>
-  </head>
-  <body>
-    <div id="app"></div>
-    #{js_asset "jquery-1.8.2.js"}
-    #{js_asset "handlebars.js"}
-    #{js_asset "ember.js"}
-    #{js_asset "message-bus.js"}
-    #{js_asset "application.handlebars"}
-    #{js_asset "index.handlebars"}
-    #{js_asset "application.js"}
-  </body>
-</html>
-HTML
+    html = <<~HTML
+      <!DOCTYPE html>
+      <html>
+        <head>
+        </head>
+        <body>
+          <div id="app"></div>
+          #{js_asset "jquery-1.8.2.js"}
+          #{js_asset "handlebars.js"}
+          #{js_asset "ember.js"}
+          #{js_asset "message-bus.js"}
+          #{js_asset "application.handlebars"}
+          #{js_asset "index.handlebars"}
+          #{js_asset "application.js"}
+        </body>
+      </html>
+    HTML
     return [200, { "content-type" => "text/html;" }, [html]]
   end
 
