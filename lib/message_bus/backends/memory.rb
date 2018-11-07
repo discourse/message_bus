@@ -19,7 +19,7 @@ class MessageBus::Memory::Client
     end
   end
 
-  def initialize(config)
+  def initialize(_config)
     @mutex = Mutex.new
     @listeners = []
     reset!
@@ -177,7 +177,7 @@ class MessageBus::Memory::ReliablePubSub
     client.expire_all_backlogs!
   end
 
-  def publish(channel, data, opts = nil)
+  def publish(channel, data, _opts = nil)
     client = self.client
     backlog_id = client.add(channel, data)
     if backlog_id % clear_every == 0
@@ -246,7 +246,7 @@ class MessageBus::Memory::ReliablePubSub
     @subscribed = false
   end
 
-  def global_subscribe(last_id = nil, &blk)
+  def global_subscribe(last_id = nil)
     raise ArgumentError unless block_given?
 
     highest_id = last_id
@@ -269,7 +269,7 @@ class MessageBus::Memory::ReliablePubSub
           @subscribed = false
         end
 
-        on.message do |c, m|
+        on.message do |_c, m|
           m = MessageBus::Message.decode m
 
           # we have 3 options

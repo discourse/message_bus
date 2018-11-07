@@ -268,7 +268,7 @@ class MessageBus::Postgres::ReliablePubSub
     client.expire_all_backlogs!
   end
 
-  def publish(channel, data, opts = nil)
+  def publish(channel, data, _opts = nil)
     # TODO in memory queue?
 
     client = self.client
@@ -341,7 +341,7 @@ class MessageBus::Postgres::ReliablePubSub
     @subscribed = false
   end
 
-  def global_subscribe(last_id = nil, &blk)
+  def global_subscribe(last_id = nil)
     raise ArgumentError unless block_given?
 
     highest_id = last_id
@@ -365,7 +365,7 @@ class MessageBus::Postgres::ReliablePubSub
           @subscribed = false
         end
 
-        on.message do |c, m|
+        on.message do |_c, m|
           if m == UNSUB_MESSAGE
             @subscribed = false
             return

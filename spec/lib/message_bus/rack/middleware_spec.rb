@@ -18,7 +18,7 @@ describe MessageBus::Rack::Middleware do
       use FakeAsyncMiddleware, message_bus: bus
       use e_m if e_m
       use MessageBus::Rack::Middleware, message_bus: bus
-      run lambda { |env| [500, { 'Content-Type' => 'text/html' }, 'should not be called'] }
+      run lambda { |_env| [500, { 'Content-Type' => 'text/html' }, 'should not be called'] }
     }
 
     @async_middleware = builder.to_app
@@ -62,7 +62,7 @@ describe MessageBus::Rack::Middleware do
       middleware = @async_middleware
       bus = @bus
 
-      @bus.extra_response_headers_lookup do |env|
+      @bus.extra_response_headers_lookup do |_env|
         { "FOO" => "BAR" }
       end
 
@@ -137,7 +137,7 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should include access control headers" do
-      @bus.extra_response_headers_lookup do |env|
+      @bus.extra_response_headers_lookup do |_env|
         { "FOO" => "BAR" }
       end
 
@@ -267,7 +267,7 @@ describe MessageBus::Rack::Middleware do
 
     it "should filter by user correctly" do
       id = @bus.publish("/foo", "test", user_ids: [1])
-      @bus.user_id_lookup do |env|
+      @bus.user_id_lookup do |_env|
         0
       end
 
@@ -283,7 +283,7 @@ describe MessageBus::Rack::Middleware do
       message["channel"].must_equal "/__status"
       message["data"].must_equal("/foo" => 1)
 
-      @bus.user_id_lookup do |env|
+      @bus.user_id_lookup do |_env|
         1
       end
 
@@ -296,7 +296,7 @@ describe MessageBus::Rack::Middleware do
 
     it "should filter by group correctly" do
       id = @bus.publish("/foo", "test", group_ids: [3, 4, 5])
-      @bus.group_ids_lookup do |env|
+      @bus.group_ids_lookup do |_env|
         [0, 1, 2]
       end
 
@@ -310,7 +310,7 @@ describe MessageBus::Rack::Middleware do
       message["channel"].must_equal "/__status"
       message["data"].must_equal("/foo" => 1)
 
-      @bus.group_ids_lookup do |env|
+      @bus.group_ids_lookup do |_env|
         [1, 7, 4, 100]
       end
 
@@ -332,13 +332,13 @@ describe MessageBus::Rack::Middleware do
 
     describe "on_middleware_error handling" do
       it "allows error handling of middleware failures" do
-        @bus.on_middleware_error do |env, err|
+        @bus.on_middleware_error do |_env, err|
           if ArgumentError === err
             [407, {}, []]
           end
         end
 
-        @bus.group_ids_lookup do |env|
+        @bus.group_ids_lookup do |_env|
           raise ArgumentError
         end
 

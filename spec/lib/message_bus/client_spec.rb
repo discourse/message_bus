@@ -32,7 +32,6 @@ describe MessageBus::Client do
         headers[name] = val
       end
 
-      length = nil
       while line = lines.shift
         length = line.to_i(16)
         break if length == 0
