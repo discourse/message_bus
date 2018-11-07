@@ -257,36 +257,31 @@ describe MessageBus do
         data << msg.data
       end
 
-      @bus.publish("/hello", "world")
+      @bus.publish("/hello", "pre-fork")
       wait_for(2000) { data.length > 0 }
 
-      if child = Process.fork
+      fork_has_published = false
+      child = Process.fork
 
-        wait_for(2000) { data.include?("ready") }
-        data.must_include "ready"
+      if child
+        # The child was forked and we received its PID
 
-        @bus.publish("/hello", "world1")
-
+        # Wait for fork to finish so we're asserting that we can still publish after it has
         Process.wait(child)
 
-        wait_for(2000) { data.include?("got it") }
-        data.must_include "got it"
-
+        @bus.publish("/hello", "continuation")
       else
         begin
           @bus.after_fork
-          @bus.publish("/hello", "ready")
-
-          wait_for(2000) { data.include? "world1" }
-
-          if (data.include? "world1")
-            @bus.publish("/hello", "got it")
-          end
+          @bus.publish("/hello", "from-fork")
         ensure
           exit!(0)
         end
       end
 
+      wait_for(2000) { data.length == 3 }
+
+      data.must_equal(["pre-fork", "from-fork", "continuation"])
     end
   end
 end
