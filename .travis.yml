@@ -8,10 +8,15 @@ gemfile:
   - Gemfile
 addons:
   postgresql: "9.4"
+  apt:
+    packages:
+      - redis-server
 env:
   - PGUSER=postgres
 before_script:
+  - redis-server --version
+  - sudo sed -i -e 's/bind 127.0.0.1 ::1/bind 127.0.0.1/g' /etc/redis/redis.conf
+  - sudo service redis-server start
   - psql -c 'create database message_bus_test;' -U postgres
 services:
-  - redis-server
   - postgresql
