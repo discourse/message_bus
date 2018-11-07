@@ -115,7 +115,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "can set backlog age" do
-    test_only :redis
+    test_only :redis, :postgres
 
     @bus.max_backlog_age = 1
 
@@ -139,7 +139,13 @@ describe PUB_SUB_CLASS do
 
     @bus.publish "/foo", "baz" # Force triggering backlog expiry: some backends don't expire backlogs on a timer, but do so at publication time.
 
-    @bus.global_backlog.length.must_equal 3 # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+    case MESSAGE_BUS_CONFIG[:backend]
+    when :postgres
+      # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
+      @bus.global_backlog.length.must_equal 2
+    else
+      @bus.global_backlog.length.must_equal 3 # Assert that the backlog did not expire, and has all of our publications since the last expiry.
+    end
   end
 
   it "can set backlog age on publish" do
