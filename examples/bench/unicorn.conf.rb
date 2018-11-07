@@ -1,4 +1,4 @@
 require 'message_bus'
-after_fork do |server, worker|
+after_fork do |_server, _worker|
   MessageBus.after_fork
 end

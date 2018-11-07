@@ -251,10 +251,7 @@ describe MessageBus do
     @bus.publish("/hello", "pre-fork")
     wait_for(2000) { data.length > 0 }
 
-    fork_has_published = false
-    child = Process.fork
-
-    if child
+    if child = Process.fork
       # The child was forked and we received its PID
 
       # Wait for fork to finish so we're asserting that we can still publish after it has

@@ -291,7 +291,7 @@ LUA
     end
   end
 
-  def process_global_backlog(highest_id, raise_error, &blk)
+  def process_global_backlog(highest_id, raise_error)
     if highest_id > pub_redis.get(global_id_key).to_i
       highest_id = 0
     end
@@ -358,7 +358,7 @@ LUA
           @subscribed = false
         end
 
-        on.message do |c, m|
+        on.message do |_c, m|
           if m == UNSUB_MESSAGE
             @redis_global.unsubscribe
             return

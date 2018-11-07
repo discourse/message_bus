@@ -1,4 +1,4 @@
-Jasmine.configure do |config|
+Jasmine.configure do |_config|
   # patch for travis
   if ENV['TRAVIS']
     module ::Phantomjs

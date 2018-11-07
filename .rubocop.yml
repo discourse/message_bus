@@ -165,3 +165,12 @@ Layout/MultilineMethodCallBraceLayout:
 
 Layout/MultilineOperationIndentation:
   Enabled: true
+
+Lint/UselessAssignment:
+  Enabled: true
+
+Lint/UnusedMethodArgument:
+  Enabled: true
+
+Lint/UnusedBlockArgument:
+  Enabled: true
