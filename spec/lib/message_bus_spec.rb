@@ -282,10 +282,6 @@ describe MessageBus do
           if (data.include? "world1")
             @bus.publish("/hello", "got it")
           end
-
-          $stdout.reopen("/dev/null", "w")
-          $stderr.reopen("/dev/null", "w")
-
         ensure
           exit!(0)
         end
