@@ -146,21 +146,24 @@ LUA
 
     msg = MessageBus::Message.new nil, nil, channel, data
 
-    cached_eval(redis, LUA_PUBLISH, LUA_PUBLISH_SHA1,
-               argv: [
-                 msg.encode_without_ids,
-                 max_backlog_age,
-                 max_backlog_size,
-                 max_global_backlog_size,
-                 channel
-               ],
-               keys: [
-                 global_id_key,
-                 backlog_id_key,
-                 backlog_key,
-                 global_backlog_key,
-                 redis_channel_name
-               ]
+    cached_eval(
+      redis,
+      LUA_PUBLISH,
+      LUA_PUBLISH_SHA1,
+      argv: [
+        msg.encode_without_ids,
+        max_backlog_age,
+        max_backlog_size,
+        max_global_backlog_size,
+        channel
+      ],
+      keys: [
+        global_id_key,
+        backlog_id_key,
+        backlog_key,
+        global_backlog_key,
+        redis_channel_name
+      ]
     )
   rescue Redis::CommandError => e
     if queue_in_memory && e.message =~ /READONLY/
