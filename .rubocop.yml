@@ -174,3 +174,9 @@ Lint/UnusedMethodArgument:
 
 Lint/UnusedBlockArgument:
   Enabled: true
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: true
+
+Lint/ParenthesesAsGroupedExpression:
+  Enabled: true

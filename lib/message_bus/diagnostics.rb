@@ -5,7 +5,7 @@ class MessageBus::Diagnostics
       if system == "Darwin"
         `ps -o "comm=" -p #{Process.pid}`
       elsif system == "FreeBSD"
-        `ps -o command -p #{Process.pid}`.split("\n", 2)[1].strip()
+        `ps -o command -p #{Process.pid}`.split("\n", 2)[1].strip
       else
         info = `ps -eo "%p|$|%a" | grep '^\\s*#{Process.pid}'`
         info.strip.split('|$|')[1]
