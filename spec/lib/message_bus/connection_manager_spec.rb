@@ -2,7 +2,6 @@ require_relative '../../spec_helper'
 require 'message_bus'
 
 class FakeAsync
-
   attr_accessor :cleanup_timer
 
   def <<(val)
@@ -12,7 +11,9 @@ class FakeAsync
   end
 
   def sent; @sent; end
+
   def done; @done = true; end
+
   def done?; @done; end
 end
 
@@ -22,7 +23,6 @@ class FakeTimer
 end
 
 describe MessageBus::ConnectionManager do
-
   before do
     @bus = MessageBus
     @manager = MessageBus::ConnectionManager.new(@bus)
@@ -83,7 +83,6 @@ describe MessageBus::ConnectionManager do
 end
 
 describe MessageBus::ConnectionManager, "notifying and subscribing concurrently" do
-
   it "does not subscribe incorrect clients" do
     manager = MessageBus::ConnectionManager.new
 
@@ -124,5 +123,4 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
     client_threads.each(&:join).map(&:value).must_equal([1] * 10)
     subscriber_threads.each(&:join).map(&:value).must_equal([1] * 10)
   end
-
 end

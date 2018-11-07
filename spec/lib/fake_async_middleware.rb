@@ -1,6 +1,5 @@
 require 'http/parser'
 class FakeAsyncMiddleware
-
   def initialize(app, config = {})
     @app = app
     @bus = config[:message_bus] || MessageBus
@@ -104,7 +103,6 @@ class FakeAsyncMiddleware
 
     @in_async = false
     result || [500, {}, ['timeout']]
-
   end
 
   def call_thin_async(env)

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "monitor"
 require "set"
 require "message_bus/version"
@@ -52,6 +53,7 @@ module MessageBus::Implementation
 
   def logger
     return @config[:logger] if @config[:logger]
+
     require 'logger'
     logger = Logger.new(STDOUT)
     logger.level = Logger::INFO
@@ -218,6 +220,7 @@ module MessageBus::Implementation
 
   def publish(channel, data, opts = nil)
     return if @off
+
     @mutex.synchronize do
       raise ::MessageBus::BusDestroyed if @destroyed
     end
@@ -270,6 +273,7 @@ module MessageBus::Implementation
   def encode_channel_name(channel, site_id = nil)
     if (site_id || site_id_lookup) && !global?(channel)
       raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
+
       "#{channel}#{ENCODE_SITE_TOKEN}#{site_id || site_id_lookup.call}"
     else
       channel
@@ -333,6 +337,7 @@ module MessageBus::Implementation
   # mostly used in tests to detroy entire bus
   def destroy
     return if @destroyed
+
     reliable_pub_sub.global_unsubscribe
 
     @mutex.synchronize do
@@ -361,6 +366,7 @@ module MessageBus::Implementation
 
   def timer
     return @timer_thread if @timer_thread
+
     @timer_thread ||= begin
       t = MessageBus::TimerThread.new
       t.on_error do |e|
@@ -410,7 +416,6 @@ module MessageBus::Implementation
   end
 
   def subscribe_impl(channel, site_id, last_id, &blk)
-
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
@@ -450,11 +455,11 @@ module MessageBus::Implementation
     end
 
     raise MessageBus::BusDestroyed if @destroyed
+
     blk
   end
 
   def unsubscribe_impl(channel, site_id, &blk)
-
     @mutex.synchronize do
       if blk
         @subscriptions[site_id][channel].delete blk
@@ -462,12 +467,12 @@ module MessageBus::Implementation
         @subscriptions[site_id][channel] = []
       end
     end
-
   end
 
   def ensure_subscriber_thread
     @mutex.synchronize do
       return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
+
       @subscriber_thread = new_subscriber_thread
     end
   end
@@ -475,7 +480,6 @@ module MessageBus::Implementation
   MIN_KEEPALIVE = 20
 
   def new_subscriber_thread
-
     thread = Thread.new do
       begin
         global_subscribe_thread unless @destroyed
@@ -569,7 +573,6 @@ module MessageBus::Implementation
       a.each(&block) if a
     end
   end
-
 end
 
 module MessageBus

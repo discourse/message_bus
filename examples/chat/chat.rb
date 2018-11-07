@@ -47,7 +47,6 @@ Thread.new do
 end
 
 class Chat < Sinatra::Base
-
   set :public_folder, File.expand_path('../../../assets', __FILE__)
 
   use MessageBus::Rack::Middleware
@@ -76,7 +75,6 @@ class Chat < Sinatra::Base
   end
 
   get '/' do
-
     <<HTML
 
 <html>

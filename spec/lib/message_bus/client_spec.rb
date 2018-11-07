@@ -2,9 +2,7 @@ require_relative '../../spec_helper'
 require 'message_bus'
 
 describe MessageBus::Client do
-
   describe "subscriptions" do
-
     def setup_client(client_id)
       MessageBus::Client.new client_id: client_id, message_bus: @bus
     end
@@ -29,6 +27,7 @@ describe MessageBus::Client do
 
       while line = lines.shift
         break if line == ""
+
         name, val = line.split(": ")
         headers[name] = val
       end
@@ -37,6 +36,7 @@ describe MessageBus::Client do
       while line = lines.shift
         length = line.to_i(16)
         break if length == 0
+
         rest = lines.join("\r\n")
         chunks << rest[0...length]
         lines = (rest[length + 2..-1] || "").split("\r\n")
@@ -95,7 +95,6 @@ describe MessageBus::Client do
       # end with []
       chunk2 = parse_chunk(chunks[1])
       chunk2.length.must_equal 0
-
     end
 
     it "does not bleed data accross sites" do
@@ -117,7 +116,6 @@ describe MessageBus::Client do
     end
 
     it "allows negative subscribes to look behind" do
-
       @bus.publish '/hello', 'world'
       @bus.publish '/hello', 'sam'
 
@@ -201,8 +199,6 @@ describe MessageBus::Client do
         @client.group_ids = [77, 0, 10]
         @client.allowed?(@message).must_equal true
       end
-
     end
   end
-
 end

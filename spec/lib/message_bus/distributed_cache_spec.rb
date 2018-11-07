@@ -4,7 +4,6 @@ require 'message_bus'
 require 'message_bus/distributed_cache'
 
 describe MessageBus::DistributedCache do
-
   before :all do
     @bus = MessageBus::Instance.new
     @bus.configure(backend: :memory)
@@ -29,7 +28,6 @@ describe MessageBus::DistributedCache do
   end
 
   it 'supports arrays with hashes' do
-
     c1 = cache("test1")
     c2 = cache("test1")
 
@@ -81,7 +79,6 @@ describe MessageBus::DistributedCache do
 
     Thread.pass
     assert_nil(@cache1["hi"])
-
   end
 
   it 'allows coerces symbol keys to strings' do
@@ -129,5 +126,4 @@ describe MessageBus::DistributedCache do
       @cache2["boom"] == nil
     end
   end
-
 end

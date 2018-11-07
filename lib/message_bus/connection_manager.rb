@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'json' unless defined? ::JSON
 
 class MessageBus::ConnectionManager
@@ -34,7 +35,6 @@ class MessageBus::ConnectionManager
             remove_client(client) if client.closed?
           end
         end
-
       rescue => e
         @bus.logger.error "notify clients crash #{e} : #{e.backtrace}"
       end
@@ -105,5 +105,4 @@ class MessageBus::ConnectionManager
       }
     end
   end
-
 end

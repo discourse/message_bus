@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 require 'redis'
 require 'digest'
@@ -161,7 +162,6 @@ LUA
                  redis_channel_name
                ]
     )
-
   rescue Redis::CommandError => e
     if queue_in_memory && e.message =~ /READONLY/
       @lock.synchronize do
@@ -299,6 +299,7 @@ LUA
         highest_id = old.global_id
       else
         raise BackLogOutOfOrder.new(highest_id) if raise_error
+
         if old.global_id > highest_id
           yield old
           highest_id = old.global_id
@@ -320,6 +321,7 @@ LUA
 
   def global_subscribe(last_id = nil, &blk)
     raise ArgumentError unless block_given?
+
     highest_id = last_id
 
     clear_backlog = lambda do

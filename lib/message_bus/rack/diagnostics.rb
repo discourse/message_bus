@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module MessageBus::Rack; end
 
 class MessageBus::Rack::Diagnostics
@@ -9,6 +10,7 @@ class MessageBus::Rack::Diagnostics
 
   def js_asset(name)
     return generate_script_tag(name) unless @bus.cache_assets
+
     @@asset_cache ||= {}
     @@asset_cache[name] ||= generate_script_tag(name)
     @@asset_cache[name]
@@ -62,7 +64,6 @@ HTML
   end
 
   def call(env)
-
     return @app.call(env) unless env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
 
     route = env['PATH_INFO'].split('/message-bus/_diagnostics')[1]
