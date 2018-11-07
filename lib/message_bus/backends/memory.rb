@@ -3,6 +3,8 @@
 module MessageBus::Memory; end
 
 class MessageBus::Memory::Client
+  attr_accessor :max_backlog_age
+
   class Listener
     attr_reader :do_sub, :do_unsub, :do_message
 
@@ -19,18 +21,44 @@ class MessageBus::Memory::Client
     end
   end
 
+  class Channel
+    attr_accessor :backlog, :ttl
+
+    def initialize(ttl:)
+      @backlog = []
+      @ttl = ttl
+    end
+
+    def expired?
+      last_publication_time = nil
+      backlog.each do |_id, _value, published_at|
+        if !last_publication_time || published_at > last_publication_time
+          last_publication_time = published_at
+        end
+      end
+      return true unless last_publication_time
+
+      last_publication_time < Time.now - ttl
+    end
+  end
+
   def initialize(_config)
     @mutex = Mutex.new
     @listeners = []
     reset!
   end
 
-  def add(channel, value)
+  def add(channel, value, max_backlog_age:)
     listeners = nil
     id = nil
+    expire
     sync do
       id = @global_id += 1
-      chan(channel) << [id, value]
+      channel_object = chan(channel)
+      channel_object.backlog << [id, value, Time.now]
+      if max_backlog_age
+        channel_object.ttl = max_backlog_age
+      end
       listeners = @listeners.dup
     end
     msg = MessageBus::Message.new id, id, channel, value
@@ -39,12 +67,18 @@ class MessageBus::Memory::Client
     id
   end
 
+  def expire
+    sync do
+      @channels.delete_if { |_name, channel| channel.expired? }
+    end
+  end
+
   def clear_global_backlog(backlog_id, num_to_keep)
     if backlog_id > num_to_keep
       oldest = backlog_id - num_to_keep
       sync do
-        @channels.each_value do |entries|
-          entries.delete_if { |id, _| id <= oldest }
+        @channels.each_value do |channel|
+          channel.backlog.delete_if { |id, _| id <= oldest }
         end
       end
       nil
@@ -53,24 +87,24 @@ class MessageBus::Memory::Client
 
   def clear_channel_backlog(channel, backlog_id, num_to_keep)
     oldest = backlog_id - num_to_keep
-    sync { chan(channel).delete_if { |id, _| id <= oldest } }
+    sync { chan(channel).backlog.delete_if { |id, _| id <= oldest } }
     nil
   end
 
   def backlog(channel, backlog_id)
-    sync { chan(channel).select { |id, _| id > backlog_id } }
+    sync { chan(channel).backlog.select { |id, _| id > backlog_id } }
   end
 
   def global_backlog(backlog_id)
     sync do
-      @channels.dup.flat_map do |channel, messages|
-        messages.select { |id, _| id > backlog_id }.map { |id, value| [id, channel, value] }
+      @channels.dup.flat_map do |channel_name, channel|
+        channel.backlog.select { |id, _| id > backlog_id }.map { |id, value| [id, channel_name, value] }
       end.sort
     end
   end
 
   def get_value(channel, id)
-    sync { chan(channel).find { |i, _| i == id }.last }
+    sync { chan(channel).backlog.find { |i, _| i == id }[1] }
   end
 
   # Dangerous, drops the message_bus table containing the backlog if it exists.
@@ -91,7 +125,7 @@ class MessageBus::Memory::Client
   def max_id(channel = nil)
     if channel
       sync do
-        if entry = chan(channel).last
+        if entry = chan(channel).backlog.last
           entry.first
         end
       end
@@ -128,7 +162,7 @@ class MessageBus::Memory::Client
   private
 
   def chan(channel)
-    @channels[channel] ||= []
+    @channels[channel] ||= Channel.new(ttl: @max_backlog_age)
   end
 
   def sync
@@ -148,11 +182,16 @@ class MessageBus::Memory::ReliablePubSub
     @max_backlog_size = max_backlog_size
     @max_global_backlog_size = 2000
     # after 7 days inactive backlogs will be removed
+    self.max_backlog_age = 604800
     @clear_every = config[:clear_every] || 1
   end
 
   def new_connection
     MessageBus::Memory::Client.new(@config)
+  end
+
+  def max_backlog_age=(value)
+    client.max_backlog_age = value
   end
 
   def backend
@@ -179,7 +218,10 @@ class MessageBus::Memory::ReliablePubSub
 
   def publish(channel, data, opts = nil)
     client = self.client
-    backlog_id = client.add(channel, data)
+
+    max_backlog_age = opts && opts[:max_backlog_age]
+    backlog_id = client.add(channel, data, max_backlog_age: max_backlog_age)
+
     if backlog_id % clear_every == 0
       max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
       client.clear_global_backlog(backlog_id, @max_global_backlog_size)
