@@ -180,3 +180,6 @@ Style/MethodCallWithoutArgsParentheses:
 
 Lint/ParenthesesAsGroupedExpression:
   Enabled: true
+
+Lint/DuplicateMethods:
+  Enabled: true
