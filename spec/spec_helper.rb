@@ -2,13 +2,14 @@ $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 require 'thin'
 require 'lib/fake_async_middleware'
+require 'logger'
 require 'message_bus'
 
 require 'minitest/autorun'
 require 'minitest/spec'
 
 backend = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
-MESSAGE_BUS_CONFIG = { backend: backend }
+MESSAGE_BUS_CONFIG = { backend: backend, logger: Logger.new(STDOUT) }
 require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
 case backend
