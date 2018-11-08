@@ -308,6 +308,8 @@ describe PUB_SUB_CLASS do
 
     @bus.publish("/foo", "two")
 
+    wait_for(100) { got.length == 1 }
+
     @bus.reset!
 
     @bus.publish("/foo", "three")
