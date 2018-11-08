@@ -314,7 +314,7 @@ describe PUB_SUB_CLASS do
 
     @bus.publish("/foo", "three")
 
-    wait_for(100) do
+    wait_for(2000) do
       got.length == 2
     end
 
