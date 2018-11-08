@@ -130,7 +130,7 @@ describe PUB_SUB_CLASS do
     expected_backlog_size = 0
 
     case MESSAGE_BUS_CONFIG[:backend]
-    when :postgres, :memory
+    when :postgres
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
       @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size
@@ -180,7 +180,7 @@ describe PUB_SUB_CLASS do
     expected_backlog_size = 0
 
     case MESSAGE_BUS_CONFIG[:backend]
-    when :postgres, :memory
+    when :postgres
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
       @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size

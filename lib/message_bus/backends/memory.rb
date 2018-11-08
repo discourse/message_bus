@@ -45,13 +45,17 @@ class MessageBus::Memory::Client
   def initialize(_config)
     @mutex = Mutex.new
     @listeners = []
+    @timer_thread = MessageBus::TimerThread.new
+    @timer_thread.on_error do |e|
+      logger.warn "Failed to process job: #{e} #{e.backtrace}"
+    end
+    @timer_thread.every(1) { expire }
     reset!
   end
 
   def add(channel, value, max_backlog_age:)
     listeners = nil
     id = nil
-    expire
     sync do
       id = @global_id += 1
       channel_object = chan(channel)
