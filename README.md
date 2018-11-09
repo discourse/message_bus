@@ -157,14 +157,14 @@ location /message-bus/ {
 
 If you wish to disable chunked encoding run:
 
-```ruby
+```javascript
 MessageBus.enableChunkedEncoding = false; // in your JavaScript
 ```
 
 Or
 
 ```ruby
-MessageBus.configure(chunked_encoding_enabled: false) // in Ruby
+MessageBus.configure(chunked_encoding_enabled: false) # in Ruby
 ```
 
 Long Polling requires no special setup, as soon as new data arrives on the channel the server delivers the data and closes the connection.
