@@ -8,7 +8,7 @@ Long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby w
 
 MessageBus is implemented as Rack middleware and can be used by and Rails / Sinatra or pure Rack application.
 
-# Try it out!
+## Try it out!
 
 Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tree/master/examples/chat) is at:
 
