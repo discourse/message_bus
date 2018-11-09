@@ -4,9 +4,9 @@ A reliable, robust messaging bus for Ruby processes and web clients.
 
 MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling, long-polling or long-polling + streaming)
 
-Long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web server can run MessageBus (Thin, Puma, Unicorn) and handle a large amount of concurrent connections that wait on messages.
+Since long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web servers (Thin, Puma, Unicorn, Passenger) can run MessageBus and handle a large number of concurrent connections that wait on messages.
 
-MessageBus is implemented as Rack middleware and can be used by and Rails / Sinatra or pure Rack application.
+MessageBus is implemented as Rack middleware and can be used by any Rails / Sinatra or pure Rack application.
 
 ## Try it out!
 
@@ -16,11 +16,11 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby, as of [2018-06-20](https://www.ruby-lang.org/en/news/2018/06/20/support-of-ruby-2-2-has-ended/) this means we only support Ruby version 2.3 and up.
+MessageBus only support officially supported versions of Ruby; as of [2018-06-20](https://www.ruby-lang.org/en/news/2018/06/20/support-of-ruby-2-2-has-ended/) this means we only support Ruby version 2.3 and up.
 
 ## Can you handle concurrent requests?
 
-**Yes**, MessageBus uses Rack Hijack, this interface allows us to take control of the underlying socket. MessageBus can handle thousands of concurrent long polls on all popular Ruby webservers. MessageBus runs as middleware in your Rack (or by extension Rails) application and does not require a dedicated server. Background work is minimized to ensure it does not interfere with existing non MessageBus traffic.
+**Yes**, MessageBus uses Rack Hijack and this interface allows us to take control of the underlying socket. MessageBus can handle thousands of concurrent long polls on all popular Ruby webservers. MessageBus runs as middleware in your Rack (or by extension Rails) application and does not require a dedicated server. Background work is minimized to ensure it does not interfere with existing non-MessageBus traffic.
 
 ## Is this used in production at scale?
 
@@ -47,9 +47,6 @@ Server to Server messaging
 ```ruby
 message_id = MessageBus.publish "/channel", "message"
 
-# last id in a channel
-id = MessageBus.last_id("/channel")
-
 # in another process / spot
 
 MessageBus.subscribe "/channel" do |msg|
@@ -65,10 +62,17 @@ end
 MessageBus.subscribe "/channel", 5 do |msg|
   # block called in a background thread when message is received
 end
+```
 
+```ruby
+# get the ID of the last message on a channel
+id = MessageBus.last_id("/channel")
+
+# returns all messages after some id
 MessageBus.backlog "/channel", id
-# returns all messages after the id
+```
 
+```ruby
 # messages can be targetted at particular users or groups
 MessageBus.publish "/channel", "hello", user_ids: [1,2,3], group_ids: [4,5,6]
 
@@ -90,12 +94,6 @@ MessageBus.configure(group_ids_lookup: proc do |env|
   # can be nil or []
 end)
 
-MessageBus.configure(on_middleware_error: proc do |env, e|
-   # If you wish to add special handling based on error
-   # return a rack result array: [status, headers, body]
-   # If you just want to pass it on return nil
-end)
-
 # example of message bus to set user_ids from an initializer in Rails and Devise:
 # config/inializers/message_bus.rb
 MessageBus.user_id_lookup do |env|
@@ -107,17 +105,25 @@ MessageBus.user_id_lookup do |env|
 end
 ```
 
+```ruby
+MessageBus.configure(on_middleware_error: proc do |env, e|
+   # If you wish to add special handling based on error
+   # return a rack result array: [status, headers, body]
+   # If you just want to pass it on return nil
+end)
+```
+
 ### Debugging
 
-When setting up MessageBus, it's good to manually check the channels before integrating the client.
+When setting up MessageBus, it's useful to manually inspect channels before integrating a client application.
 
-You can `curl` MessageBus. This is helpful when trying to debug what may be doing wrong. This uses https://chat.samsaffron.com.
+You can `curl` MessageBus; this is helpful when trying to debug what may be going wrong. This example uses https://chat.samsaffron.com:
 
 ```
 curl -H "Content-Type: application/x-www-form-urlencoded" -X POST --data "/message=0" https://chat.samsaffron.com/message-bus/client-id/poll\?dlp\=t
 ```
 
-You should see a reply with the messages of that channel you requested for (`/message`) starting at the message ID (`0`). `dlp=t` disables long-polling: we do not want this request to stay open.
+You should see a reply with the messages of that channel you requested (in this case `/message`) starting at the message ID you requested (`0`). The URL parameter `dlp=t` disables long-polling: we do not want this request to stay open.
 
 ### Transport
 
@@ -127,42 +133,42 @@ MessageBus ships with 3 transport mechanisms.
 2. Long Polling
 3. Polling
 
-Long Polling with chunked encoding allows a single connection to stream multiple messages to a client, this requires HTTP/1.1
+Long Polling with chunked encoding allows a single connection to stream multiple messages to a client, and this requires HTTP/1.1.
 
 Chunked encoding provides all the benefits of [EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) with greater browser support (as it works on IE10 and up as well)
 
-To setup NGINX to proxy to your app correctly be sure to enable HTTP1.1 and disable buffering
+To setup NGINX to proxy to your app correctly be sure to enable HTTP1.1 and disable buffering:
 
 ```
 location /message-bus/ {
   ...
-  proxy_buffering off;
   proxy_http_version 1.1;
+  proxy_buffering off;
   ...
 }
 ```
 
 **NOTE**: do not set proxy_buffering off globally, it may have unintended consequences.
 
-If you wish to disable chunked encoding run:
+In order to disable chunked encoding for a specific client in Javascript:
 
 ```javascript
-MessageBus.enableChunkedEncoding = false; // in your JavaScript
+MessageBus.enableChunkedEncoding = false;
 ```
 
-Or
+or as a server-side policy in Ruby for all clients:
 
 ```ruby
-MessageBus.configure(chunked_encoding_enabled: false) # in Ruby
+MessageBus.configure(chunked_encoding_enabled: false)
 ```
 
-Long Polling requires no special setup, as soon as new data arrives on the channel the server delivers the data and closes the connection.
+Long Polling requires no special setup; as soon as new data arrives on the channel the server delivers the data and closes the connection.
 
-Polling also requires no special setup, MessageBus will fallback to polling after a tab becomes inactive and remains inactive for a period.
+Polling also requires no special setup; MessageBus will fallback to polling after a tab becomes inactive and remains inactive for a period.
 
 ### Multisite support
 
-MessageBus can be used in an environment that hosts multiple sites by multiplexing channels. To use this mode
+MessageBus can be used in an environment that hosts multiple sites by multiplexing channels. To use this mode:
 
 ```ruby
 # define a site_id lookup method, which is executed
@@ -174,7 +180,7 @@ end)
 # you may post messages just to this site
 MessageBus.publish "/channel", "some message"
 
-# you can also choose to pass the `site_id`.
+# you can also choose to pass the `:site_id`.
 # This takes precendence over whatever `site_id_lookup`
 # returns
 MessageBus.publish "/channel", "some message", site_id: "site-id"
@@ -187,18 +193,19 @@ MessageBus.publish "/global/channel", "will go to all sites"
 
 MessageBus ships a simple ~300 line JavaScript library which provides an API to interact with the server.
 
-JavaScript can listen on any channel (and receive notification via polling or long polling):
+JavaScript clients can listen on any channel and receive messages via polling or long polling. You may simply include the source file (located in `assets/` within the message_bus source code):
 
 ```html
 <script src="message-bus.js" type="text/javascript"></script>
 ```
 
-Note, the message-bus.js file is located in the assets folder.
+or when used in a Rails application, import it through the asset pipeline:
 
-#### Rails
 ```javascript
 //= require message-bus
 ```
+
+In your application Javascript, you can then subscribe to particular channels and define callback functions to be executed when messages are received:
 
 ```javascript
 MessageBus.start(); // call once at startup
@@ -227,9 +234,7 @@ MessageBus.subscribe("/channel", function(data){
 }, -3);
 ```
 
-There is also a Ruby implementation of the client library, at
-[message_bus-client](https://github.com/lowjoel/message_bus-client) with the API very similar to
-that of the JavaScript client.
+There is also [a Ruby implementation of the client library](https://github.com/lowjoel/message_bus-client) available with an API very similar to that of the JavaScript client.
 
 #### Client settings
 
@@ -237,49 +242,51 @@ All client settings are settable via `MessageBus.OPTION`
 
 Setting|Default|Info
 ----|---|---|
-enableLongPolling|true|Allow long-polling (provided it is enable by the server)
+enableLongPolling|true|Allow long-polling (provided it is enabled by the server)
 callbackInterval|15000|Safeguard to ensure background polling does not exceed this interval (in milliseconds)
 backgroundCallbackInterval|60000|Interval to poll when long polling is disabled (either explicitly or due to browser being in background)
 minPollInterval|100|When polling requests succeed, this is the minimum amount of time to wait before making the next request.
 maxPollInterval|180000|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
 alwaysLongPoll|false|For debugging you may want to disable the "is browser in background" check and always long-poll
-baseUrl|/|If message bus is mounted in a subdirectory of different domain, you may configure it to perform requests there
-ajax|$.ajax or XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `message-bus-ajax.js` file. `message-bus-ajax.js` must be loaded after `message-bus.js` for it to be used.
-headers|{}|Extra headers to be include with request.  Properties and values of object must be valid values for HTTP Headers, i.e. no spaces and control characters.
+baseUrl|/|If message bus is mounted at a sub-path or different domain, you may configure it to perform requests there
+ajax|$.ajax falling back to XMLHttpRequest|MessageBus will first attempt to use jQuery and then fallback to a plain XMLHttpRequest version that's contained in the `message-bus-ajax.js` file. `message-bus-ajax.js` must be loaded after `message-bus.js` for it to be used. You may override this option with a function that implements an ajax request by some other means
+headers|{}|Extra headers to be include with requests. Properties and values of object must be valid values for HTTP Headers, i.e. no spaces or control characters.
 minHiddenPollInterval|1500|Time to wait between poll requests performed by background or hidden tabs and windows, shared state via localStorage
-enableChunkedEncoding|true|Allow streaming of message bus data over the HTTP channel
+enableChunkedEncoding|true|Allows streaming of message bus data over the HTTP connection without closing the connection after each message.
 
-#### API
+#### Client API
 
-`MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus
+`MessageBus.start()` : Starts up the MessageBus poller
 
-`MessageBus.pause()` : Pause all MessageBus activity
+`MessageBus.subscribe(channel,func,lastId)` : Subscribes to a channel. You may optionally specify the id of the last message you received in the channel. The callback receives three arguments on message delivery: `func(payload, globalId, messageId)`. You may save globalId or messageId of received messages and use then at a later time when client needs to subscribe, receiving the backlog since that id.
 
-`MessageBus.resume()` : Resume MessageBus activity
+`MessageBus.unsubscribe(channel,func)` : Removes a subscription from a particular channel that was defined with a particular callback function (optional).
 
-`MessageBus.stop()` : Stop all MessageBus activity
+`MessageBus.pause()` : Pauses all MessageBus activity
 
-`MessageBus.start()` : Must be called to startup the MessageBus poller
+`MessageBus.resume()` : Resumes MessageBus activity
 
-`MessageBus.status()` : Return status (started, paused, stopped)
+`MessageBus.stop()` : Stops all MessageBus activity
 
-`MessageBus.subscribe(channel,func,lastId)` : Subscribe to a channel, optionally you may specify the id of the last message you received in the channel. The callback accepts three arguments: `func(payload, globalId, messageId)`. You may save globalId or messageId of received messages and use then at a later time when client needs to subscribe, receiving the backlog just after that Id.
+`MessageBus.status()` : Returns status (started, paused, stopped)
 
-`MessageBus.unsubscribe(channel,func)` : Unsubscribe callback from a particular channel
+`MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded. Returns a reference to the MessageBus object.
 
-`MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded.  Returns a reference to the MessageBus object.
+`MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus.
 
 ## Configuration
 
+message_bus can be configured to use one of several available storage backends, and each has its own configuration options.
+
 ### Redis
 
-You can configure redis setting in `config/initializers/message_bus.rb`, like
+message_bus supports using Redis as a storage backend, and you can configure message_bus to use redis in `config/initializers/message_bus.rb`, like so:
 
 ```ruby
 MessageBus.configure(backend: :redis, url: "redis://:p4ssw0rd@10.0.1.1:6380/15")
 ```
 
-The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
+The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what other options you can pass besides a `url`.
 
 #### Data Retention
 
@@ -300,19 +307,19 @@ MessageBus.reliable_pub_sub.max_backlog_age = 100
 
 ### PostgreSQL
 
-message_bus also supports PostgreSQL as the backend:
+message_bus also supports PostgreSQL as a backend, and can be configured like so:
 
 ```ruby
 MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', dbname: 'message_bus'})
 ```
 
-The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can configure inside `:backend_options`.
+The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
 
-A `:clear_every` option is also supported, which only clears the backlogs on every number of requests given.  So if you set `clear_every: 100`, the backlog will only be cleared every 100 requests.  This can improve performance in cases where exact backlog clearing are not required.
+A `:clear_every` option is also supported, which limits backlog trimming frequency to the specified number of publications. If you set `clear_every: 100`, the backlog will only be cleared every 100 publications. This can improve performance in cases where exact backlog length limiting is not required.
 
 ### Memory
 
-message_bus also supports an in-memory backend.  This can be used for testing or simple single-process environments that do not require persistence.
+message_bus also supports an in-memory backend. This can be used for testing or simple single-process environments that do not require persistence or horizontal scalability.
 
 ```ruby
 MessageBus.configure(backend: :memory)
@@ -322,7 +329,7 @@ The `:clear_every` option supported by the PostgreSQL backend is also supported 
 
 ### Forking/threading app servers
 
-If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis/PostgreSQL in your app server config:
+If you're using a forking or threading app server and you're not getting immediate delivery of published messages, you might need to configure your web server to re-connect to the message_bus backend
 
 #### Passenger
 
@@ -342,20 +349,22 @@ end
 
 MessageBus uses long polling which needs to be configured in Passenger
 
-* for passenger version < 5.0.21
+For passenger version < 5.0.21, add the following to `application.rb`:
 
-`PhusionPassenger.advertised_concurrency_level = 0` to application.rb
+```ruby
+PhusionPassenger.advertised_concurrency_level = 0
+```
 
-* for passenger version > 5.0.21
+For passenger version > 5.0.21, add the following to `nginx.conf`:
 
 ```
-   location /message-bus {
-       passenger_app_group_name foo_websocket;
-       passenger_force_max_concurrent_requests_per_process 0;
-   }
+location /message-bus {
+  passenger_app_group_name foo_websocket;
+  passenger_force_max_concurrent_requests_per_process 0;
+}
 ```
-to nginx.conf.
-For more information see [Passenger documentation](https://www.phusionpassenger.com/library/config/nginx/tuning_sse_and_websockets/)
+
+For more information see the [Passenger documentation](https://www.phusionpassenger.com/library/config/nginx/tuning_sse_and_websockets/) on long-polling.
 
 #### Puma
 
@@ -383,7 +392,7 @@ MessageBus middleware has to show up after the session middleware, but depending
 
 For APIs or apps that have `ActionDispatch::Flash` deleted from the stack the middleware is pushed to the bottom.
 
-Should you want to manipulate the default behavior please refer to [Rails MiddlewareStackProxy documentation](http://api.rubyonrails.org/classes/Rails/Configuration/MiddlewareStackProxy.html) and alter the order of the middlewares in stack in `app/config/initializers/message_bus.rb`
+Should you wish to manipulate the default behavior please refer to [Rails MiddlewareStackProxy documentation](http://api.rubyonrails.org/classes/Rails/Configuration/MiddlewareStackProxy.html) and alter the order of the middlewares in stack in `app/config/initializers/message_bus.rb`
 
 ```ruby
 # config/initializers/message_bus.rb
@@ -394,8 +403,7 @@ end
 
 ### A Distributed Cache
 
-MessageBus ships with an optional DistributedCache object you can use to synchronize a cache between processes.
-It allows you a simple and efficient way of synchronizing a cache between processes.
+MessageBus ships with an optional `DistributedCache` API which provides a simple and efficient way of synchronizing a cache between processes, based on the core of message_bus:
 
 ```ruby
 require 'message_bus/distributed_cache'
@@ -425,7 +433,7 @@ puts cache["frogs"]
 # => nil
 ```
 
-Automatically expiring the cache on app update:
+You can automatically expire the cache on application code changes by scoping the cache to a specific version of the application:
 
 ```ruby
 cache = MessageBus::DistributedCache.new("cache name", app_version: "12.1.7.ABDEB")
@@ -439,7 +447,7 @@ puts cache["a"]
 
 #### Error Handling
 
-The internet is a chaotic environment and clients can drop off for a variety of reasons. If this happens while MessageBus is trying to write a message to the client you may see something like this in your logs:
+The internet is a chaotic environment and clients can drop off for a variety of reasons. If this happens while message_bus is trying to write a message to the client you may see something like this in your logs:
 
 ```
 Errno::EPIPE: Broken pipe
@@ -455,7 +463,7 @@ Errno::EPIPE: Broken pipe
   ...
 ```
 
-The user doesn't see anything, but depending on your traffic you may acquire quite a few of these in your logs.
+The user doesn't see anything, but depending on your traffic you may acquire quite a few of these in your logs or exception tracking tool.
 
 You can rescue from errors that occur in MessageBus's middleware stack by adding a config option:
 
