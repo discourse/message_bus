@@ -181,19 +181,18 @@ MessageBus.publish "/channel", "some message", site_id: "site-id"
 
 # you may publish messages to ALL sites using the /global/ prefix
 MessageBus.publish "/global/channel", "will go to all sites"
-
 ```
 
 ### Client support
 
 MessageBus ships a simple ~300 line JavaScript library which provides an API to interact with the server.
 
-
 JavaScript can listen on any channel (and receive notification via polling or long polling):
 
 ```html
 <script src="message-bus.js" type="text/javascript"></script>
 ```
+
 Note, the message-bus.js file is located in the assets folder.
 
 #### Rails
@@ -212,12 +211,10 @@ MessageBus.subscribe("/channel", function(data){
   // data shipped from server
 });
 
-
 // you will get all new messages sent to channel (-1 is implicit)
 MessageBus.subscribe("/channel", function(data){
   // data shipped from server
 }, -1);
-
 
 // all messages AFTER message id 7 AND all new messages
 MessageBus.subscribe("/channel", function(data){
@@ -281,6 +278,7 @@ You can configure redis setting in `config/initializers/message_bus.rb`, like
 ```ruby
 MessageBus.configure(backend: :redis, url: "redis://:p4ssw0rd@10.0.1.1:6380/15")
 ```
+
 The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what options you can configure.
 
 #### Data Retention
@@ -298,7 +296,6 @@ MessageBus.reliable_pub_sub.max_global_backlog_size = 100
 
 # flush per-channel backlog after 100 seconds of inactivity
 MessageBus.reliable_pub_sub.max_backlog_age = 100
-
 ```
 
 ### PostgreSQL
@@ -328,6 +325,7 @@ The `:clear_every` option supported by the PostgreSQL backend is also supported 
 If you're using a forking or threading app server and you're not getting immediate updates from published messages, you might need to reconnect Redis/PostgreSQL in your app server config:
 
 #### Passenger
+
 ```ruby
 # Rails: config/application.rb or config.ru
 if defined?(PhusionPassenger)
@@ -360,6 +358,7 @@ to nginx.conf.
 For more information see [Passenger documentation](https://www.phusionpassenger.com/library/config/nginx/tuning_sse_and_websockets/)
 
 #### Puma
+
 ```ruby
 # path/to/your/config/puma.rb
 require 'message_bus' # omit this line for Rails 5
@@ -369,6 +368,7 @@ end
 ```
 
 #### Unicorn
+
 ```ruby
 # path/to/your/config/unicorn.rb
 require 'message_bus'
@@ -423,7 +423,6 @@ cache["frogs"] = nil
 
 puts cache["frogs"]
 # => nil
-
 ```
 
 Automatically expiring the cache on app update:
