@@ -207,7 +207,7 @@ JavaScript can listen on any channel (and receive notification via polling or lo
 ```
 Note, the message-bus.js file is located in the assets folder.
 
-**Rails**
+#### Rails
 ```javascript
 //= require message-bus
 ```
@@ -245,8 +245,7 @@ There is also a Ruby implementation of the client library, at
 [message_bus-client](https://github.com/lowjoel/message_bus-client) with the API very similar to
 that of the JavaScript client.
 
-**Client settings**:
-
+#### Client settings
 
 All client settings are settable via `MessageBus.OPTION`
 
@@ -264,7 +263,7 @@ headers|{}|Extra headers to be include with request.  Properties and values of o
 minHiddenPollInterval|1500|Time to wait between poll requests performed by background or hidden tabs and windows, shared state via localStorage
 enableChunkedEncoding|true|Allow streaming of message bus data over the HTTP channel
 
-**API**:
+#### API
 
 `MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus
 
