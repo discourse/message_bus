@@ -14,17 +14,6 @@ Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tre
 
 ### http://chat.samsaffron.com
 
-## Want to help?
-
-If you are looking to contribute to this project here are some ideas
-
-- MAKE THIS README BETTER!
-- Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis.
-- Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
-- Improve general documentation (Add examples, refine existing examples)
-- Make MessageBus a nice website
-- Add optional transports for websocket and shared web workers
-
 ## Ruby version support
 
 MessageBus only support officially supported versions of Ruby, as of [2018-06-20](https://www.ruby-lang.org/en/news/2018/06/20/support-of-ruby-2-2-has-ended/) this means we only support Ruby version 2.3 and up.
@@ -283,16 +272,6 @@ enableChunkedEncoding|true|Allow streaming of message bus data over the HTTP cha
 
 `MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded.  Returns a reference to the MessageBus object.
 
-## Running tests
-
-To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to localhost:6379 and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
-
-```
-PGUSER=some_user PGDATABASE=some_db bundle exec rake
-```
-
-We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
-
 ## Configuration
 
 ### Redis
@@ -492,3 +471,24 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
   end
 end)
 ```
+
+## Contributing
+
+If you are looking to contribute to this project here are some ideas
+
+- MAKE THIS README BETTER!
+- Build backends for other providers (zeromq, rabbitmq, disque) - currently we support pg and redis.
+- Improve and properly document admin dashboard (add opt-in stats, better diagnostics into queues)
+- Improve general documentation (Add examples, refine existing examples)
+- Make MessageBus a nice website
+- Add optional transports for websocket and shared web workers
+
+### Running tests
+
+To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
+
+```
+PGUSER=some_user PGDATABASE=some_db bundle exec rake
+```
+
+We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
