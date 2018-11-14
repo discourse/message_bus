@@ -479,6 +479,64 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
 end)
 ```
 
+## How it works
+
+### Client-server protocol
+
+The message_bus protocol for subscribing clients is based on HTTP, optionally with long-polling and chunked encoding, as specified by the HTTP/1.1 spec in RFC7230 and RFC7231.
+
+The protocol consists of a single HTTP end-point at `/message-bus/[client_id]/poll`, which responds to `POST` and `OPTIONS`. In the course of a `POST` request, the client must indicate the channels from which messages are desired, along with the last message ID the client received for each channel, and an incrementing integer sequence number for each request (used to detect out of order requests and close those with the same client ID and lower sequence numbers).
+
+Clients' specification of requested channels can be submitted in either JSON format (with a `Content-Type` of `application/json`) or as HTML form data (using `application/x-www-form-urlencoded`). An example request might look like:
+
+```
+POST /message-bus/3314c3f12b1e45b4b1fdf1a6e42ba826/poll HTTP/1.1
+Host: foo.com
+Content-Type: application/json
+Content-Length: 37
+
+{"/foo/bar":3,"/doo/dah":0,"__seq":7}
+```
+
+If there are messages more recent than the client-specified IDs in any of the requested channels, those messages will be immediately delivered to the client. If the server is configured for long-polling, the client has not requested to disable it (by specifying the `dlp=t` query parameter), and no new messages are available, the connection will remain open for the configured long-polling interval (25 seconds by default); if a message becomes available in that time, it will be delivered, else the connection will close. If chunked encoding is enabled, message delivery will not automatically end the connection, and messages will be continuously delivered during the life of the connection, separated by `"\r\n|\r\n"`.
+
+The format for delivered messages is a JSON array of message objects like so:
+
+```json
+[
+  {
+    "global_id": 12,
+    "message_id": 1,
+    "channel": "/some/channel/name",
+    "data": [the message as published]
+  }
+]
+```
+
+The `global_id` field here indicates the ID of the message in the global backlog, while the `message_id` is the ID of the message in the channel-specific backlog. The ID used for subscriptions is always the channel-specific one.
+
+In certain conditions, a status message will be delivered and look like this:
+
+```json
+{
+  "global_id": -1,
+  "message_id": -1,
+  "channel": "/__status",
+  "data": {
+    "/some/channel":5,
+    "/other/channel":9
+  }
+}
+```
+
+This message indicates the last ID in the backlog for each channel that the client subscribed to. It is sent in the following circumstances:
+
+* When the client subscribes to a channel starting from `-1`. When long-polling, this message will be delivered immediately.
+* When the client subscribes to a channel starting from a message ID that is beyond the last message on that channel.
+* When delivery of messages to a client is skipped because the message is filtered to other users/groups.
+
+The values provided in this status message can be used by the client to skip requesting messages it will never receive and move forward in polling.
+
 ## Contributing
 
 If you are looking to contribute to this project here are some ideas
