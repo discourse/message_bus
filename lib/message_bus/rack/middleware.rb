@@ -5,6 +5,9 @@ require 'json'
 # our little message bus, accepts long polling and polling
 module MessageBus::Rack; end
 
+# Accepts requests from subscribers, validates and authenticates them,
+# delivers existing messages from the backlog and informs a
+# `MessageBus::ConnectionManager` of a connection which is remaining open.
 class MessageBus::Rack::Middleware
   def start_listener
     unless @started_listener

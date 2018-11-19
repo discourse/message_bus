@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# Represents a connected subscriber and delivers published messages over its
+# connected socket.
 class MessageBus::Client
   attr_accessor :client_id, :user_id, :group_ids, :connect_time,
                 :subscribed_sets, :site_id, :cleanup_timer,
