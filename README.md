@@ -491,6 +491,8 @@ The MessageBus implementation consists of several key parts:
 * `MessageBus::Client` - represents a connected subscriber and delivers published messages over its connected socket.
 * `MessageBus::Message` - represents a published message and its encoding for persistence.
 
+The public API is all defined on the `MessageBus` module itself.
+
 ### Subscriber protocol
 
 The message_bus protocol for subscribing clients is based on HTTP, optionally with long-polling and chunked encoding, as specified by the HTTP/1.1 spec in RFC7230 and RFC7231.
