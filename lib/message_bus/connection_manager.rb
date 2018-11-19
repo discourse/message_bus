@@ -2,6 +2,8 @@
 
 require 'json' unless defined? ::JSON
 
+# Manages a set of subscribers with active connections to the server, such that
+# messages which are published during the connection may be dispatched.
 class MessageBus::ConnectionManager
   require 'monitor'
   include MonitorMixin
