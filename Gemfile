@@ -17,3 +17,4 @@ gem 'rack'
 gem 'concurrent-ruby' # for distributed-cache
 
 gem 'rubocop'
+gem 'yard'

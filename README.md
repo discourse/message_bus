@@ -569,3 +569,7 @@ PGUSER=some_user PGDATABASE=some_db bundle exec rake
 ```
 
 We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
+
+### Generating the documentation
+
+Run `rake yard` (or `docker-compose run tests rake yard`) in order to generate the implementation's API docs in HTML format, and `open doc/index.html` to view them.
