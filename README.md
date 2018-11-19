@@ -481,7 +481,17 @@ end)
 
 ## How it works
 
-### Client-server protocol
+MessageBus provides durable messaging following the publish-subscribe (pubsub) pattern to subscribers who track their own subscriptions. Durability is by virtue of the persistence of messages in backlogs stored in the selected backend implementation (Redis, Postgres, etc) which can be queried up until a configurable expiry. Subscribers must keep track of the ID of the last message they processed, and request only more-recent messages in subsequent connections.
+
+The MessageBus implementation consists of several key parts:
+
+* Backend implementations - these provide a consistent API over a variety of options for persisting published messages. The API they present is around the publication to and reading of messages from those backlogs in a manner consistent with message_bus' philosophy.
+* `MessageBus::Rack::Middleware` - which accepts requests from subscribers, validates and authenticates them, delivers existing messages from the backlog and informs a `MessageBus::ConnectionManager` of a connection which is remaining open.
+* `MessageBus::ConnectionManager` - manages a set of subscribers with active connections to the server, such that messages which are published during the connection may be dispatched.
+* `MessageBus::Client` - represents a connected subscriber and delivers published messages over its connected socket.
+* `MessageBus::Message` - represents a published message and its encoding for persistence.
+
+### Subscriber protocol
 
 The message_bus protocol for subscribing clients is based on HTTP, optionally with long-polling and chunked encoding, as specified by the HTTP/1.1 spec in RFC7230 and RFC7231.
 
