@@ -11,6 +11,14 @@ load 'jasmine/tasks/jasmine.rake'
 require 'rubocop/rake_task'
 RuboCop::RakeTask.new
 
+require 'yard'
+YARD::Rake::YardocTask.new
+
+desc "Generate documentation for Yard, and fail if there are any warnings"
+task :test_doc do
+  sh "yard --fail-on-warning #{'--no-progress' if ENV['CI']}"
+end
+
 Bundler.require(:default, :test)
 
 task default: :spec
@@ -37,7 +45,7 @@ run_spec = proc do |backend|
   end
 end
 
-task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop]
+task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop, :test_doc]
 
 task spec_client_js: 'jasmine:ci'
 
