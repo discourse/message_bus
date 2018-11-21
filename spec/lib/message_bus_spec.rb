@@ -230,7 +230,7 @@ describe MessageBus do
       assert pub_sub_spy.has_been_called_with?(
         "/chuck$|$law-and-order",
         "{\"data\":\"norris\",\"user_ids\":null,\"group_ids\":null,\"client_ids\":null}",
-        {max_backlog_age: 33, max_backlog_size: 13}
+        max_backlog_age: 33, max_backlog_size: 13
       ), "Expected different arguments, got #{pub_sub_spy.calls.first.args}"
     end
   end
