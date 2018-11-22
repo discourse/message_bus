@@ -21,6 +21,18 @@ services:
     depends_on:
       - postgres
       - redis
+  docs:
+    build:
+      context: .
+    command: yard server --bind 0.0.0.0 --reload
+    environment:
+      BUNDLE_TO: /usr/local/bundle
+    volumes:
+      - .:/usr/src/app
+      - bundle_config:/home/src/app/.bundle
+      - bundle:/usr/local/bundle
+    ports:
+      - 8808:8808
   redis:
     image: redis:5.0
     volumes:

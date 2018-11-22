@@ -1,8 +1,19 @@
 # frozen_string_literal: true
 
+require "message_bus/backends/base"
+
 module MessageBus
   module Backends
-    class Memory
+    # The memory backend stores published messages in a simple array per
+    # channel, and does not store a separate global backlog.
+    #
+    # This backend diverges from the standard in Base in the following ways:
+    #
+    # * Does not support forking
+    # * Does not support in-memory buffering of messages on publication (redundant)
+    #
+    # @see Base general information about message_bus backends
+    class Memory < Base
       class Client
         attr_accessor :max_backlog_age
 
@@ -175,12 +186,10 @@ module MessageBus
         end
       end
 
-      attr_reader :subscribed
-      attr_accessor :max_backlog_size, :max_global_backlog_size, :clear_every
-
-      UNSUB_MESSAGE = "$$UNSUBSCRIBE"
-
-      # max_backlog_size is per multiplexed channel
+      # @param [Hash] config
+      # @option config [Logger] :logger a logger to which logs will be output
+      # @option config [Integer] :clear_every the interval of publications between which the backlog will not be cleared
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
       def initialize(config = {}, max_backlog_size = 1000)
         @config = config
         @max_backlog_size = max_backlog_size
@@ -190,56 +199,65 @@ module MessageBus
         @clear_every = config[:clear_every] || 1
       end
 
-      def new_connection
-        Client.new(@config)
-      end
-
       def max_backlog_age=(value)
         client.max_backlog_age = value
       end
 
-      def backend
-        :memory
-      end
-
+      # No-op; this backend doesn't support forking.
       def after_fork
         nil
       end
 
-      def client
-        @client ||= new_connection
-      end
-
-      # use with extreme care, will nuke all of the data
+      # Deletes all message_bus data from the backend. Use with extreme caution.
       def reset!
         client.reset!
       end
 
-      # use with extreme care, will nuke all of the data
+      # Deletes all backlogs and their data. Use with extreme caution.
       def expire_all_backlogs!
         client.expire_all_backlogs!
       end
 
+      # Publishes a message to a channel
+      #
+      # @param [String] channel the name of the channel to which the message should be published
+      # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
+      # @param [Hash] opts
+      # @option opts [Boolean] :queue_in_memory NOT SUPPORTED
+      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a message may live in a backlog before beging removed, in seconds
+      # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
+      #
+      # @return [Integer] the channel-specific ID the message was given
       def publish(channel, data, opts = nil)
-        client = self.client
-
+        c = client
         max_backlog_age = opts && opts[:max_backlog_age]
-        backlog_id = client.add(channel, data, max_backlog_age: max_backlog_age)
+        backlog_id = c.add(channel, data, max_backlog_age: max_backlog_age)
 
         if backlog_id % clear_every == 0
           max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
-          client.clear_global_backlog(backlog_id, @max_global_backlog_size)
-          client.clear_channel_backlog(channel, backlog_id, max_backlog_size)
+          c.clear_global_backlog(backlog_id, @max_global_backlog_size)
+          c.clear_channel_backlog(channel, backlog_id, max_backlog_size)
         end
 
         backlog_id
       end
 
+      # Get the ID of the last message published on a channel
+      #
+      # @param [String] channel the name of the channel in question
+      #
+      # @return [Integer] the channel-specific ID of the last message published to the given channel
       def last_id(channel)
         client.max_id(channel)
       end
 
-      def backlog(channel, last_id = nil)
+      # Get messages from a channel backlog
+      #
+      # @param [String] channel the name of the channel in question
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      #
+      # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
+      def backlog(channel, last_id = 0)
         items = client.backlog channel, last_id.to_i
 
         items.map! do |id, data|
@@ -247,9 +265,12 @@ module MessageBus
         end
       end
 
-      def global_backlog(last_id = nil)
-        last_id = last_id.to_i
-
+      # Get messages from the global backlog
+      #
+      # @param [#to_i] last_id the global ID of the last message that the caller received
+      #
+      # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
+      def global_backlog(last_id = 0)
         items = client.global_backlog last_id.to_i
 
         items.map! do |id, channel, data|
@@ -257,6 +278,12 @@ module MessageBus
         end
       end
 
+      # Get a specific message from a channel
+      #
+      # @param [String] channel the name of the channel in question
+      # @param [Integer] message_id the channel-specific ID of the message required
+      #
+      # @return [MessageBus::Message, nil] the requested message, or nil if it does not exist
       def get_message(channel, message_id)
         if data = client.get_value(channel, message_id)
           MessageBus::Message.new message_id, message_id, channel, data
@@ -265,6 +292,17 @@ module MessageBus
         end
       end
 
+      # Subscribe to messages on a particular channel. Each message since the
+      # last ID specified will be delivered by yielding to the passed block as
+      # soon as it is available. This will block until subscription is terminated.
+      #
+      # @param [String] channel the name of the channel to which we should subscribe
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      #
+      # @yield [message] a message-handler block
+      # @yieldparam [MessageBus::Message] message each message as it is delivered
+      #
+      # @return [nil]
       def subscribe(channel, last_id = nil)
         # trivial implementation for now,
         #   can cut down on connections if we only have one global subscriber
@@ -275,24 +313,22 @@ module MessageBus
         end
       end
 
-      def process_global_backlog(highest_id)
-        if highest_id > client.max_id
-          highest_id = 0
-        end
-
-        global_backlog(highest_id).each do |old|
-          yield old
-          highest_id = old.global_id
-        end
-
-        highest_id
-      end
-
+      # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
       def global_unsubscribe
         client.unsubscribe
         @subscribed = false
       end
 
+      # Subscribe to messages on all channels. Each message since the last ID
+      # specified will be delivered by yielding to the passed block as soon as
+      # it is available. This will block until subscription is terminated.
+      #
+      # @param [#to_i] last_id the global ID of the last message that the caller received
+      #
+      # @yield [message] a message-handler block
+      # @yieldparam [MessageBus::Message] message each message as it is delivered
+      #
+      # @return [nil]
       def global_subscribe(last_id = nil)
         raise ArgumentError unless block_given?
 
@@ -342,6 +378,29 @@ module MessageBus
           sleep 1
           retry
         end
+      end
+
+      private
+
+      def client
+        @client ||= new_connection
+      end
+
+      def new_connection
+        Client.new(@config)
+      end
+
+      def process_global_backlog(highest_id)
+        if highest_id > client.max_id
+          highest_id = 0
+        end
+
+        global_backlog(highest_id).each do |old|
+          yield old
+          highest_id = old.global_id
+        end
+
+        highest_id
       end
 
       MessageBus::BACKENDS[:memory] = self

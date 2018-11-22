@@ -1,26 +1,41 @@
 # frozen_string_literal: true
 
-#
 require 'redis'
 require 'digest'
 
-# the heart of the message bus, it acts as 2 things
-#
-# 1. A channel multiplexer
-# 2. Backlog storage per-multiplexed channel.
-#
-# ids are all sequencially increasing numbers starting at 0
-#
+require "message_bus/backends/base"
 
 module MessageBus
   module Backends
-    class Redis
-      attr_reader :subscribed
-      attr_accessor :max_backlog_size, :max_global_backlog_size, :max_in_memory_publish_backlog, :max_backlog_age
-
-      UNSUB_MESSAGE = "$$UNSUBSCRIBE"
-
-      class NoMoreRetries < StandardError; end
+    # The Redis backend stores published messages in Redis sorted sets (using
+    # ZADD, where the score is the message ID), one for each channel (where
+    # the full message is stored), and also in a global backlog as a simple
+    # pointer to the respective channel and channel-specific ID. In addition,
+    # publication publishes full messages to a Redis PubSub channel; this is
+    # used for actively subscribed message_bus servers to consume published
+    # messages in real-time while connected and forward them to subscribers,
+    # while catch-up is performed from the backlog sorted sets.
+    #
+    # Message lookup is performed using the Redis ZRANGEBYSCORE command, and
+    # backlog trimming uses ZREMRANGEBYSCORE. The last used channel-specific
+    # and global IDs are stored as integers in simple Redis keys and
+    # incremented on publication.
+    #
+    # Publication is implemented using a Lua script to ensure that it is
+    # atomic and messages are not corrupted by parallel publication.
+    #
+    # This backend diverges from the standard in Base in the following ways:
+    #
+    # * `max_backlog_age` options in this backend differ from the behaviour of
+    #   other backends, in that either no messages are removed (when
+    #   publications happen more regularly than this time-frame) or all
+    #   messages are removed (when no publication happens during this
+    #   time-frame).
+    #
+    # * `clear_every` is not a supported option for this backend.
+    #
+    # @see Base general information about message_bus backends
+    class Redis < Base
       class BackLogOutOfOrder < StandardError
         attr_accessor :highest_id
 
@@ -29,7 +44,10 @@ module MessageBus
         end
       end
 
-      # max_backlog_size is per multiplexed channel
+      # @param [Hash] redis_config in addition to the options listed, see https://github.com/redis/redis-rb for other available options
+      # @option redis_config [Logger] :logger a logger to which logs will be output
+      # @option redis_config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying Redis library
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
       def initialize(redis_config = {}, max_backlog_size = 1000)
         @redis_config = redis_config.dup
         @logger = @redis_config[:logger]
@@ -46,48 +64,19 @@ module MessageBus
         @max_backlog_age = 604800
       end
 
-      def new_redis_connection
-        ::Redis.new(@redis_config)
-      end
-
+      # Reconnects to Redis; used after a process fork, typically triggerd by a forking webserver
       def after_fork
         pub_redis.disconnect!
       end
 
-      def redis_channel_name
-        db = @redis_config[:db] || 0
-        "_message_bus_#{db}"
-      end
-
-      # redis connection used for publishing messages
-      def pub_redis
-        @pub_redis ||= new_redis_connection
-      end
-
-      def backlog_key(channel)
-        "__mb_backlog_n_#{channel}"
-      end
-
-      def backlog_id_key(channel)
-        "__mb_backlog_id_n_#{channel}"
-      end
-
-      def global_id_key
-        "__mb_global_id_n"
-      end
-
-      def global_backlog_key
-        "__mb_global_backlog_n"
-      end
-
-      # use with extreme care, will nuke all of the data
+      # Deletes all message_bus data from the backend. Use with extreme caution.
       def reset!
         pub_redis.keys("__mb_*").each do |k|
           pub_redis.del k
         end
       end
 
-      # use with extreme care, will nuke all of the data
+      # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.
       def expire_all_backlogs!
         pub_redis.keys("__mb_*backlog_n").each do |k|
           pub_redis.del k
@@ -135,6 +124,16 @@ LUA
 
       LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)
 
+      # Publishes a message to a channel
+      #
+      # @param [String] channel the name of the channel to which the message should be published
+      # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
+      # @param [Hash] opts
+      # @option opts [Boolean] :queue_in_memory (true) whether or not to hold the message in an in-memory buffer if publication fails, to be re-tried later
+      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a backlog may survive without publication.
+      # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
+      #
+      # @return [Integer] the channel-specific ID the message was given
       def publish(channel, data, opts = nil)
         queue_in_memory = (opts && opts[:queue_in_memory]) != false
 
@@ -189,51 +188,23 @@ LUA
         end
       end
 
-      def ensure_backlog_flushed
-        flushed = false
-
-        while !flushed
-          try_again = false
-
-          if is_readonly?
-            sleep 1
-            next
-          end
-
-          @lock.synchronize do
-            if @in_memory_backlog.length == 0
-              flushed = true
-              break
-            end
-
-            begin
-              # TODO recover special options
-              publish(*@in_memory_backlog[0], queue_in_memory: false)
-            rescue ::Redis::CommandError => e
-              if e.message =~ /^READONLY/
-                try_again = true
-              else
-                @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
-              end
-            rescue => e
-              @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
-            end
-
-            @in_memory_backlog.delete_at(0) unless try_again
-          end
-        end
-      ensure
-        @lock.synchronize do
-          @flush_backlog_thread = nil
-        end
-      end
-
+      # Get the ID of the last message published on a channel
+      #
+      # @param [String] channel the name of the channel in question
+      #
+      # @return [Integer] the channel-specific ID of the last message published to the given channel
       def last_id(channel)
         backlog_id_key = backlog_id_key(channel)
         pub_redis.get(backlog_id_key).to_i
       end
 
-      def backlog(channel, last_id = nil)
+      # Get messages from a channel backlog
+      #
+      # @param [String] channel the name of the channel in question
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      #
+      # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
+      def backlog(channel, last_id = 0)
         redis = pub_redis
         backlog_key = backlog_key(channel)
         items = redis.zrangebyscore backlog_key, last_id.to_i + 1, "+inf"
@@ -243,11 +214,13 @@ LUA
         end
       end
 
-      def global_backlog(last_id = nil)
-        last_id = last_id.to_i
-        redis = pub_redis
-
-        items = redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
+      # Get messages from the global backlog
+      #
+      # @param [#to_i] last_id the global ID of the last message that the caller received
+      #
+      # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
+      def global_backlog(last_id = 0)
+        items = pub_redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
 
         items.map! do |i|
           pipe = i.index "|"
@@ -261,6 +234,12 @@ LUA
         items
       end
 
+      # Get a specific message from a channel
+      #
+      # @param [String] channel the name of the channel in question
+      # @param [Integer] message_id the channel-specific ID of the message required
+      #
+      # @return [MessageBus::Message, nil] the requested message, or nil if it does not exist
       def get_message(channel, message_id)
         redis = pub_redis
         backlog_key = backlog_key(channel)
@@ -273,6 +252,17 @@ LUA
         end
       end
 
+      # Subscribe to messages on a particular channel. Each message since the
+      # last ID specified will be delivered by yielding to the passed block as
+      # soon as it is available. This will block until subscription is terminated.
+      #
+      # @param [String] channel the name of the channel to which we should subscribe
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      #
+      # @yield [message] a message-handler block
+      # @yieldparam [MessageBus::Message] message each message as it is delivered
+      #
+      # @return [nil]
       def subscribe(channel, last_id = nil)
         # trivial implementation for now,
         #   can cut down on connections if we only have one global subscriber
@@ -292,28 +282,7 @@ LUA
         end
       end
 
-      def process_global_backlog(highest_id, raise_error)
-        if highest_id > pub_redis.get(global_id_key).to_i
-          highest_id = 0
-        end
-
-        global_backlog(highest_id).each do |old|
-          if highest_id + 1 == old.global_id
-            yield old
-            highest_id = old.global_id
-          else
-            raise BackLogOutOfOrder.new(highest_id) if raise_error
-
-            if old.global_id > highest_id
-              yield old
-              highest_id = old.global_id
-            end
-          end
-        end
-
-        highest_id
-      end
-
+      # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
       def global_unsubscribe
         if @redis_global
           # new connection to avoid deadlock
@@ -323,6 +292,16 @@ LUA
         end
       end
 
+      # Subscribe to messages on all channels. Each message since the last ID
+      # specified will be delivered by yielding to the passed block as soon as
+      # it is available. This will block until subscription is terminated.
+      #
+      # @param [#to_i] last_id the global ID of the last message that the caller received
+      #
+      # @yield [message] a message-handler block
+      # @yieldparam [MessageBus::Message] message each message as it is delivered
+      #
+      # @return [nil]
       def global_subscribe(last_id = nil, &blk)
         raise ArgumentError unless block_given?
 
@@ -388,6 +367,97 @@ LUA
       end
 
       private
+
+      def new_redis_connection
+        ::Redis.new(@redis_config)
+      end
+
+      # redis connection used for publishing messages
+      def pub_redis
+        @pub_redis ||= new_redis_connection
+      end
+
+      def redis_channel_name
+        db = @redis_config[:db] || 0
+        "_message_bus_#{db}"
+      end
+
+      def backlog_key(channel)
+        "__mb_backlog_n_#{channel}"
+      end
+
+      def backlog_id_key(channel)
+        "__mb_backlog_id_n_#{channel}"
+      end
+
+      def global_id_key
+        "__mb_global_id_n"
+      end
+
+      def global_backlog_key
+        "__mb_global_backlog_n"
+      end
+
+      def process_global_backlog(highest_id, raise_error)
+        if highest_id > pub_redis.get(global_id_key).to_i
+          highest_id = 0
+        end
+
+        global_backlog(highest_id).each do |old|
+          if highest_id + 1 == old.global_id
+            yield old
+            highest_id = old.global_id
+          else
+            raise BackLogOutOfOrder.new(highest_id) if raise_error
+
+            if old.global_id > highest_id
+              yield old
+              highest_id = old.global_id
+            end
+          end
+        end
+
+        highest_id
+      end
+
+      def ensure_backlog_flushed
+        flushed = false
+
+        while !flushed
+          try_again = false
+
+          if is_readonly?
+            sleep 1
+            next
+          end
+
+          @lock.synchronize do
+            if @in_memory_backlog.length == 0
+              flushed = true
+              break
+            end
+
+            begin
+              # TODO recover special options
+              publish(*@in_memory_backlog[0], queue_in_memory: false)
+            rescue ::Redis::CommandError => e
+              if e.message =~ /^READONLY/
+                try_again = true
+              else
+                @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+              end
+            rescue => e
+              @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+            end
+
+            @in_memory_backlog.delete_at(0) unless try_again
+          end
+        end
+      ensure
+        @lock.synchronize do
+          @flush_backlog_thread = nil
+        end
+      end
 
       def cached_eval(redis, script, script_sha1, params)
         begin
