@@ -52,6 +52,9 @@ module MessageBus
     class Base
       # rubocop:disable Lint/UnusedMethodArgument
 
+      # Raised to indicate that the concrete backend implementation does not implement part of the API
+      ConcreteClassMustImplementError = Class.new(StandardError)
+
       # @return [String] a special message published to trigger termination of backend subscriptions
       UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
@@ -84,19 +87,19 @@ module MessageBus
       # Performs routines specific to the backend that are necessary after a process fork, typically triggerd by a forking webserver. Typically this re-opens sockets to the backend.
       # @abstract
       def after_fork
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Deletes all message_bus data from the backend. Use with extreme caution.
       # @abstract
       def reset!
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Deletes all backlogs and their data. Does not delete non-backlog data that message_bus may persist, depending on the concrete backend implementation. Use with extreme caution.
       # @abstract
       def expire_all_backlogs!
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Publishes a message to a channel
@@ -112,7 +115,7 @@ module MessageBus
       #
       # @abstract
       def publish(channel, data, opts = nil)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Get the ID of the last message published on a channel
@@ -123,7 +126,7 @@ module MessageBus
       #
       # @abstract
       def last_id(channel)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Get messages from a channel backlog
@@ -135,7 +138,7 @@ module MessageBus
       #
       # @abstract
       def backlog(channel, last_id = 0)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Get messages from the global backlog
@@ -146,7 +149,7 @@ module MessageBus
       #
       # @abstract
       def global_backlog(last_id = 0)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Get a specific message from a channel
@@ -158,7 +161,7 @@ module MessageBus
       #
       # @abstract
       def get_message(channel, message_id)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Subscribe to messages on a particular channel. Each message since the
@@ -175,14 +178,14 @@ module MessageBus
       #
       # @abstract
       def subscribe(channel, last_id = nil)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
       #
       # @abstract
       def global_unsubscribe
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # Subscribe to messages on all channels. Each message since the last ID
@@ -198,7 +201,7 @@ module MessageBus
       #
       # @abstract
       def global_subscribe(last_id = nil)
-        raise NotImplementedError
+        raise ConcreteClassMustImplementError
       end
 
       # rubocop:enable Lint/UnusedMethodArgument
