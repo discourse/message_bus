@@ -485,7 +485,7 @@ MessageBus provides durable messaging following the publish-subscribe (pubsub) p
 
 The MessageBus implementation consists of several key parts:
 
-* Backend implementations - these provide a consistent API over a variety of options for persisting published messages. The API they present is around the publication to and reading of messages from those backlogs in a manner consistent with message_bus' philosophy.
+* Backend implementations - these provide a consistent API over a variety of options for persisting published messages. The API they present is around the publication to and reading of messages from those backlogs in a manner consistent with message_bus' philosophy. Each of these inherits from `MessageBus::Backends::Base` and implements the interface it documents.
 * `MessageBus::Rack::Middleware` - which accepts requests from subscribers, validates and authenticates them, delivers existing messages from the backlog and informs a `MessageBus::ConnectionManager` of a connection which is remaining open.
 * `MessageBus::ConnectionManager` - manages a set of subscribers with active connections to the server, such that messages which are published during the connection may be dispatched.
 * `MessageBus::Client` - represents a connected subscriber and delivers published messages over its connected socket.
@@ -572,4 +572,6 @@ We include a Docker Compose configuration to run test suite in isolation, or if 
 
 ### Generating the documentation
 
-Run `rake yard` (or `docker-compose run tests rake yard`) in order to generate the implementation's API docs in HTML format, and `open doc/index.html` to view them.
+Run `rake yard` (or `docker-compose run docs rake yard`) in order to generate the implementation's API docs in HTML format, and `open doc/index.html` to view them.
+
+While working on documentation, it is useful to automatically re-build it as you make changes. You can do `yard server --reload` (or `docker-compose up docs`) and `open http://localhost:8808` to browse live-built docs as you edit them.

@@ -11,6 +11,12 @@ describe PUB_SUB_CLASS do
     @bus.reset!
   end
 
+  describe "API parity" do
+    it "has the same public methods as the base class" do
+      @bus.public_methods.sort.must_equal MessageBus::Backends::Base.new(MESSAGE_BUS_CONFIG).public_methods.sort
+    end
+  end
+
   it "should be able to access the backlog" do
     @bus.publish "/foo", "bar"
     @bus.publish "/foo", "baz"
