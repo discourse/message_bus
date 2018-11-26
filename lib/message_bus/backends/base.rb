@@ -58,40 +58,30 @@ module MessageBus
       # @return [String] a special message published to trigger termination of backend subscriptions
       UNSUB_MESSAGE = "$$UNSUBSCRIBE"
 
-      # @abstract
       # @return [Boolean] The subscription state of the backend
       attr_reader :subscribed
-      # @abstract
       # @return [Integer] the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
       attr_accessor :max_backlog_size
-      # @abstract
       # @return [Integer] the largest permitted size (number of messages) for the global backlog; beyond this capacity, old messages will be dropped.
       attr_accessor :max_global_backlog_size
-      # @abstract
       # @return [Integer] the longest amount of time a message may live in a backlog before beging removed, in seconds.
       attr_accessor :max_backlog_age
       # Typically, backlogs are trimmed whenever we publish to them. This setting allows some tolerance in order to improve performance.
-      # @abstract
       # @return [Integer] the interval of publications between which the backlog will not be cleared.
       attr_accessor :clear_every
-      # @abstract
       # @return [Integer] the largest permitted size (number of messages) to be held in a memory buffer when publication fails, for later re-publication.
       attr_accessor :max_in_memory_publish_backlog
 
       # @param [Hash] config backend-specific configuration options; see the concrete class for details
       # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
-      #
-      # @abstract
       def initialize(config = {}, max_backlog_size = 1000); end
 
       # Performs routines specific to the backend that are necessary after a process fork, typically triggerd by a forking webserver. Typically this re-opens sockets to the backend.
-      # @abstract
       def after_fork
         raise ConcreteClassMustImplementError
       end
 
       # Deletes all message_bus data from the backend. Use with extreme caution.
-      # @abstract
       def reset!
         raise ConcreteClassMustImplementError
       end
@@ -112,8 +102,6 @@ module MessageBus
       # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
       #
       # @return [Integer] the channel-specific ID the message was given
-      #
-      # @abstract
       def publish(channel, data, opts = nil)
         raise ConcreteClassMustImplementError
       end
@@ -123,8 +111,6 @@ module MessageBus
       # @param [String] channel the name of the channel in question
       #
       # @return [Integer] the channel-specific ID of the last message published to the given channel
-      #
-      # @abstract
       def last_id(channel)
         raise ConcreteClassMustImplementError
       end
@@ -135,8 +121,6 @@ module MessageBus
       # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
       #
       # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
-      #
-      # @abstract
       def backlog(channel, last_id = 0)
         raise ConcreteClassMustImplementError
       end
@@ -146,8 +130,6 @@ module MessageBus
       # @param [#to_i] last_id the global ID of the last message that the caller received
       #
       # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
-      #
-      # @abstract
       def global_backlog(last_id = 0)
         raise ConcreteClassMustImplementError
       end
@@ -158,8 +140,6 @@ module MessageBus
       # @param [Integer] message_id the channel-specific ID of the message required
       #
       # @return [MessageBus::Message, nil] the requested message, or nil if it does not exist
-      #
-      # @abstract
       def get_message(channel, message_id)
         raise ConcreteClassMustImplementError
       end
@@ -175,15 +155,11 @@ module MessageBus
       # @yieldparam [MessageBus::Message] message each message as it is delivered
       #
       # @return [nil]
-      #
-      # @abstract
       def subscribe(channel, last_id = nil)
         raise ConcreteClassMustImplementError
       end
 
       # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
-      #
-      # @abstract
       def global_unsubscribe
         raise ConcreteClassMustImplementError
       end
@@ -198,8 +174,6 @@ module MessageBus
       # @yieldparam [MessageBus::Message] message each message as it is delivered
       #
       # @return [nil]
-      #
-      # @abstract
       def global_subscribe(last_id = nil)
         raise ConcreteClassMustImplementError
       end

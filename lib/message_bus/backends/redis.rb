@@ -24,15 +24,15 @@ module MessageBus
     # Publication is implemented using a Lua script to ensure that it is
     # atomic and messages are not corrupted by parallel publication.
     #
-    # This backend diverges from the standard in Base in the following ways:
+    # @note This backend diverges from the standard in Base in the following ways:
     #
-    # * `max_backlog_age` options in this backend differ from the behaviour of
-    #   other backends, in that either no messages are removed (when
-    #   publications happen more regularly than this time-frame) or all
-    #   messages are removed (when no publication happens during this
-    #   time-frame).
+    #   * `max_backlog_age` options in this backend differ from the behaviour of
+    #     other backends, in that either no messages are removed (when
+    #     publications happen more regularly than this time-frame) or all
+    #     messages are removed (when no publication happens during this
+    #     time-frame).
     #
-    # * `clear_every` is not a supported option for this backend.
+    #   * `clear_every` is not a supported option for this backend.
     #
     # @see Base general information about message_bus backends
     class Redis < Base
@@ -65,11 +65,12 @@ module MessageBus
       end
 
       # Reconnects to Redis; used after a process fork, typically triggerd by a forking webserver
+      # @see Base#after_fork
       def after_fork
         pub_redis.disconnect!
       end
 
-      # Deletes all message_bus data from the backend. Use with extreme caution.
+      # (see Base#reset!)
       def reset!
         pub_redis.keys("__mb_*").each do |k|
           pub_redis.del k
@@ -77,6 +78,7 @@ module MessageBus
       end
 
       # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.
+      # @see Base#expire_all_backlogs!
       def expire_all_backlogs!
         pub_redis.keys("__mb_*backlog_n").each do |k|
           pub_redis.del k
@@ -124,16 +126,7 @@ LUA
 
       LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)
 
-      # Publishes a message to a channel
-      #
-      # @param [String] channel the name of the channel to which the message should be published
-      # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
-      # @param [Hash] opts
-      # @option opts [Boolean] :queue_in_memory (true) whether or not to hold the message in an in-memory buffer if publication fails, to be re-tried later
-      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a backlog may survive without publication.
-      # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
-      #
-      # @return [Integer] the channel-specific ID the message was given
+      # (see Base#publish)
       def publish(channel, data, opts = nil)
         queue_in_memory = (opts && opts[:queue_in_memory]) != false
 
@@ -188,22 +181,13 @@ LUA
         end
       end
 
-      # Get the ID of the last message published on a channel
-      #
-      # @param [String] channel the name of the channel in question
-      #
-      # @return [Integer] the channel-specific ID of the last message published to the given channel
+      # (see Base#last_id)
       def last_id(channel)
         backlog_id_key = backlog_id_key(channel)
         pub_redis.get(backlog_id_key).to_i
       end
 
-      # Get messages from a channel backlog
-      #
-      # @param [String] channel the name of the channel in question
-      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
-      #
-      # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
+      # (see Base#backlog)
       def backlog(channel, last_id = 0)
         redis = pub_redis
         backlog_key = backlog_key(channel)
@@ -214,11 +198,7 @@ LUA
         end
       end
 
-      # Get messages from the global backlog
-      #
-      # @param [#to_i] last_id the global ID of the last message that the caller received
-      #
-      # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
+      # (see Base#global_backlog)
       def global_backlog(last_id = 0)
         items = pub_redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
 
@@ -234,12 +214,7 @@ LUA
         items
       end
 
-      # Get a specific message from a channel
-      #
-      # @param [String] channel the name of the channel in question
-      # @param [Integer] message_id the channel-specific ID of the message required
-      #
-      # @return [MessageBus::Message, nil] the requested message, or nil if it does not exist
+      # (see Base#get_message)
       def get_message(channel, message_id)
         redis = pub_redis
         backlog_key = backlog_key(channel)
@@ -252,17 +227,7 @@ LUA
         end
       end
 
-      # Subscribe to messages on a particular channel. Each message since the
-      # last ID specified will be delivered by yielding to the passed block as
-      # soon as it is available. This will block until subscription is terminated.
-      #
-      # @param [String] channel the name of the channel to which we should subscribe
-      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
-      #
-      # @yield [message] a message-handler block
-      # @yieldparam [MessageBus::Message] message each message as it is delivered
-      #
-      # @return [nil]
+      # (see Base#subscribe)
       def subscribe(channel, last_id = nil)
         # trivial implementation for now,
         #   can cut down on connections if we only have one global subscriber
@@ -282,7 +247,7 @@ LUA
         end
       end
 
-      # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
+      # (see Base#global_unsubscribe)
       def global_unsubscribe
         if @redis_global
           # new connection to avoid deadlock
@@ -292,16 +257,7 @@ LUA
         end
       end
 
-      # Subscribe to messages on all channels. Each message since the last ID
-      # specified will be delivered by yielding to the passed block as soon as
-      # it is available. This will block until subscription is terminated.
-      #
-      # @param [#to_i] last_id the global ID of the last message that the caller received
-      #
-      # @yield [message] a message-handler block
-      # @yieldparam [MessageBus::Message] message each message as it is delivered
-      #
-      # @return [nil]
+      # (see Base#global_subscribe)
       def global_subscribe(last_id = nil, &blk)
         raise ArgumentError unless block_given?
 
