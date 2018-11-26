@@ -13,7 +13,7 @@ describe PUB_SUB_CLASS do
 
   describe "API parity" do
     it "has the same public methods as the base class" do
-      @bus.methods.sort.must_equal MessageBus::Backends::Base.new(MESSAGE_BUS_CONFIG).methods.sort
+      @bus.public_methods.sort.must_equal MessageBus::Backends::Base.new(MESSAGE_BUS_CONFIG).public_methods.sort
     end
   end
 
