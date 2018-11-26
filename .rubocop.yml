@@ -14,3 +14,8 @@ Layout/MultilineMethodCallIndentation:
 
 Bundler/OrderedGems:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - '**/spec_helper.rb'
+    - '**/**_spec.rb'
