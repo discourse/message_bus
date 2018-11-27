@@ -207,8 +207,7 @@ class MessageBus::Rack::Middleware
 
     client.cleanup_timer = @bus.timer.queue(@bus.long_polling_interval.to_f / 1000) {
       begin
-        client.cleanup_timer = nil
-        client.ensure_closed!
+        client.cancel
         @connection_manager.remove_client(client)
       rescue
         @bus.logger.warn "Failed to clean up client properly: #{$!} #{$!.backtrace}"

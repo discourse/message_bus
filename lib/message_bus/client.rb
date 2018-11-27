@@ -49,34 +49,6 @@ class MessageBus::Client
     end
   end
 
-  def ensure_closed!
-    return unless in_async?
-
-    if use_chunked
-      write_chunk("[]")
-      if @io
-        @io.write("0\r\n\r\n")
-        @io.close
-        @io = nil
-      end
-      if @async_response
-        @async_response << ("0\r\n\r\n")
-        @async_response.done
-        @async_response = nil
-      end
-    else
-      write_and_close "[]"
-    end
-  rescue
-    # we may have a dead socket, just nil the @io
-    @io = nil
-    @async_response = nil
-  end
-
-  def close
-    ensure_closed!
-  end
-
   def closed?
     !@async_response && !@io
   end
@@ -240,6 +212,30 @@ class MessageBus::Client
       @async_response.done
       @async_response = nil
     end
+  end
+
+  def ensure_closed!
+    return unless in_async?
+
+    if use_chunked
+      write_chunk("[]")
+      if @io
+        @io.write("0\r\n\r\n")
+        @io.close
+        @io = nil
+      end
+      if @async_response
+        @async_response << ("0\r\n\r\n")
+        @async_response.done
+        @async_response = nil
+      end
+    else
+      write_and_close "[]"
+    end
+  rescue
+    # we may have a dead socket, just nil the @io
+    @io = nil
+    @async_response = nil
   end
 
   def messages_to_json(msgs)

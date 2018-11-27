@@ -77,7 +77,7 @@ describe MessageBus::Client do
       chunk2.first["data"].must_equal "a|\r\n|\r\n|b"
 
       @client << MessageBus::Message.new(3, 3, '/test', 'test3')
-      @client.close
+      @client.cancel
 
       data = r.read
 
