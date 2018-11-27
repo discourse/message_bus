@@ -33,10 +33,6 @@ class MessageBus::Client
     ensure_closed!
   end
 
-  def in_async?
-    @async_response || @io
-  end
-
   def deliver_backlog(backlog)
     if backlog.length > 0
       if use_chunked
@@ -163,7 +159,7 @@ class MessageBus::Client
     r || []
   end
 
-  protected
+  private
 
   # heavily optimised to avoid all uneeded allocations
   NEWLINE = "\r\n".freeze
@@ -248,5 +244,9 @@ class MessageBus::Client
 
   def messages_to_json(msgs)
     MessageBus::Rack::Middleware.backlog_to_json(msgs)
+  end
+
+  def in_async?
+    @async_response || @io
   end
 end
