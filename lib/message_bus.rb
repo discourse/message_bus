@@ -267,23 +267,6 @@ module MessageBus::Implementation
     end
   end
 
-  ENCODE_SITE_TOKEN = "$|$"
-
-  # encode channel name to include site
-  def encode_channel_name(channel, site_id = nil)
-    if (site_id || site_id_lookup) && !global?(channel)
-      raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
-
-      "#{channel}#{ENCODE_SITE_TOKEN}#{site_id || site_id_lookup.call}"
-    else
-      channel
-    end
-  end
-
-  def decode_channel_name(channel)
-    channel.split(ENCODE_SITE_TOKEN)
-  end
-
   def subscribe(channel = nil, last_id = -1, &blk)
     subscribe_impl(channel, nil, last_id, &blk)
   end
@@ -387,7 +370,24 @@ module MessageBus::Implementation
     @config[:keepalive_interval] || 60
   end
 
-  protected
+  private
+
+  ENCODE_SITE_TOKEN = "$|$"
+
+  # encode channel name to include site
+  def encode_channel_name(channel, site_id = nil)
+    if (site_id || site_id_lookup) && !global?(channel)
+      raise ArgumentError.new channel if channel.include? ENCODE_SITE_TOKEN
+
+      "#{channel}#{ENCODE_SITE_TOKEN}#{site_id || site_id_lookup.call}"
+    else
+      channel
+    end
+  end
+
+  def decode_channel_name(channel)
+    channel.split(ENCODE_SITE_TOKEN)
+  end
 
   def global?(channel)
     channel && channel.start_with?('/global/'.freeze)
