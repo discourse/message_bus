@@ -524,7 +524,7 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
-    reliable_pub_sub.reset!
+    reliable_pub_sub.reset! if reliable_pub_sub
   end
 
   # @return [MessageBus::TimerThread] the timer thread used for triggering
