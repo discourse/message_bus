@@ -115,10 +115,12 @@ describe MessageBus::Rack::Middleware do
     let(:app) { ->(_) { [200, {}, []] } }
 
     it "never subscribes" do
-      bus = Minitest::Mock.new
-      bus.expect(:off?, true)
+      bus = MessageBus::Instance.new
+      bus.off
 
-      MessageBus::Rack::Middleware.new(app, message_bus: bus)
+      middleware = MessageBus::Rack::Middleware.new(app, message_bus: bus)
+
+      middleware.started_listener.must_equal false
     end
   end
 

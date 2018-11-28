@@ -24,6 +24,9 @@ class MessageBus::Rack::Middleware
     JSON.dump(m)
   end
 
+  # @return [Boolean] whether the message listener (subscriber) is started or not)
+  attr_reader :started_listener
+
   # Sets up the middleware to receive subscriber client requests and begins
   # listening for messages published on the bus for re-distribution (unless
   # the bus is disabled).
@@ -35,6 +38,7 @@ class MessageBus::Rack::Middleware
     @app = app
     @bus = config[:message_bus] || MessageBus
     @connection_manager = MessageBus::ConnectionManager.new(@bus)
+    @started_listener = false
     start_listener unless @bus.off?
   end
 
