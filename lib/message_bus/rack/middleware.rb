@@ -9,46 +9,6 @@ module MessageBus::Rack; end
 # delivers existing messages from the backlog and informs a
 # `MessageBus::ConnectionManager` of a connection which is remaining open.
 class MessageBus::Rack::Middleware
-  def start_listener
-    unless @started_listener
-
-      thin = defined?(Thin::Server) && ObjectSpace.each_object(Thin::Server).to_a.first
-      thin_running = thin && thin.running?
-
-      @subscription = @bus.subscribe do |msg|
-        run = proc do
-          begin
-            @connection_manager.notify_clients(msg) if @connection_manager
-          rescue
-            @bus.logger.warn "Failed to notify clients: #{$!} #{$!.backtrace}"
-          end
-        end
-
-        if thin_running
-          EM.next_tick(&run)
-        else
-          @bus.timer.queue(&run)
-        end
-
-        @started_listener = true
-      end
-    end
-  end
-
-  def initialize(app, config = {})
-    @app = app
-    @bus = config[:message_bus] || MessageBus
-    @connection_manager = MessageBus::ConnectionManager.new(@bus)
-    self.start_listener
-  end
-
-  def stop_listener
-    if @subscription
-      @bus.unsubscribe(&@subscription)
-      @started_listener = false
-    end
-  end
-
   def self.backlog_to_json(backlog)
     m = backlog.map do |msg|
       {
@@ -59,6 +19,20 @@ class MessageBus::Rack::Middleware
       }
     end.to_a
     JSON.dump(m)
+  end
+
+  def initialize(app, config = {})
+    @app = app
+    @bus = config[:message_bus] || MessageBus
+    @connection_manager = MessageBus::ConnectionManager.new(@bus)
+    start_listener
+  end
+
+  def stop_listener
+    if @subscription
+      @bus.unsubscribe(&@subscription)
+      @started_listener = false
+    end
   end
 
   def call(env)
@@ -192,6 +166,8 @@ class MessageBus::Rack::Middleware
     end
   end
 
+  private
+
   def close_db_connection!
     # IMPORTANT
     # ConnectionManagement in Rails puts a BodyProxy around stuff
@@ -213,5 +189,31 @@ class MessageBus::Rack::Middleware
         @bus.logger.warn "Failed to clean up client properly: #{$!} #{$!.backtrace}"
       end
     }
+  end
+
+  def start_listener
+    unless @started_listener
+
+      thin = defined?(Thin::Server) && ObjectSpace.each_object(Thin::Server).to_a.first
+      thin_running = thin && thin.running?
+
+      @subscription = @bus.subscribe do |msg|
+        run = proc do
+          begin
+            @connection_manager.notify_clients(msg) if @connection_manager
+          rescue
+            @bus.logger.warn "Failed to notify clients: #{$!} #{$!.backtrace}"
+          end
+        end
+
+        if thin_running
+          EM.next_tick(&run)
+        else
+          @bus.timer.queue(&run)
+        end
+
+        @started_listener = true
+      end
+    end
   end
 end
