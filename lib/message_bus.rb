@@ -16,13 +16,16 @@ if defined?(::Rails)
   require 'message_bus/rails/railtie'
 end
 
+# @see MessageBus::Implementation
 module MessageBus; end
 MessageBus::BACKENDS = {}
 class MessageBus::InvalidMessage < StandardError; end
 class MessageBus::BusDestroyed < StandardError; end
 
+# The main server-side interface to a message bus for the purposes of
+# configuration, publishing and subscribing
 module MessageBus::Implementation
-  # Configuration options hash
+  # @return [Hash<Symbol => Object>] Configuration options hash
   attr_reader :config
 
   # Like Mutex but safe for recursive calls
@@ -35,10 +38,13 @@ module MessageBus::Implementation
     @mutex = Synchronizer.new
   end
 
+  # @param [Boolean] val whether or not to cache static assets for the diagnostics pages
+  # @return [void]
   def cache_assets=(val)
     configure(cache_assets: val)
   end
 
+  # @return [Boolean] whether or not to cache static assets for the diagnostics pages
   def cache_assets
     if defined? @config[:cache_assets]
       @config[:cache_assets]
@@ -47,10 +53,14 @@ module MessageBus::Implementation
     end
   end
 
+  # @param [Logger] logger a logger object to be used by the bus
+  # @return [void]
   def logger=(logger)
     configure(logger: logger)
   end
 
+  # @return [Logger] the logger used by the bus. If not explicitly set,
+  #   is configured to log to STDOUT at INFO level.
   def logger
     return @config[:logger] if @config[:logger]
 
@@ -61,32 +71,47 @@ module MessageBus::Implementation
     logger
   end
 
+  # @return [Boolean] whether or not chunked encoding is enabled. If not
+  #   explicitly set, defaults to true.
   def chunked_encoding_enabled?
     @config[:chunked_encoding_enabled] == false ? false : true
   end
 
+  # @param [Boolean] val whether or not to enable chunked encoding
+  # @return [void]
   def chunked_encoding_enabled=(val)
     configure(chunked_encoding_enabled: val)
   end
 
+  # @return [Boolean] whether or not long polling is enabled. If not explicitly
+  #   set, defaults to true.
   def long_polling_enabled?
     @config[:long_polling_enabled] == false ? false : true
   end
 
+  # @param [Boolean] val whether or not to enable long polling
+  # @return [void]
   def long_polling_enabled=(val)
     configure(long_polling_enabled: val)
   end
 
-  # The number of simultanuous clients we can service
-  #  will revert to polling if we are out of slots
+  # @param [Integer] val The number of simultanuous clients we can service;
+  #   will revert to polling if we are out of slots
+  # @return [void]
   def max_active_clients=(val)
     configure(max_active_clients: val)
   end
 
+  # @return [Integer] The number of simultanuous clients we can service;
+  #   will revert to polling if we are out of slots. Defaults to 1000 if not
+  #   explicitly set.
   def max_active_clients
     @config[:max_active_clients] || 1000
   end
 
+  # @return [Boolean] whether or not Rack Hijack is enabled. If not explicitly
+  #   set, will default to true, unless we're on Passenger without the ability
+  #   to set the advertised_concurrency_level to 0.
   def rack_hijack_enabled?
     if @config[:rack_hijack_enabled].nil?
       enable = true
@@ -106,62 +131,102 @@ module MessageBus::Implementation
     @config[:rack_hijack_enabled]
   end
 
+  # @param [Boolean] val whether or not to enable Rack Hijack
+  # @return [void]
   def rack_hijack_enabled=(val)
     configure(rack_hijack_enabled: val)
   end
 
+  # @param [Integer] millisecs the long-polling interval in milliseconds
+  # @return [void]
   def long_polling_interval=(millisecs)
     configure(long_polling_interval: millisecs)
   end
 
+  # @return [Integer] the long-polling interval in milliseconds. If not
+  #   explicitly set, defaults to 25,000.
   def long_polling_interval
     @config[:long_polling_interval] || 25 * 1000
   end
 
+  # Disables publication to the bus
+  # @return [void]
   def off
     @off = true
   end
 
+  # Enables publication to the bus
+  # @return [void]
   def on
     @off = false
   end
 
+  # Overrides existing configuration
+  # @param [Hash<Symbol => Object>] config values to merge into existing config
+  # @return [void]
   def configure(config)
     @config.merge!(config)
   end
 
-  # Allow us to inject a redis db
+  # Overrides existing configuration, explicitly enabling the redis backend
+  # @param [Hash<Symbol => Object>] config values to merge into existing config
+  # @return [void]
   def redis_config=(config)
     configure(config.merge(backend: :redis))
   end
 
   alias redis_config config
 
+  # @yield [env] a routine to determine the site ID for a subscriber
+  # @yieldparam [optional, Rack::Request::Env] env the subscriber request environment
+  # @yieldreturn [optional, String] the site ID for the subscriber
+  # @return [void]
   def site_id_lookup(&blk)
     configure(site_id_lookup: blk) if blk
     @config[:site_id_lookup]
   end
 
+  # @yield [env] a routine to determine the user ID for a subscriber (authenticate)
+  # @yieldparam [optional, Rack::Request::Env] env the subscriber request environment
+  # @yieldreturn [optional, String, Integer] the user ID for the subscriber
+  # @return [void]
   def user_id_lookup(&blk)
     configure(user_id_lookup: blk) if blk
     @config[:user_id_lookup]
   end
 
+  # @yield [env] a routine to determine the group IDs for a subscriber
+  # @yieldparam [optional, Rack::Request::Env] env the subscriber request environment
+  # @yieldreturn [optional, Array<String,Integer>] the group IDs for the subscriber
+  # @return [void]
   def group_ids_lookup(&blk)
     configure(group_ids_lookup: blk) if blk
     @config[:group_ids_lookup]
   end
 
+  # @yield [env] a routine to determine if a request comes from an admin user
+  # @yieldparam [Rack::Request::Env] env the subscriber request environment
+  # @yieldreturn [Boolean] whether or not the request is from an admin user
+  # @return [void]
   def is_admin_lookup(&blk)
     configure(is_admin_lookup: blk) if blk
     @config[:is_admin_lookup]
   end
 
+  # @yield [env, e] a routine to handle exceptions raised when handling a subscriber request
+  # @yieldparam [Rack::Request::Env] env the subscriber request environment
+  # @yieldparam [Exception] e the exception that was raised
+  # @yieldreturn [optional, Array<(Integer,Hash,Array)>] a Rack response to be delivered
+  # @return [void]
   def on_middleware_error(&blk)
     configure(on_middleware_error: blk) if blk
     @config[:on_middleware_error]
   end
 
+  # @yield [env] a routine to determine extra headers to be set on a subscriber response
+  # @yieldparam [Rack::Request::Env] env the subscriber request environment
+  # @yieldreturn [Hash<String => String>] the extra headers to set on the response
+  # @return [void]
   def extra_response_headers_lookup(&blk)
     configure(extra_response_headers_lookup: blk) if blk
     @config[:extra_response_headers_lookup]
@@ -177,10 +242,14 @@ module MessageBus::Implementation
     @config[:on_disconnect]
   end
 
+  # @param [Boolean] val whether or not to allow broadcasting (debugging)
+  # @return [void]
   def allow_broadcast=(val)
     configure(allow_broadcast: val)
   end
 
+  # @return [Boolean] whether or not broadcasting is allowed. If not explicitly
+  #   set, defaults to false unless we're in Rails test or development mode.
   def allow_broadcast?
     @config[:allow_broadcast] ||=
       if defined? ::Rails
@@ -190,10 +259,14 @@ module MessageBus::Implementation
       end
   end
 
+  # @param [MessageBus::Backend::Base] pub_sub a configured backend
+  # @return [void]
   def reliable_pub_sub=(pub_sub)
     configure(reliable_pub_sub: pub_sub)
   end
 
+  # @return [MessageBus::Backend::Base] the configured backend. If not
+  #   explicitly set, will be loaded based on the configuration provided.
   def reliable_pub_sub
     @mutex.synchronize do
       return nil if @destroyed
@@ -210,14 +283,34 @@ module MessageBus::Implementation
     end
   end
 
+  # @return [Symbol] the name of the backend implementation configured
   def backend
     @config[:backend] || :redis
   end
 
+  # Enables diagnostics tracking
+  # @return [void]
   def enable_diagnostics
     MessageBus::Diagnostics.enable(self)
   end
 
+  # Publishes a message to a channel
+  #
+  # @param [String] channel the name of the channel to which the message should be published
+  # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
+  # @param [Hash] opts
+  # @option opts [Array<String>] :client_ids (`nil`) the unique client IDs to which the message should be available. If nil, available to all.
+  # @option opts [Array<String,Integer>] :user_ids (`nil`) the user IDs to which the message should be available. If nil, available to all.
+  # @option opts [Array<String,Integer>] :group_ids (`nil`) the group IDs to which the message should be available. If nil, available to all.
+  # @option opts [String] :site_id (`nil`) the site ID to scope the message to; used for hosting multiple
+  #   applications or instances of an application against a single message_bus
+  # @option opts [nil,Integer] :max_backlog_age the longest amount of time a message may live in a backlog before beging removed, in seconds
+  # @option opts [nil,Integer] :max_backlog_size the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
+  #
+  # @return [Integer] the channel-specific ID the message was given
+  #
+  # @raise [MessageBus::BusDestroyed] if the bus is destroyed
+  # @raise [MessageBus::InvalidMessage] if attempting to put permission restrictions on a globally-published message
   def publish(channel, data, opts = nil)
     return if @off
 
@@ -259,6 +352,17 @@ module MessageBus::Implementation
     reliable_pub_sub.publish(encoded_channel_name, encoded_data, channel_opts)
   end
 
+  # Subscribe to messages. Each message will be delivered by yielding to the
+  # passed block as soon as it is available. This will block until subscription
+  # is terminated.
+  #
+  # @param [String,nil] channel the name of the channel to which we should
+  #   subscribe. If `nil`, messages on every channel will be provided.
+  #
+  # @yield [message] a message-handler block
+  # @yieldparam [MessageBus::Message] message each message as it is delivered
+  #
+  # @return [void]
   def blocking_subscribe(channel = nil, &blk)
     if channel
       reliable_pub_sub.subscribe(encode_channel_name(channel), &blk)
@@ -267,29 +371,78 @@ module MessageBus::Implementation
     end
   end
 
+  # Subscribe to messages on a particular channel. Each message since the
+  # last ID specified will be delivered by yielding to the passed block as
+  # soon as it is available. This will not block, but instead the callbacks
+  # will be executed asynchronously in a dedicated subscriber thread.
+  #
+  # @param [String] channel the name of the channel to which we should subscribe
+  # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+  #
+  # @yield [message] a message-handler block
+  # @yieldparam [MessageBus::Message] message each message as it is delivered
+  #
+  # @return [Proc] the callback block that will be executed
   def subscribe(channel = nil, last_id = -1, &blk)
     subscribe_impl(channel, nil, last_id, &blk)
   end
 
-  # subscribe only on current site
+  # Subscribe to messages on a particular channel, filtered by the current site
+  # (@see #site_id_lookup). Each message since the last ID specified will be
+  # delivered by yielding to the passed block as soon as it is available. This
+  # will not block, but instead the callbacks will be executed asynchronously
+  # in a dedicated subscriber thread.
+  #
+  # @param [String] channel the name of the channel to which we should subscribe
+  # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+  #
+  # @yield [message] a message-handler block
+  # @yieldparam [MessageBus::Message] message each message as it is delivered
+  #
+  # @return [Proc] the callback block that will be executed
   def local_subscribe(channel = nil, last_id = -1, &blk)
     site_id = site_id_lookup.call if site_id_lookup && !global?(channel)
     subscribe_impl(channel, site_id, last_id, &blk)
   end
 
+  # Removes a subscription to a particular channel.
+  #
+  # @param [String] channel the name of the channel from which we should unsubscribe
+  # @param [Proc,nil] blk the callback which should be removed. If `nil`, removes all.
+  #
+  # @return [void]
   def unsubscribe(channel = nil, &blk)
     unsubscribe_impl(channel, nil, &blk)
   end
 
+  # Removes a subscription to a particular channel, filtered by the current site
+  # (@see #site_id_lookup).
+  #
+  # @param [String] channel the name of the channel from which we should unsubscribe
+  # @param [Proc,nil] blk the callback which should be removed. If `nil`, removes all.
+  #
+  # @return [void]
   def local_unsubscribe(channel = nil, &blk)
     site_id = site_id_lookup.call if site_id_lookup
     unsubscribe_impl(channel, site_id, &blk)
   end
 
+  # Get messages from the global backlog since the last ID specified
+  #
+  # @param [#to_i] last_id the global ID of the last message that the caller received
+  #
+  # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
   def global_backlog(last_id = nil)
     backlog(nil, last_id)
   end
 
+  # Get messages from a channel backlog since the last ID specified, filtered by site
+  #
+  # @param [String] channel the name of the channel in question
+  # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+  # @param [String] site_id the ID of the site by which to filter
+  #
+  # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
   def backlog(channel = nil, last_id = nil, site_id = nil)
     old =
       if channel
@@ -304,10 +457,21 @@ module MessageBus::Implementation
     old
   end
 
+  # Get the ID of the last message published on a channel, filtered by site
+  #
+  # @param [String] channel the name of the channel in question
+  # @param [String] site_id the ID of the site by which to filter
+  #
+  # @return [Integer] the channel-specific ID of the last message published to the given channel
   def last_id(channel, site_id = nil)
     reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
   end
 
+  # Get the last message published on a channel
+  #
+  # @param [String] channel the name of the channel in question
+  #
+  # @return [MessageBus::Message] the last message published to the given channel
   def last_message(channel)
     if last_id = last_id(channel)
       messages = backlog(channel, last_id - 1)
@@ -317,7 +481,9 @@ module MessageBus::Implementation
     end
   end
 
-  # mostly used in tests to detroy entire bus
+  # Stops listening for publications and stops executing scheduled tasks.
+  # Mostly used in tests to detroy entire bus.
+  # @return [void]
   def destroy
     return if @destroyed
 
@@ -331,6 +497,11 @@ module MessageBus::Implementation
     timer.stop
   end
 
+  # Performs routines that are necessary after a process fork, typically
+  #   triggered by a forking webserver. Performs whatever the backend requires
+  #   and ensures the server is listening for publications and running
+  #   scheduled tasks.
+  # @return [void]
   def after_fork
     reliable_pub_sub.after_fork
     ensure_subscriber_thread
@@ -338,15 +509,19 @@ module MessageBus::Implementation
     timer.queue {}
   end
 
+  # @return [Boolean] whether or not the server is actively listening for
+  #   publications on the bus
   def listening?
     @subscriber_thread && @subscriber_thread.alive?
   end
 
-  # will reset all keys
+  # (see MessageBus::Backend::Base#reset!)
   def reset!
     reliable_pub_sub.reset!
   end
 
+  # @return [MessageBus::TimerThread] the timer thread used for triggering
+  #   scheduled routines at specific times/intervals.
   def timer
     return @timer_thread if @timer_thread
 
@@ -359,13 +534,15 @@ module MessageBus::Implementation
     end
   end
 
-  # set to 0 to disable, anything higher and
-  # a keepalive will run every N seconds, if it fails
-  # process is killed
+  # @param [Integer] interval the keepalive interval in seconds.
+  #   Set to 0 to disable; anything higher and a keepalive will run every N
+  #   seconds. If it fails, the process is killed.
   def keepalive_interval=(interval)
     configure(keepalive_interval: interval)
   end
 
+  # @return [Integer] the keepalive interval in seconds. If not explicitly set,
+  #   defaults to `60`.
   def keepalive_interval
     @config[:keepalive_interval] || 60
   end
@@ -581,6 +758,7 @@ module MessageBus
 end
 
 # allows for multiple buses per app
+# @see MessageBus::Implementation
 class MessageBus::Instance
   include MessageBus::Implementation
 end
