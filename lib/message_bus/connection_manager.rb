@@ -98,13 +98,4 @@ class MessageBus::ConnectionManager
       @clients.length
     end
   end
-
-  def stats
-    synchronize do
-      {
-        client_count: @clients.length,
-        subscriptions: @subscriptions
-      }
-    end
-  end
 end
