@@ -24,10 +24,6 @@ class MessageBus::Rails::Railtie < ::Rails::Railtie
     MessageBus.logger = Rails.logger
   end
 
-  rake_tasks do
-    MessageBus.off
-  end
-
   def api_only?(config)
     return false unless config.respond_to?(:api_only)
 
