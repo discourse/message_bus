@@ -9,6 +9,9 @@ module MessageBus::Rack; end
 # delivers existing messages from the backlog and informs a
 # `MessageBus::ConnectionManager` of a connection which is remaining open.
 class MessageBus::Rack::Middleware
+  # @param [Array<MessageBus::Message>] backlog a list of messages for delivery
+  # @return [JSON] a JSON representation of the backlog, compliant with the
+  #   subscriber API specification
   def self.backlog_to_json(backlog)
     m = backlog.map do |msg|
       {
@@ -21,6 +24,12 @@ class MessageBus::Rack::Middleware
     JSON.dump(m)
   end
 
+  # Sets up the middleware to receive subscriber client requests and begins
+  # listening for messages published on the bus for re-distribution
+  #
+  # @param [Proc] app the rack app
+  # @param [Hash] config
+  # @option config [MessageBus::Instance] :message_bus (`MessageBus`) a specific instance of message_bus
   def initialize(app, config = {})
     @app = app
     @bus = config[:message_bus] || MessageBus
@@ -28,6 +37,8 @@ class MessageBus::Rack::Middleware
     start_listener
   end
 
+  # Stops listening for messages on the bus
+  # @return [void]
   def stop_listener
     if @subscription
       @bus.unsubscribe(&@subscription)
@@ -35,6 +46,8 @@ class MessageBus::Rack::Middleware
     end
   end
 
+  # Process an HTTP request from a subscriber client
+  # @param [Rack::Request::Env] env the request environment
   def call(env)
     return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
 
