@@ -112,16 +112,14 @@ describe MessageBus::Rack::Middleware do
   end
 
   describe "start listener" do
-    let(:app) { ->(_){ [200, {}, []] } }
-
+    let(:app) { ->(_) { [200, {}, []] } }
 
     it "never subscribes" do
       bus = Minitest::Mock.new
       bus.expect(:off?, true)
 
-      MessageBus::Rack::Middleware.new(app,message_bus: bus)
+      MessageBus::Rack::Middleware.new(app, message_bus: bus)
     end
-
   end
 
   describe "diagnostics" do
