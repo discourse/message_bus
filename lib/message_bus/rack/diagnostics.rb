@@ -2,12 +2,19 @@
 
 module MessageBus::Rack; end
 
+# Accepts requests from clients interested in using diagnostics functionality
+# @see MessageBus::Diagnostics
 class MessageBus::Rack::Diagnostics
+  # @param [Proc] app the rack app
+  # @param [Hash] config
+  # @option config [MessageBus::Instance] :message_bus (`MessageBus`) a specific instance of message_bus
   def initialize(app, config = {})
     @app = app
     @bus = config[:message_bus] || MessageBus
   end
 
+  # Process an HTTP request from a subscriber client
+  # @param [Rack::Request::Env] env the request environment
   def call(env)
     return @app.call(env) unless env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
 

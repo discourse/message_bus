@@ -1,5 +1,10 @@
+# MessageBus diagnostics are used for troubleshooting the bus and optimising its configuration
+# @see MessageBus::Rack::Diagnostics
 class MessageBus::Diagnostics
   class << self
+    # Enables diagnostics functionality
+    # @param [MessageBus::Instance] bus a specific instance of message_bus
+    # @return [void]
     def enable(bus = MessageBus)
       full_path = full_process_path
       start_time = Time.now.to_f
