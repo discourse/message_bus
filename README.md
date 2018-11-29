@@ -113,6 +113,10 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
 end)
 ```
 
+#### Disabling message_bus
+
+In certain cases, it is undesirable for message_bus to start up on application start, for example in a Rails application during the `db:create` rake task when using the Postgres backend (which will error trying to connect to the non-existent database to subscribe). You can invoke `MessageBus.off` before the middleware chain is loaded in order to prevent subscriptions and publications from happening; in a Rails app you might do this in an initializer based on some environment variable or some other conditional means.
+
 ### Debugging
 
 When setting up MessageBus, it's useful to manually inspect channels before integrating a client application.

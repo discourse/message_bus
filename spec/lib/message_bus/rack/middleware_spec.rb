@@ -111,6 +111,19 @@ describe MessageBus::Rack::Middleware do
     include LongPolling
   end
 
+  describe "start listener" do
+    let(:app) { ->(_) { [200, {}, []] } }
+
+    it "never subscribes" do
+      bus = MessageBus::Instance.new
+      bus.off
+
+      middleware = MessageBus::Rack::Middleware.new(app, message_bus: bus)
+
+      middleware.started_listener.must_equal false
+    end
+  end
+
   describe "diagnostics" do
     it "should return a 403 if a user attempts to get at the _diagnostics path" do
       get "/message-bus/_diagnostics"

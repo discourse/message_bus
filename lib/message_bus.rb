@@ -149,6 +149,11 @@ module MessageBus::Implementation
     @config[:long_polling_interval] || 25 * 1000
   end
 
+  # @return [Boolean] whether the bus is disabled or not
+  def off?
+    @off
+  end
+
   # Disables publication to the bus
   # @return [void]
   def off
@@ -158,7 +163,7 @@ module MessageBus::Implementation
   # Enables publication to the bus
   # @return [void]
   def on
-    @off = false
+    @destroyed = @off = false
   end
 
   # Overrides existing configuration
@@ -490,6 +495,8 @@ module MessageBus::Implementation
     reliable_pub_sub.global_unsubscribe
 
     @mutex.synchronize do
+      return if @destroyed
+
       @subscriptions ||= {}
       @destroyed = true
     end
@@ -517,7 +524,7 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
-    reliable_pub_sub.reset!
+    reliable_pub_sub.reset! if reliable_pub_sub
   end
 
   # @return [MessageBus::TimerThread] the timer thread used for triggering
