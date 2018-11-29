@@ -45,10 +45,6 @@ describe MessageBus::ConnectionManager do
     @manager.lookup_client(@client.client_id).must_equal @client
   end
 
-  it "should be subscribed to a channel" do
-    @manager.stats[:subscriptions][10]["test"].length == 1
-  end
-
   it "should not notify clients on incorrect site" do
     m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 9

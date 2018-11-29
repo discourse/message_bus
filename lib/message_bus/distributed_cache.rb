@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
-# Like a hash, just does its best to stay in sync across the farm.
-# On boot all instances are blank, but they populate as various processes
-# fill it up.
-
 require 'weakref'
 require 'base64'
 require 'securerandom'
 
 module MessageBus
+  # Like a hash, just does its best to stay in sync across the farm.
+  # On boot all instances are blank, but they populate as various processes
+  # fill it up.
   class DistributedCache
     DEFAULT_SITE_ID = 'default'
 

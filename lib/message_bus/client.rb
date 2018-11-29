@@ -3,10 +3,38 @@
 # Represents a connected subscriber and delivers published messages over its
 # connected socket.
 class MessageBus::Client
-  attr_accessor :client_id, :user_id, :group_ids, :connect_time,
-                :subscribed_sets, :site_id, :cleanup_timer,
-                :async_response, :io, :headers, :seq, :use_chunked
+  # @return [String] the unique ID provided by the client
+  attr_accessor :client_id
+  # @return [String,Integer] the user ID the client was authenticated for
+  attr_accessor :user_id
+  # @return [Array<String,Integer>] the group IDs the authenticated client is a member of
+  attr_accessor :group_ids
+  # @return [Time] the time at which the client connected
+  attr_accessor :connect_time
+  # @return [String] the site ID the client was authenticated for; used for hosting multiple
+  attr_accessor :site_id
+  # @return [MessageBus::TimerThread::Cancelable] a timer job that is used to
+  #   auto-disconnect the client at the configured long-polling interval
+  attr_accessor :cleanup_timer
+  # @return [Thin::AsyncResponse, nil]
+  attr_accessor :async_response
+  # @return [IO] the HTTP socket the client is connected on
+  attr_accessor :io
+  # @return [Hash<String => String>] custom headers to include in HTTP responses
+  attr_accessor :headers
+  # @return [Integer] the connection sequence number the client provided when connecting
+  attr_accessor :seq
+  # @return [Boolean] whether or not the client should use chunked encoding
+  attr_accessor :use_chunked
 
+  # @param [Hash] opts
+  # @option opts [String] :client_id the unique ID provided by the client
+  # @option opts [String,Integer] :user_id (`nil`) the user ID the client was authenticated for
+  # @option opts [Array<String,Integer>] :group_ids (`[]`) the group IDs the authenticated client is a member of
+  # @option opts [String] :site_id (`nil`) the site ID the client was authenticated for; used for hosting multiple
+  #   applications or instances of an application against a single message_bus
+  # @option opts [#to_i] :seq (`0`) the connection sequence number the client provided when connecting
+  # @option opts [MessageBus::Instance] :message_bus (`MessageBus`) a specific instance of message_bus
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
@@ -20,11 +48,14 @@ class MessageBus::Client
     @chunks_sent = 0
   end
 
+  # @yield executed with a lock on the Client instance
+  # @return [void]
   def synchronize
     @lock.synchronize { yield }
   end
 
-  def cancel
+  # Closes the client connection
+  def close
     if cleanup_timer
       # concurrency may nil cleanup timer
       cleanup_timer.cancel rescue nil
@@ -33,10 +64,12 @@ class MessageBus::Client
     ensure_closed!
   end
 
-  def in_async?
-    @async_response || @io
-  end
-
+  # Delivers a backlog of messages to the client, if there is anything in it.
+  # If chunked encoding/streaming is in use, will keep the connection open;
+  # if not, will close it.
+  #
+  # @param [Array<MessageBus::Message>] backlog the set of messages to deliver
+  # @return [void]
   def deliver_backlog(backlog)
     if backlog.length > 0
       if use_chunked
@@ -47,54 +80,41 @@ class MessageBus::Client
     end
   end
 
+  # If no data has yet been sent to the client, sends an empty chunk; prevents
+  # clients from entering a timeout state if nothing is delivered initially.
   def ensure_first_chunk_sent
     if use_chunked && @chunks_sent == 0
       write_chunk("[]")
     end
   end
 
-  def ensure_closed!
-    return unless in_async?
-
-    if use_chunked
-      write_chunk("[]")
-      if @io
-        @io.write("0\r\n\r\n")
-        @io.close
-        @io = nil
-      end
-      if @async_response
-        @async_response << ("0\r\n\r\n")
-        @async_response.done
-        @async_response = nil
-      end
-    else
-      write_and_close "[]"
-    end
-  rescue
-    # we may have a dead socket, just nil the @io
-    @io = nil
-    @async_response = nil
-  end
-
-  def close
-    ensure_closed!
-  end
-
+  # @return [Boolean] whether the connection is closed or not
   def closed?
     !@async_response && !@io
   end
 
+  # Subscribes the client to messages on a channel, optionally from a
+  # defined starting point.
+  #
+  # @param [String] channel the channel to subscribe to
+  # @param [Integer, nil] last_seen_id the ID of the last message the client
+  #   received. If nil, will be subscribed from the head of the backlog.
+  # @return [void]
   def subscribe(channel, last_seen_id)
     last_seen_id = nil if last_seen_id == ""
     last_seen_id ||= @bus.last_id(channel)
     @subscriptions[channel] = last_seen_id.to_i
   end
 
+  # @return [Hash<String => Integer>] the active subscriptions, mapping channel
+  #   names to last seen message IDs
   def subscriptions
     @subscriptions
   end
 
+  # Delivers a message to the client, even if it's empty
+  # @param [MessageBus::Message, nil] msg the message to deliver
+  # @return [void]
   def <<(msg)
     json = messages_to_json([msg])
     if use_chunked
@@ -104,6 +124,9 @@ class MessageBus::Client
     end
   end
 
+  # @param [MessageBus::Message] msg the message in question
+  # @return [Boolean] whether or not the client has permission to receive the
+  #   passed message
   def allowed?(msg)
     allowed = !msg.user_ids || msg.user_ids.include?(self.user_id)
     allowed &&= !msg.client_ids || msg.client_ids.include?(self.client_id)
@@ -116,6 +139,11 @@ class MessageBus::Client
     )
   end
 
+  # @return [Array<MessageBus::Message>] the set of messages the client is due
+  #   to receive, based on its subscriptions and permissions. Includes status
+  #   message if any channels have no messages available and the client
+  #   requested a message newer than the newest on the channel, or when there
+  #   are messages available that the client doesn't have permission for.
   def backlog
     r = []
     new_message_ids = nil
@@ -163,7 +191,7 @@ class MessageBus::Client
     r || []
   end
 
-  protected
+  private
 
   # heavily optimised to avoid all uneeded allocations
   NEWLINE = "\r\n".freeze
@@ -246,7 +274,35 @@ class MessageBus::Client
     end
   end
 
+  def ensure_closed!
+    return unless in_async?
+
+    if use_chunked
+      write_chunk("[]")
+      if @io
+        @io.write("0\r\n\r\n")
+        @io.close
+        @io = nil
+      end
+      if @async_response
+        @async_response << ("0\r\n\r\n")
+        @async_response.done
+        @async_response = nil
+      end
+    else
+      write_and_close "[]"
+    end
+  rescue
+    # we may have a dead socket, just nil the @io
+    @io = nil
+    @async_response = nil
+  end
+
   def messages_to_json(msgs)
     MessageBus::Rack::Middleware.backlog_to_json(msgs)
+  end
+
+  def in_async?
+    @async_response || @io
   end
 end

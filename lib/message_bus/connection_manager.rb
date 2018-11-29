@@ -8,6 +8,7 @@ class MessageBus::ConnectionManager
   require 'monitor'
   include MonitorMixin
 
+  # @param [MessageBus::Instance] bus the message bus for which to manage connections
   def initialize(bus = nil)
     @clients = {}
     @subscriptions = {}
@@ -15,6 +16,9 @@ class MessageBus::ConnectionManager
     mon_initialize
   end
 
+  # Dispatches a message to any connected clients which are permitted to receive it
+  # @param [MessageBus::Message] msg the message to dispatch
+  # @return [void]
   def notify_clients(msg)
     synchronize do
       begin
@@ -43,15 +47,18 @@ class MessageBus::ConnectionManager
     end
   end
 
+  # Keeps track of a client with an active connection
+  # @param [MessageBus::Client] client the client to track
+  # @return [void]
   def add_client(client)
     synchronize do
       existing = @clients[client.client_id]
       if existing && existing.seq > client.seq
-        client.cancel
+        client.close
       else
         if existing
           remove_client(existing)
-          existing.cancel
+          existing.close
         end
 
         @clients[client.client_id] = client
@@ -63,6 +70,9 @@ class MessageBus::ConnectionManager
     end
   end
 
+  # Removes a client
+  # @param [MessageBus::Client] c the client to remove
+  # @return [void]
   def remove_client(c)
     synchronize do
       @clients.delete c.client_id
@@ -76,11 +86,23 @@ class MessageBus::ConnectionManager
     end
   end
 
+  # Finds a client by ID
+  # @param [String] client_id the client ID to search by
+  # @return [MessageBus::Client] the client with the specified ID
   def lookup_client(client_id)
     synchronize do
       @clients[client_id]
     end
   end
+
+  # @return [Integer] the number of tracked clients
+  def client_count
+    synchronize do
+      @clients.length
+    end
+  end
+
+  private
 
   def subscribe_client(client, channel)
     synchronize do
@@ -90,21 +112,6 @@ class MessageBus::ConnectionManager
         @subscriptions[client.site_id][channel] = set
       end
       set << client.client_id
-    end
-  end
-
-  def client_count
-    synchronize do
-      @clients.length
-    end
-  end
-
-  def stats
-    synchronize do
-      {
-        client_count: @clients.length,
-        subscriptions: @subscriptions
-      }
     end
   end
 end
