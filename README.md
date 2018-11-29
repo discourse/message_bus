@@ -564,6 +564,8 @@ If you are looking to contribute to this project here are some ideas
 - Make MessageBus a nice website
 - Add optional transports for websocket and shared web workers
 
+When submitting a PR, please be sure to include notes on it in the `Unreleased` section of the changelog, but do not bump the version number.
+
 ### Running tests
 
 To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
