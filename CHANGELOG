@@ -1,3 +1,60 @@
+Unreleased
+
+- FEATURE: Much extra implementation documentation, and some improvements to usage documentation.
+- FEATURE: Improvements to development workflow:
+  - Fully docker-based development and testing, with no other dependencies.
+  - More stringent Rubocop enforcement and greater compliance.
+  - Testing supported Ruby versions
+  - Better test coverage of some features
+  - Improved testing and assertion of the differences between backends
+  - More stable tests - now pass pretty much every run
+  - Documentation syntax is verified as part of testing
+- FEATURE: Ruby 2.2.0 is no longer supported as it is EOL
+- FEATURE: Better feature parity between backends:
+  - Adds support for backlog expiry to memory backend
+  - Support setting backlog expiry on publication w/ Postgres
+  - Supports setting backlog size on publication for memory/postgres
+- FEATURE: `MessageBus.off` now prevents the server subscription from starting up.
+- FEATURE: Trims unused parts of the public API:
+  - Methods removed:
+    * ConnectionManager#stats (never used and the ConnectionManager is not exposed to application code)
+    * Client#cancel (effectively duplicate of Client#close and the Client is only available via the ConnectionManager, thus not available to application code)
+
+  - Methods made private:
+    * MessageBus::Implementation#encode_channel_name
+    * MessageBus::Implementation#decode_channel_name
+    * Client#in_async?
+    * Client#ensure_closed!
+    * ConnectionManager#subscribe_client
+    * Diagnostics.full_process_path
+    * Diagnostics.hostname
+    * MessageBus::Rack::Diagnostics#js_asset
+    * MessageBus::Rack::Diagnostics#generate_script_tag
+    * MessageBus::Rack::Diagnostics#file_hash
+    * MessageBus::Rack::Diagnostics#asset_contents
+    * MessageBus::Rack::Diagnostics#asset_path
+    * MessageBus::Rack::Diagnostics#index
+    * MessageBus::Rack::Diagnostics#translate_handlebars
+    * MessageBus::Rack::Diagnostics#indent
+    * MessageBus::Rack::Middleware#start_listener
+    * MessageBus::Rack::Middleware#close_db_connection!
+    * MessageBus::Rack::Middleware#add_client_with_timeout
+
+  - Methods switched from protected to private:
+    * MessageBus::Implementation#global?
+    * MessageBus::Implementation#decode_message!
+    * MessageBus::Implementation#replay_backlog
+    * MessageBus::Implementation#subscribe_impl
+    * MessageBus::Implementation#unsubscribe_impl
+    * MessageBus::Implementation#ensure_subscriber_thread
+    * MessageBus::Implementation#new_subscriber_thread
+    * MessageBus::Implementation#global_subscribe_thread
+    * MessageBus::Implementation#multi_each
+    * Client#write_headers
+    * Client#write_chunk
+    * Client#write_and_close
+    * Client#messages_to_json
+
 15-10-2018
 
 - Version 2.1.6
