@@ -125,7 +125,7 @@ class MessageBus::Rack::Middleware
     backlog = client.backlog
 
     if backlog.length > 0 && !allow_chunked
-      client.cancel
+      client.close
       @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
       [200, headers, [self.class.backlog_to_json(backlog)]]
     elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
@@ -196,7 +196,7 @@ class MessageBus::Rack::Middleware
 
     client.cleanup_timer = @bus.timer.queue(@bus.long_polling_interval.to_f / 1000) {
       begin
-        client.cancel
+        client.close
         @connection_manager.remove_client(client)
       rescue
         @bus.logger.warn "Failed to clean up client properly: #{$!} #{$!.backtrace}"

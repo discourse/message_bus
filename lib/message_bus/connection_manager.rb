@@ -54,11 +54,11 @@ class MessageBus::ConnectionManager
     synchronize do
       existing = @clients[client.client_id]
       if existing && existing.seq > client.seq
-        client.cancel
+        client.close
       else
         if existing
           remove_client(existing)
-          existing.cancel
+          existing.close
         end
 
         @clients[client.client_id] = client

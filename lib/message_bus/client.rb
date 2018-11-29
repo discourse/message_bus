@@ -55,7 +55,7 @@ class MessageBus::Client
   end
 
   # Closes the client connection
-  def cancel
+  def close
     if cleanup_timer
       # concurrency may nil cleanup timer
       cleanup_timer.cancel rescue nil
