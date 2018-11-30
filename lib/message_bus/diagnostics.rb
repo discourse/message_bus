@@ -8,7 +8,7 @@ class MessageBus::Diagnostics
     def enable(bus = MessageBus)
       full_path = full_process_path
       start_time = Time.now.to_f
-      hostname = self.hostname
+      hostname = get_hostname
 
       # it may make sense to add a channel per machine/host to streamline
       #  process to process comms
@@ -51,7 +51,7 @@ class MessageBus::Diagnostics
       end
     end
 
-    def hostname
+    def get_hostname
       begin
         `hostname`.strip
       rescue
