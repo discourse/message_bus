@@ -15,6 +15,10 @@ Layout/MultilineMethodCallIndentation:
 Bundler/OrderedGems:
   Enabled: false
 
+# Redis backend is quite big
+Metrics/ClassLength:
+  Max: 310
+
 Metrics/BlockLength:
   Exclude:
     - '**/spec_helper.rb'

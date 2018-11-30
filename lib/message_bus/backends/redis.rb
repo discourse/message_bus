@@ -85,6 +85,9 @@ module MessageBus
         end
       end
 
+      # Note, the script takes care of all expiry of keys, however
+      # we do not expire the global backlog key cause we have no simple way to determine what it should be on publish
+      # we do not provide a mechanism to set a global max backlog age, only a per-channel which we can override on publish
       LUA_PUBLISH = <<LUA
 
       local start_payload = ARGV[1]
@@ -106,11 +109,11 @@ module MessageBus
 
       redis.call("ZADD", backlog_key, backlog_id, payload)
       redis.call("EXPIRE", backlog_key, max_backlog_age)
-
       redis.call("ZADD", global_backlog_key, global_id, global_backlog_message)
       redis.call("EXPIRE", global_backlog_key, max_backlog_age)
-
       redis.call("PUBLISH", redis_channel_name, payload)
+
+      redis.call("EXPIRE", backlog_id_key, max_backlog_age)
 
       if backlog_id > max_backlog_size then
         redis.call("ZREMRANGEBYSCORE", backlog_key, 1, backlog_id - max_backlog_size)
@@ -121,7 +124,6 @@ module MessageBus
       end
 
       return backlog_id
-
 LUA
 
       LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)

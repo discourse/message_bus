@@ -175,6 +175,8 @@ describe PUB_SUB_CLASS do
 
     expected_backlog_size = 0
 
+    initial_id = @bus.last_id("/foo")
+
     # Start at time = 0s
     @bus.publish "/foo", "bar", max_backlog_age: 1
     expected_backlog_size += 1
@@ -197,6 +199,15 @@ describe PUB_SUB_CLASS do
     # Assert that the backlog did expire, and now has only the new publication in it.
     @bus.global_backlog.length.must_equal expected_backlog_size
     @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
+
+    # for the time being we can give pg a pass here
+    # TODO: make the implementation here consistent
+    if MESSAGE_BUS_CONFIG[:backend] != :postgres
+      # ids are not opaque we expect them to be reset on our channel if it
+      # got cleared due to an expire, the reason for this is cause we will leak entries due to tracking
+      # this in turn can bloat storage for the backend
+      @bus.last_id("/foo").must_equal initial_id
+    end
 
     sleep 0.75 # Should now be at time =~ 2s
 

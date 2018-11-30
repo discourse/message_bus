@@ -1,5 +1,7 @@
 Unreleased
 
+- FIX: In redis backend we now expire the key used to track channel id this can cause a redis key leak
+    with large amounts of subscriptions that go away
 - FEATURE: Much extra implementation documentation, and some improvements to usage documentation.
 - FEATURE: Improvements to development workflow:
   - Fully docker-based development and testing, with no other dependencies.
