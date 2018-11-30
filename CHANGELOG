@@ -25,6 +25,7 @@
   - Support setting backlog expiry on publication w/ Postgres
   - Supports setting backlog size on publication for memory/postgres
 - FEATURE: `MessageBus.off` now prevents the server subscription from starting up.
+- FEATURE: Alternative Redis backend based on Redis Streams rather than sorted sets
 - FEATURE: Trims unused parts of the public API:
   - Methods removed:
     * ConnectionManager#stats (never used and the ConnectionManager is not exposed to application code)
