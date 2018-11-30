@@ -1,4 +1,6 @@
-Unreleased
+30-11-2018
+
+- Version 2.2.0.pre
 
 - FIX: In redis backend we now expire the key used to track channel id this can cause a redis key leak
     with large amounts of subscriptions that go away
