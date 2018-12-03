@@ -120,7 +120,10 @@ module MessageBus
         end
 
         def get_value(channel, id)
-          sync { chan(channel).backlog.find { |i, _| i == id }[1] }
+          sync do
+            id, value = chan(channel).backlog.find { |i, _| i == id }
+            value
+          end
         end
 
         # Dangerous, drops the message_bus table containing the backlog if it exists.
