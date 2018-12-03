@@ -533,7 +533,6 @@ The format for delivered messages is a JSON array of message objects like so:
 ```json
 [
   {
-    "global_id": 12,
     "message_id": 1,
     "channel": "/some/channel/name",
     "data": [the message as published]
@@ -541,13 +540,12 @@ The format for delivered messages is a JSON array of message objects like so:
 ]
 ```
 
-The `global_id` field here indicates the ID of the message in the global backlog, while the `message_id` is the ID of the message in the channel-specific backlog. The ID used for subscriptions is always the channel-specific one.
+The `message_id` is the ID of the message in the channel-specific backlog, which is used for subscriptions.
 
 In certain conditions, a status message will be delivered and look like this:
 
 ```json
 {
-  "global_id": -1,
   "message_id": -1,
   "channel": "/__status",
   "data": {

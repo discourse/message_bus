@@ -15,7 +15,6 @@ class MessageBus::Rack::Middleware
   def self.backlog_to_json(backlog)
     m = backlog.map do |msg|
       {
-        global_id: msg.global_id,
         message_id: msg.message_id,
         channel: msg.channel,
         data: msg.data
