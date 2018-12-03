@@ -84,7 +84,11 @@ module MessageBus
         end
 
         def get_value(channel, id)
-          hold { |conn| exec_prepared(conn, 'get_message', [channel, id]) { |r| r.getvalue(0, 0) } }
+          hold do |conn|
+            exec_prepared(conn, 'get_message', [channel, id]) do |r|
+              r.getvalue(0, 0) if r.ntuples > 0
+            end
+          end
         end
 
         def reconnect

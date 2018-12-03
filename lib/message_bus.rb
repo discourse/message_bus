@@ -479,10 +479,9 @@ module MessageBus::Implementation
   # @return [MessageBus::Message] the last message published to the given channel
   def last_message(channel)
     if last_id = last_id(channel)
-      messages = backlog(channel, last_id - 1)
-      if messages
-        messages[0]
-      end
+      message = reliable_pub_sub.get_message(encode_channel_name(channel, nil), last_id)
+      decode_message!(message) if message
+      message
     end
   end
 
