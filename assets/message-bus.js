@@ -102,7 +102,7 @@
         if (callback.channel === message.channel) {
           callback.last_id = message.message_id;
           try {
-            callback.func(message.data, message.global_id, message.message_id);
+            callback.func(message.data, message.message_id);
           }
           catch(e){
             if(console.log) {

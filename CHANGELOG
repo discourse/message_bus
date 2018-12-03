@@ -1,3 +1,7 @@
+Unreleased
+
+- CHANGE: No longer reports messages' `global_id` to Javascript subscribers
+
 30-11-2018
 
 - Version 2.2.0.pre.1

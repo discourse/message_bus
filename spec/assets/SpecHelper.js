@@ -7,7 +7,6 @@ var encodeChunks = function(xhr, chunks) {
   }
   for (var i=0;i<chunks.length;i++) {
     var chunk = chunks[i];
-    chunk.global_id = Math.random() * 10000 | 0;
     chunk.message_id = message_id++;
   }
   if (xhr.onprogress){ // using longPoll if onprogress is set
@@ -105,4 +104,3 @@ window.testMB = function(description, testFn, path, data){
   });
 
 }
-
