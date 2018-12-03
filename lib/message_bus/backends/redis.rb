@@ -190,10 +190,11 @@ LUA
       end
 
       # (see Base#backlog)
-      def backlog(channel, last_id = 0)
+      def backlog(channel, last_id = 0, inclusive: false)
         redis = pub_redis
         backlog_key = backlog_key(channel)
-        items = redis.zrangebyscore backlog_key, last_id.to_i + 1, "+inf"
+        start = inclusive ? last_id.to_i : last_id.to_i + 1
+        items = redis.zrangebyscore backlog_key, start, "+inf"
 
         items.map do |i|
           m = MessageBus::Message.decode(i)
@@ -203,8 +204,9 @@ LUA
       end
 
       # (see Base#global_backlog)
-      def global_backlog(last_id = 0)
-        items = pub_redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
+      def global_backlog(last_id = 0, inclusive: false)
+        start = inclusive ? last_id.to_i : last_id.to_i + 1
+        items = pub_redis.zrangebyscore global_backlog_key, start, "+inf"
 
         items.map! do |i|
           pipe = i.index "|"

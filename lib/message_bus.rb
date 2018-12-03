@@ -446,14 +446,15 @@ module MessageBus::Implementation
   # @param [String] channel the name of the channel in question
   # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
   # @param [String] site_id the ID of the site by which to filter
+  # @param [Boolean] inclusive whether or not to incluse the message with specified `last_id` in the results
   #
   # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
-  def backlog(channel = nil, last_id = nil, site_id = nil)
+  def backlog(channel = nil, last_id = nil, site_id = nil, inclusive: false)
     old =
       if channel
-        reliable_pub_sub.backlog(encode_channel_name(channel, site_id), last_id)
+        reliable_pub_sub.backlog(encode_channel_name(channel, site_id), last_id, inclusive: inclusive)
       else
-        reliable_pub_sub.global_backlog(last_id)
+        reliable_pub_sub.global_backlog(last_id, inclusive: inclusive)
       end
 
     old.each do |m|
@@ -591,7 +592,7 @@ module MessageBus::Implementation
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
-      backlog(channel, last_id - 1, site_id).each do |m|
+      backlog(channel, last_id, site_id, inclusive: true).each do |m|
         yield m
       end
     end
