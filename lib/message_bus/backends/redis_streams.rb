@@ -182,7 +182,9 @@ LUA
         items = redis.xrange backlog_key, start, "+"
 
         items.map do |_id, (_, payload)|
-          MessageBus::Message.decode(payload)
+          m = MessageBus::Message.decode(payload)
+          m.global_id = -1
+          m
         end
       end
 
@@ -207,16 +209,9 @@ LUA
 
       # (see Base#get_message)
       def get_message(channel, message_id)
-        redis = pub_redis
-        backlog_key = backlog_key(channel)
-
-        items = redis.xrange backlog_key, "0-#{message_id}", "0-#{message_id}"
-        if items && items[0]
-          _id, (_, payload) = items[0]
-          MessageBus::Message.decode(payload)
-        else
-          nil
-        end
+        message = _get_message(channel, message_id)
+        message.global_id = -1 if message
+        message
       end
 
       # (see Base#subscribe)
@@ -229,7 +224,7 @@ LUA
           # we need to translate this to a global id, at least give it a shot
           #   we are subscribing on global and global is always going to be bigger than local
           #   so worst case is a replay of a few messages
-          message = get_message(channel, last_id)
+          message = _get_message(channel, last_id)
           if message
             last_id = message.global_id
           end
@@ -342,11 +337,24 @@ LUA
         "__mb_unsubscribe_n"
       end
 
+      def _get_message(channel, message_id)
+        redis = pub_redis
+        backlog_key = backlog_key(channel)
+
+        items = redis.xrange backlog_key, "0-#{message_id}", "0-#{message_id}"
+        if items && items[0]
+          _id, (_, payload) = items[0]
+          MessageBus::Message.decode(payload)
+        else
+          nil
+        end
+      end
+
       def message_from_global_backlog(payload)
         pipe = payload.index "|"
         message_id = payload[0..pipe].to_i
         channel = payload[pipe + 1..-1]
-        get_message(channel, message_id)
+        _get_message(channel, message_id)
       end
 
       def cached_eval(redis, script, script_sha1, params)
