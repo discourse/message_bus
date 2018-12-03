@@ -1,6 +1,7 @@
 Unreleased
 
 - CHANGE: No longer reports messages' `global_id` to Javascript subscribers
+- CHANGE: Stops providing usable `global_id` unless messages come from global backlog. Will now report -1 any time a message comes directly from a specific channel.
 
 30-11-2018
 

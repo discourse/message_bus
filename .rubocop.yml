@@ -17,7 +17,7 @@ Bundler/OrderedGems:
 
 # Redis backend is quite big
 Metrics/ClassLength:
-  Max: 310
+  Max: 313
 
 Metrics/BlockLength:
   Exclude:

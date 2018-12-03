@@ -245,7 +245,7 @@ module MessageBus
         items = client.backlog channel, last_id.to_i
 
         items.map! do |id, data|
-          MessageBus::Message.new id, id, channel, data
+          MessageBus::Message.new(-1, id, channel, data)
         end
       end
 
@@ -261,7 +261,7 @@ module MessageBus
       # (see Base#get_message)
       def get_message(channel, message_id)
         if data = client.get_value(channel, message_id)
-          MessageBus::Message.new message_id, message_id, channel, data
+          MessageBus::Message.new(-1, message_id, channel, data)
         else
           nil
         end
@@ -274,7 +274,10 @@ module MessageBus
         raise ArgumentError unless block_given?
 
         global_subscribe(last_id) do |m|
-          yield m if m.channel == channel
+          if m.channel == channel
+            m.global_id = -1
+            yield m
+          end
         end
       end
 

@@ -196,7 +196,9 @@ LUA
         items = redis.zrangebyscore backlog_key, last_id.to_i + 1, "+inf"
 
         items.map do |i|
-          MessageBus::Message.decode(i)
+          m = MessageBus::Message.decode(i)
+          m.global_id = -1
+          m
         end
       end
 
@@ -208,8 +210,7 @@ LUA
           pipe = i.index "|"
           message_id = i[0..pipe].to_i
           channel = i[pipe + 1..-1]
-          m = get_message(channel, message_id)
-          m
+          _get_message(channel, message_id)
         end
 
         items.compact!
@@ -218,15 +219,9 @@ LUA
 
       # (see Base#get_message)
       def get_message(channel, message_id)
-        redis = pub_redis
-        backlog_key = backlog_key(channel)
-
-        items = redis.zrangebyscore backlog_key, message_id, message_id
-        if items && items[0]
-          MessageBus::Message.decode(items[0])
-        else
-          nil
-        end
+        message = _get_message(channel, message_id)
+        message.global_id = -1 if message
+        message
       end
 
       # (see Base#subscribe)
@@ -239,13 +234,16 @@ LUA
           # we need to translate this to a global id, at least give it a shot
           #   we are subscribing on global and global is always going to be bigger than local
           #   so worst case is a replay of a few messages
-          message = get_message(channel, last_id)
+          message = _get_message(channel, last_id)
           if message
             last_id = message.global_id
           end
         end
         global_subscribe(last_id) do |m|
-          yield m if m.channel == channel
+          if m.channel == channel
+            m.global_id = -1
+            yield m
+          end
         end
       end
 
@@ -356,21 +354,34 @@ LUA
         "__mb_global_backlog_n"
       end
 
+      def _get_message(channel, message_id)
+        redis = pub_redis
+        backlog_key = backlog_key(channel)
+
+        items = redis.zrangebyscore backlog_key, message_id, message_id
+        if items && items[0]
+          MessageBus::Message.decode(items[0])
+        else
+          nil
+        end
+      end
+
       def process_global_backlog(highest_id, raise_error)
         if highest_id > pub_redis.get(global_id_key).to_i
           highest_id = 0
         end
 
         global_backlog(highest_id).each do |old|
-          if highest_id + 1 == old.global_id
+          old_global_id = old.global_id
+          if highest_id + 1 == old_global_id
             yield old
-            highest_id = old.global_id
+            highest_id = old_global_id
           else
             raise BackLogOutOfOrder.new(highest_id) if raise_error
 
-            if old.global_id > highest_id
+            if old_global_id > highest_id
               yield old
-              highest_id = old.global_id
+              highest_id = old_global_id
             end
           end
         end
