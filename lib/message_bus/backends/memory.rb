@@ -107,14 +107,29 @@ module MessageBus
           nil
         end
 
-        def backlog(channel, backlog_id)
-          sync { chan(channel).backlog.select { |id, _| id > backlog_id } }
+        def backlog(channel, backlog_id, inclusive:)
+          sync do
+            chan(channel).backlog.select do |id, _|
+              if inclusive
+                id >= backlog_id
+              else
+                id > backlog_id
+              end
+            end
+          end
         end
 
-        def global_backlog(backlog_id)
+        def global_backlog(backlog_id, inclusive:)
           sync do
             @channels.dup.flat_map do |channel_name, channel|
-              channel.backlog.select { |id, _| id > backlog_id }.map { |id, value| [id, channel_name, value] }
+              relevant_backlog = channel.backlog.select do |id, _|
+                if inclusive
+                  id >= backlog_id
+                else
+                  id > backlog_id
+                end
+              end
+              relevant_backlog.map { |id, value| [id, channel_name, value] }
             end.sort
           end
         end
@@ -244,8 +259,8 @@ module MessageBus
       end
 
       # (see Base#backlog)
-      def backlog(channel, last_id = 0)
-        items = client.backlog channel, last_id.to_i
+      def backlog(channel, last_id = 0, inclusive: false)
+        items = client.backlog channel, last_id.to_i, inclusive: inclusive
 
         items.map! do |id, data|
           MessageBus::Message.new(-1, id, channel, data)
@@ -253,8 +268,8 @@ module MessageBus
       end
 
       # (see Base#global_backlog)
-      def global_backlog(last_id = 0)
-        items = client.global_backlog last_id.to_i
+      def global_backlog(last_id = 0, inclusive: false)
+        items = client.global_backlog last_id.to_i, inclusive: inclusive
 
         items.map! do |id, channel, data|
           MessageBus::Message.new id, id, channel, data

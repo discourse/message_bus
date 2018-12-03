@@ -27,6 +27,28 @@ describe PUB_SUB_CLASS do
     ]
   end
 
+  it "should be able to access the backlog starting from some message (exclusive)" do
+    @bus.publish "/foo", "bar"
+    @bus.publish "/foo", "baz"
+    @bus.publish "/foo", "bash"
+
+    @bus.backlog("/foo", 1).to_a.must_equal [
+      MessageBus::Message.new(-1, 2, '/foo', 'baz'),
+      MessageBus::Message.new(-1, 3, '/foo', 'bash'),
+    ]
+  end
+
+  it "should be able to access the backlog starting from some message (inclusive)" do
+    @bus.publish "/foo", "bar"
+    @bus.publish "/foo", "baz"
+    @bus.publish "/foo", "bash"
+
+    @bus.backlog("/foo", 2, inclusive: true).to_a.must_equal [
+      MessageBus::Message.new(-1, 2, '/foo', 'baz'),
+      MessageBus::Message.new(-1, 3, '/foo', 'bash'),
+    ]
+  end
+
   it "should initialize with max_backlog_size" do
     PUB_SUB_CLASS.new({}, 2000).max_backlog_size.must_equal 2000
   end
@@ -266,6 +288,52 @@ describe PUB_SUB_CLASS do
     end
 
     @bus.global_backlog.to_a.must_equal expected_messages
+  end
+
+  it "should be able to access the backlog starting from some message (exclusive)" do
+    @bus.publish "/foo", "bar"
+    @bus.publish "/hello", "world"
+    @bus.publish "/foo", "baz"
+    @bus.publish "/hello", "planet"
+
+    expected_messages = case MESSAGE_BUS_CONFIG[:backend]
+                        when :redis
+                          # Redis has channel-specific message IDs
+                          [
+                            MessageBus::Message.new(3, 2, "/foo", "baz"),
+                            MessageBus::Message.new(4, 2, "/hello", "planet")
+                          ]
+                        else
+                          [
+                            MessageBus::Message.new(3, 3, "/foo", "baz"),
+                            MessageBus::Message.new(4, 4, "/hello", "planet")
+                          ]
+    end
+
+    @bus.global_backlog(2).to_a.must_equal expected_messages
+  end
+
+  it "should be able to access the backlog starting from some message (inclusive)" do
+    @bus.publish "/foo", "bar"
+    @bus.publish "/hello", "world"
+    @bus.publish "/foo", "baz"
+    @bus.publish "/hello", "planet"
+
+    expected_messages = case MESSAGE_BUS_CONFIG[:backend]
+                        when :redis
+                          # Redis has channel-specific message IDs
+                          [
+                            MessageBus::Message.new(3, 2, "/foo", "baz"),
+                            MessageBus::Message.new(4, 2, "/hello", "planet")
+                          ]
+                        else
+                          [
+                            MessageBus::Message.new(3, 3, "/foo", "baz"),
+                            MessageBus::Message.new(4, 4, "/hello", "planet")
+                          ]
+    end
+
+    @bus.global_backlog(3, inclusive: true).to_a.must_equal expected_messages
   end
 
   it "should correctly omit dropped messages from the global backlog" do

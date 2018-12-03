@@ -119,19 +119,21 @@ module MessageBus
       #
       # @param [String] channel the name of the channel in question
       # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      # @param [Boolean] inclusive whether or not to incluse the message with specified `last_id` in the results
       #
       # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID.
       #   The messages will have a `global_id` of `-1` to indicate that they came directly from a channel.
-      def backlog(channel, last_id = 0)
+      def backlog(channel, last_id = 0, inclusive: false)
         raise ConcreteClassMustImplementError
       end
 
       # Get messages from the global backlog
       #
       # @param [#to_i] last_id the global ID of the last message that the caller received
+      # @param [Boolean] inclusive whether or not to incluse the message with specified `last_id` in the results
       #
       # @return [Array<MessageBus::Message>] all messages published on any channel since the specified last ID
-      def global_backlog(last_id = 0)
+      def global_backlog(last_id = 0, inclusive: false)
         raise ConcreteClassMustImplementError
       end
 
