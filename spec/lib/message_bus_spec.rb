@@ -50,11 +50,16 @@ describe MessageBus do
       data2 << msg.data
     end
 
+    @bus.publish("/minion", "bananana")
+
+    wait_for(2000) do
+      data2.length == 2 && data1.length == 1
+    end
+
     @bus.subscribe("/minion", 1) do |msg|
       data3 << msg.data
     end
 
-    @bus.publish("/minion", "bananana")
     @bus.publish("/minion", "it's so fluffy")
 
     wait_for(2000) do
