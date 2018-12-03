@@ -587,41 +587,12 @@ module MessageBus::Implementation
     msg.client_ids = parsed["client_ids"]
   end
 
-  def replay_backlog(channel, last_id, site_id)
-    id = nil
-
-    backlog(channel, last_id, site_id).each do |m|
-      yield m
-      id = m.message_id
-    end
-
-    id
-  end
-
   def subscribe_impl(channel, site_id, last_id, &blk)
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
-      # this gets a bit tricky, but we got to ensure ordering so we wrap the block
-      original_blk = blk
-      current_id = replay_backlog(channel, last_id, site_id, &blk)
-      just_yield = false
-
-      # we double check to ensure no messages snuck through while we were subscribing
-      blk = proc do |m|
-        if just_yield
-          original_blk.call m
-        else
-          if current_id && current_id == (m.message_id - 1)
-            original_blk.call m
-            just_yield = true
-          else
-            current_id = replay_backlog(channel, current_id, site_id, &original_blk)
-            if (current_id == m.message_id)
-              just_yield = true
-            end
-          end
-        end
+      backlog(channel, last_id - 1, site_id).each do |m|
+        yield m
       end
     end
 
