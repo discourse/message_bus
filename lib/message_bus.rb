@@ -592,7 +592,11 @@ module MessageBus::Implementation
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
-      backlog(channel, last_id, site_id, inclusive: true).each do |m|
+      existing_messages = backlog(channel, last_id, site_id, inclusive: true)
+      if existing_messages.empty?
+        raise ArgumentError, "You tried to subscribe starting from a message that doesn't exist yet."
+      end
+      existing_messages.each do |m|
         yield m
       end
     end

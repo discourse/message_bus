@@ -69,6 +69,12 @@ describe MessageBus do
     data1.must_equal ['bananana', "it's so fluffy"]
     data2.must_equal ['banana', 'bananana', "it's so fluffy"]
     data3.must_equal ['banana', 'bananana', "it's so fluffy"]
+
+    -> do
+      @bus.subscribe("/minion", 4) do |msg| # This last_id doesn't exist yet
+        raise "Don't expect any delivery here"
+      end
+    end.must_raise ArgumentError
   end
 
   it "can transmit client_ids" do
