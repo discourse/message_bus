@@ -171,11 +171,11 @@ LUA
       end
 
       # (see Base#backlog)
-      def backlog(channel, last_id = nil)
+      def backlog(channel, last_id = nil, inclusive: false)
         redis = pub_redis
         backlog_key = backlog_key(channel)
         start = if last_id
-          "0-#{last_id + 1}"
+          "0-#{inclusive ? last_id.to_i : last_id.to_i + 1}"
         else
           "-"
         end
@@ -189,11 +189,11 @@ LUA
       end
 
       # (see Base#global_backlog)
-      def global_backlog(last_id = nil)
+      def global_backlog(last_id = nil, inclusive: false)
         last_id = last_id.to_i
         redis = pub_redis
         start = if last_id
-          "0-#{last_id + 1}"
+          "0-#{inclusive ? last_id.to_i : last_id.to_i + 1}"
         else
           "-"
         end

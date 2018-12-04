@@ -290,14 +290,14 @@ describe PUB_SUB_CLASS do
     @bus.global_backlog.to_a.must_equal expected_messages
   end
 
-  it "should be able to access the backlog starting from some message (exclusive)" do
+  it "should be able to access the global backlog starting from some message (exclusive)" do
     @bus.publish "/foo", "bar"
     @bus.publish "/hello", "world"
     @bus.publish "/foo", "baz"
     @bus.publish "/hello", "planet"
 
     expected_messages = case MESSAGE_BUS_CONFIG[:backend]
-                        when :redis
+                        when :redis, :redis_streams
                           # Redis has channel-specific message IDs
                           [
                             MessageBus::Message.new(3, 2, "/foo", "baz"),
@@ -313,14 +313,14 @@ describe PUB_SUB_CLASS do
     @bus.global_backlog(2).to_a.must_equal expected_messages
   end
 
-  it "should be able to access the backlog starting from some message (inclusive)" do
+  it "should be able to access the global backlog starting from some message (inclusive)" do
     @bus.publish "/foo", "bar"
     @bus.publish "/hello", "world"
     @bus.publish "/foo", "baz"
     @bus.publish "/hello", "planet"
 
     expected_messages = case MESSAGE_BUS_CONFIG[:backend]
-                        when :redis
+                        when :redis, :redis_streams
                           # Redis has channel-specific message IDs
                           [
                             MessageBus::Message.new(3, 2, "/foo", "baz"),
