@@ -2,6 +2,7 @@
 
 require 'redis'
 require 'digest'
+require 'securerandom'
 
 require "message_bus/backends/base"
 
