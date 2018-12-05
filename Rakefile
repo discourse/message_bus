@@ -55,5 +55,15 @@ end
 desc "Run tests on all backends, plus client JS tests"
 task spec: backends.map { |backend| "spec:#{backend}" } + [:spec_client_js]
 
-desc "Run all tests, link checks and confirm documentation compiles without error"
+desc "Run performance benchmarks on all backends"
+task :performance do
+  begin
+    ENV['MESSAGE_BUS_BACKENDS'] = backends.join(",")
+    sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{Dir['spec/performance/*.rb'].to_a.join(' ')}"
+  ensure
+    ENV.delete('MESSAGE_BUS_BACKENDS')
+  end
+end
+
+desc "Run all tests, link checks and confirms documentation compiles without error"
 task default: [:spec, :rubocop, :test_doc]
