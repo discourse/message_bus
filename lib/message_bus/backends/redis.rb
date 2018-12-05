@@ -44,10 +44,13 @@ module MessageBus
         end
       end
 
-      # @param [Hash] redis_config in addition to the options listed, see https://github.com/redis/redis-rb for other available options
+      # @param [Hash] redis_config in addition to the options listed, see https://github.com/redis/redis-rb for other
+      #   available options
       # @option redis_config [Logger] :logger a logger to which logs will be output
-      # @option redis_config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying Redis library
-      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
+      # @option redis_config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying
+      #   Redis library
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs;
+      #   beyond this capacity, old messages will be dropped.
       def initialize(redis_config = {}, max_backlog_size = 1000)
         @redis_config = redis_config.dup
         @logger = @redis_config[:logger]
@@ -77,7 +80,8 @@ module MessageBus
         end
       end
 
-      # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.
+      # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue
+      #   from the last publication before the expiry. Use with extreme caution.
       # @see Base#expire_all_backlogs!
       def expire_all_backlogs!
         pub_redis.keys("__mb_*backlog_n").each do |k|
@@ -86,8 +90,9 @@ module MessageBus
       end
 
       # Note, the script takes care of all expiry of keys, however
-      # we do not expire the global backlog key cause we have no simple way to determine what it should be on publish
-      # we do not provide a mechanism to set a global max backlog age, only a per-channel which we can override on publish
+      # * we do not expire the global backlog key cause we have no simple way to determine what it should be on publish
+      # * we do not provide a mechanism to set a global max backlog age, only a per-channel which we can override on
+      #   publish
       LUA_PUBLISH = <<LUA
 
       local start_payload = ARGV[1]
@@ -166,7 +171,10 @@ LUA
             @in_memory_backlog << [channel, data]
             if @in_memory_backlog.length > @max_in_memory_publish_backlog
               @in_memory_backlog.delete_at(0)
-              @logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
+              backtrace = e.backtrace.join('\n')
+              @logger.warn(
+                "Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{backtrace}"
+              )
             end
           end
 

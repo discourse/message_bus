@@ -17,7 +17,14 @@ case backend
 when :redis
   MESSAGE_BUS_CONFIG.merge!(url: ENV["REDISURL"])
 when :postgres
-  MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV["PGHOST"], user: ENV["PGUSER"] || ENV["USER"], password: ENV["PGPASSWORD"], dbname: ENV["PGDATABASE"] || "message_bus_test" })
+  MESSAGE_BUS_CONFIG.merge!(
+    backend_options: {
+      host: ENV["PGHOST"],
+      user: ENV["PGUSER"] || ENV["USER"],
+      password: ENV["PGPASSWORD"],
+      dbname: ENV["PGDATABASE"] || "message_bus_test"
+    }
+  )
 end
 puts "Running with backend: #{backend}"
 

@@ -304,13 +304,18 @@ module MessageBus::Implementation
   # @param [String] channel the name of the channel to which the message should be published
   # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
   # @param [Hash] opts
-  # @option opts [Array<String>] :client_ids (`nil`) the unique client IDs to which the message should be available. If nil, available to all.
-  # @option opts [Array<String,Integer>] :user_ids (`nil`) the user IDs to which the message should be available. If nil, available to all.
-  # @option opts [Array<String,Integer>] :group_ids (`nil`) the group IDs to which the message should be available. If nil, available to all.
+  # @option opts [Array<String>] :client_ids (`nil`) the unique client IDs to which the message should be available. If
+  #   nil, available to all.
+  # @option opts [Array<String,Integer>] :user_ids (`nil`) the user IDs to which the message should be available. If
+  #   nil, available to all.
+  # @option opts [Array<String,Integer>] :group_ids (`nil`) the group IDs to which the message should be available. If
+  #   nil, available to all.
   # @option opts [String] :site_id (`nil`) the site ID to scope the message to; used for hosting multiple
   #   applications or instances of an application against a single message_bus
-  # @option opts [nil,Integer] :max_backlog_age the longest amount of time a message may live in a backlog before beging removed, in seconds
-  # @option opts [nil,Integer] :max_backlog_size the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
+  # @option opts [nil,Integer] :max_backlog_age the longest amount of time a message may live in a backlog before beging
+  #   removed, in seconds
+  # @option opts [nil,Integer] :max_backlog_size the largest permitted size (number of messages) for the channel
+  #   backlog; beyond this capacity, old messages will be dropped
   #
   # @return [Integer] the channel-specific ID the message was given
   #

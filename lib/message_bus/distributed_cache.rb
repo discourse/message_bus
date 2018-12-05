@@ -44,7 +44,12 @@ module MessageBus
             hash = current.hash(message.site_id || DEFAULT_SITE_ID)
 
             case payload["op"]
-            when "set" then hash[payload["key"]] = payload["marshalled"] ? Marshal.load(Base64.decode64(payload["value"])) : payload["value"]
+            when "set"
+              hash[payload["key"]] = if payload["marshalled"]
+                Marshal.load(Base64.decode64(payload["value"]))
+              else
+                payload["value"]
+              end
             when "delete" then hash.delete(payload["key"])
             when "clear"  then hash.clear
             end

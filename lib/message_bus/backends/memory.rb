@@ -189,7 +189,8 @@ module MessageBus
       # @param [Hash] config
       # @option config [Logger] :logger a logger to which logs will be output
       # @option config [Integer] :clear_every the interval of publications between which the backlog will not be cleared
-      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs;
+      #   beyond this capacity, old messages will be dropped.
       def initialize(config = {}, max_backlog_size = 1000)
         @config = config
         @max_backlog_size = max_backlog_size
@@ -330,7 +331,9 @@ module MessageBus
             end
           end
         rescue => error
-          @config[:logger].warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
+          @config[:logger].warn(
+            "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
+          )
           sleep 1
           retry
         end

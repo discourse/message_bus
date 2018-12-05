@@ -60,23 +60,29 @@ module MessageBus
 
       # @return [Boolean] The subscription state of the backend
       attr_reader :subscribed
-      # @return [Integer] the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
+      # @return [Integer] the largest permitted size (number of messages) for per-channel backlogs; beyond this
+      #   capacity, old messages will be dropped.
       attr_accessor :max_backlog_size
-      # @return [Integer] the largest permitted size (number of messages) for the global backlog; beyond this capacity, old messages will be dropped.
+      # @return [Integer] the largest permitted size (number of messages) for the global backlog; beyond this capacity,
+      #   old messages will be dropped.
       attr_accessor :max_global_backlog_size
       # @return [Integer] the longest amount of time a message may live in a backlog before beging removed, in seconds.
       attr_accessor :max_backlog_age
-      # Typically, backlogs are trimmed whenever we publish to them. This setting allows some tolerance in order to improve performance.
+      # Typically, backlogs are trimmed whenever we publish to them. This setting allows some tolerance in order to
+      #   improve performance.
       # @return [Integer] the interval of publications between which the backlog will not be cleared.
       attr_accessor :clear_every
-      # @return [Integer] the largest permitted size (number of messages) to be held in a memory buffer when publication fails, for later re-publication.
+      # @return [Integer] the largest permitted size (number of messages) to be held in a memory buffer when publication
+      #   fails, for later re-publication.
       attr_accessor :max_in_memory_publish_backlog
 
       # @param [Hash] config backend-specific configuration options; see the concrete class for details
-      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs;
+      #   beyond this capacity, old messages will be dropped.
       def initialize(config = {}, max_backlog_size = 1000); end
 
-      # Performs routines specific to the backend that are necessary after a process fork, typically triggerd by a forking webserver. Typically this re-opens sockets to the backend.
+      # Performs routines specific to the backend that are necessary after a process fork, typically triggerd by a
+      #   forking webserver. Typically this re-opens sockets to the backend.
       def after_fork
         raise ConcreteClassMustImplementError
       end
@@ -86,7 +92,8 @@ module MessageBus
         raise ConcreteClassMustImplementError
       end
 
-      # Deletes all backlogs and their data. Does not delete non-backlog data that message_bus may persist, depending on the concrete backend implementation. Use with extreme caution.
+      # Deletes all backlogs and their data. Does not delete non-backlog data that message_bus may persist, depending on
+      #   the concrete backend implementation. Use with extreme caution.
       # @abstract
       def expire_all_backlogs!
         raise ConcreteClassMustImplementError
@@ -97,9 +104,12 @@ module MessageBus
       # @param [String] channel the name of the channel to which the message should be published
       # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
       # @param [Hash] opts
-      # @option opts [Boolean] :queue_in_memory (true) whether or not to hold the message in an in-memory buffer if publication fails, to be re-tried later
-      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a message may live in a backlog before beging removed, in seconds
-      # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
+      # @option opts [Boolean] :queue_in_memory (true) whether or not to hold the message in an in-memory buffer if
+      #   publication fails, to be re-tried later
+      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a message may live
+      #   in a backlog before beging removed, in seconds
+      # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of
+      #   messages) for the channel backlog; beyond this capacity, old messages will be dropped
       #
       # @return [Integer] the channel-specific ID the message was given
       def publish(channel, data, opts = nil)
@@ -118,7 +128,8 @@ module MessageBus
       # Get messages from a channel backlog
       #
       # @param [String] channel the name of the channel in question
-      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified
+      #   channel
       #
       # @return [Array<MessageBus::Message>] all messages published to the specified channel since the specified last ID
       def backlog(channel, last_id = 0)
@@ -149,7 +160,8 @@ module MessageBus
       # soon as it is available. This will block until subscription is terminated.
       #
       # @param [String] channel the name of the channel to which we should subscribe
-      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified channel
+      # @param [#to_i] last_id the channel-specific ID of the last message that the caller received on the specified
+      #   channel
       #
       # @yield [message] a message-handler block
       # @yieldparam [MessageBus::Message] message each message as it is delivered
@@ -159,7 +171,8 @@ module MessageBus
         raise ConcreteClassMustImplementError
       end
 
-      # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset tests.
+      # Causes all subscribers to the bus to unsubscribe, and terminates the local connection. Typically used to reset
+      #   tests.
       def global_unsubscribe
         raise ConcreteClassMustImplementError
       end

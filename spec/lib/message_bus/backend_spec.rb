@@ -156,7 +156,8 @@ describe PUB_SUB_CLASS do
     expected_backlog_size += 1
 
     sleep 0.75 # Should now be at time =~ 2.75s
-    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not have expired the backlog.
+    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not
+    # have expired the backlog.
 
     @bus.publish "/foo", "baz" # Publish something else to ward off another expiry
     expected_backlog_size += 1
@@ -217,7 +218,8 @@ describe PUB_SUB_CLASS do
     expected_backlog_size += 1
 
     sleep 0.75 # Should now be at time =~ 2.75s
-    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not have expired the backlog.
+    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not
+    # have expired the backlog.
 
     @bus.publish "/foo", "baz", max_backlog_age: 1 # Publish something else to ward off another expiry
     expected_backlog_size += 1

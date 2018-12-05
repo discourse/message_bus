@@ -163,7 +163,10 @@ module MessageBus
         end
 
         def create_table(conn)
-          conn.exec "CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)"
+          conn.exec(
+            "CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL " \
+            "CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)"
+          )
           conn.exec "CREATE INDEX table_channel_id_index ON message_bus (channel, id)"
           conn.exec "CREATE INDEX table_added_at_index ON message_bus (added_at)"
           nil
@@ -214,10 +217,19 @@ module MessageBus
 
           conn.exec "PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id"
           conn.exec "PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)"
-          conn.exec "PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC LIMIT 1 OFFSET $3)))"
-          conn.exec "PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id"
+          conn.exec(
+            "PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= " \
+            "(SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC LIMIT 1 OFFSET $3)))"
+          )
+          conn.exec(
+            "PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) " \
+            "ORDER BY id"
+          )
           conn.exec "PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id"
-          conn.exec "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - ($1::text || ' seconds')::interval"
+          conn.exec(
+            "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - " \
+            "($1::text || ' seconds')::interval"
+          )
           conn.exec "PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))"
           conn.exec "PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)"
           conn.exec "PREPARE max_id AS SELECT max(id) FROM message_bus"
@@ -243,7 +255,8 @@ module MessageBus
       # @option config [Logger] :logger a logger to which logs will be output
       # @option config [Integer] :clear_every the interval of publications between which the backlog will not be cleared
       # @option config [Hash] :backend_options see PG::Connection.connect for details of which options may be provided
-      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs;
+      #   beyond this capacity, old messages will be dropped.
       def initialize(config = {}, max_backlog_size = 1000)
         @config = config
         @max_backlog_size = max_backlog_size
@@ -390,7 +403,9 @@ module MessageBus
             end
           end
         rescue => error
-          @config[:logger].warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
+          @config[:logger].warn(
+            "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
+          )
           sleep 1
           retry
         end
