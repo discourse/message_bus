@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../spec_helper"
 require "message_bus"
 
@@ -6,7 +8,7 @@ class FakeAsync
 
   def <<(val)
     sleep 0.01 # simulate IO
-    @sent ||= ""
+    @sent ||= +""
     @sent << val
   end
 

@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 require "http/parser"
+
 class FakeAsyncMiddleware
   def initialize(app, config = {})
     @app = app
@@ -53,7 +56,7 @@ class FakeAsyncMiddleware
 
   def translate_io_result(io)
     data = io.string
-    body = ""
+    body = +""
 
     parser = Http::Parser.new
     parser.on_body = proc { |chunk| body << chunk }
@@ -112,7 +115,7 @@ class FakeAsyncMiddleware
         # more judo with deferrable body, at this point we just have headers
         r[2].callback do
           # even more judo cause rack test does not call each like the spec says
-          body = ""
+          body = +""
           r[2].each do |m|
             body << m
           end

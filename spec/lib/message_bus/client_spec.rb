@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../../spec_helper"
 require "message_bus"
 
@@ -83,7 +85,7 @@ describe MessageBus::Client do
 
       data[-5..-1].must_equal "0\r\n\r\n"
 
-      _, _, chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" << data)
+      _, _, chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" + data)
 
       chunks.length.must_equal 2
 
