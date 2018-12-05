@@ -1,6 +1,6 @@
-require_relative '../spec_helper'
-require 'message_bus'
-require 'redis'
+require_relative "../spec_helper"
+require "message_bus"
+require "redis"
 
 describe MessageBus do
   before do
@@ -61,9 +61,9 @@ describe MessageBus do
       data3.length == 3 && data2.length == 3 && data1.length == 2
     end
 
-    data1.must_equal ['bananana', "it's so fluffy"]
-    data2.must_equal ['banana', 'bananana', "it's so fluffy"]
-    data3.must_equal ['banana', 'bananana', "it's so fluffy"]
+    data1.must_equal ["bananana", "it's so fluffy"]
+    data2.must_equal ["banana", "bananana", "it's so fluffy"]
+    data3.must_equal ["banana", "bananana", "it's so fluffy"]
   end
 
   it "can transmit client_ids" do
@@ -73,10 +73,10 @@ describe MessageBus do
       client_ids = msg.client_ids
     end
 
-    @bus.publish("/chuck", { yeager: true }, client_ids: ['a', 'b'])
+    @bus.publish("/chuck", { yeager: true }, client_ids: ["a", "b"])
     wait_for(2000) { client_ids }
 
-    client_ids.must_equal ['a', 'b']
+    client_ids.must_equal ["a", "b"]
   end
 
   it "should recover from a redis flush" do
@@ -140,9 +140,9 @@ describe MessageBus do
 
     wait_for(2000) { data }
 
-    data.must_equal 'norris'
-    site_id.must_equal 'magic'
-    channel.must_equal '/chuck'
+    data.must_equal "norris"
+    site_id.must_equal "magic"
+    channel.must_equal "/chuck"
     user_ids.must_equal [1, 2, 3]
   end
 
@@ -159,9 +159,9 @@ describe MessageBus do
 
     wait_for(2000) { data }
 
-    data.must_equal 'norris'
-    site_id.must_equal 'magic'
-    channel.must_equal '/chuck'
+    data.must_equal "norris"
+    site_id.must_equal "magic"
+    channel.must_equal "/chuck"
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
@@ -171,7 +171,7 @@ describe MessageBus do
 
     r = @bus.backlog("/chuck", id)
 
-    r.map { |i| i.data }.to_a.must_equal ['foo', 'bar']
+    r.map { |i| i.data }.to_a.must_equal ["foo", "bar"]
   end
 
   it "should correctly get full backlog of a channel" do
@@ -179,7 +179,7 @@ describe MessageBus do
     @bus.publish("/chuck", "foo")
     @bus.publish("/chuckles", "bar")
 
-    @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['norris', 'foo']
+    @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ["norris", "foo"]
   end
 
   it "allows you to look up last_message" do
@@ -203,9 +203,9 @@ describe MessageBus do
 
       wait_for(2000) { data }
 
-      data.must_equal 'norris'
-      site_id.must_equal 'law-and-order'
-      channel.must_equal '/chuck'
+      data.must_equal "norris"
+      site_id.must_equal "law-and-order"
+      channel.must_equal "/chuck"
     end
   end
 

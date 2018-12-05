@@ -1,4 +1,4 @@
-require 'http/parser'
+require "http/parser"
 class FakeAsyncMiddleware
   def initialize(app, config = {})
     @app = app
@@ -40,7 +40,7 @@ class FakeAsyncMiddleware
 
   def call(env)
     unless @allow_chunked
-      env['HTTP_DONT_CHUNK'] = 'True'
+      env["HTTP_DONT_CHUNK"] = "True"
     end
     if simulate_thin_async?
       call_thin_async(env)
@@ -69,12 +69,12 @@ class FakeAsyncMiddleware
     io = nil
 
     EM.run {
-      env['rack.hijack'] = lambda {
+      env["rack.hijack"] = lambda {
         hijacked = true
         io = StringIO.new
       }
 
-      env['rack.hijack_io'] = io
+      env["rack.hijack_io"] = io
 
       result = @app.call(env)
 
@@ -102,13 +102,13 @@ class FakeAsyncMiddleware
     }
 
     @in_async = false
-    result || [500, {}, ['timeout']]
+    result || [500, {}, ["timeout"]]
   end
 
   def call_thin_async(env)
     result = nil
     EM.run {
-      env['async.callback'] = lambda { |r|
+      env["async.callback"] = lambda { |r|
         # more judo with deferrable body, at this point we just have headers
         r[2].callback do
           # even more judo cause rack test does not call each like the spec says
@@ -140,6 +140,6 @@ class FakeAsyncMiddleware
     }
 
     @in_async = false
-    result || [500, {}, ['timeout']]
+    result || [500, {}, ["timeout"]]
   end
 end

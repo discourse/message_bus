@@ -12,7 +12,7 @@ class MessageBus::Diagnostics
 
       # it may make sense to add a channel per machine/host to streamline
       #  process to process comms
-      bus.subscribe('/_diagnostics/hup') do |msg|
+      bus.subscribe("/_diagnostics/hup") do |msg|
         if Process.pid == msg.data["pid"] && hostname == msg.data["hostname"]
           $shutdown = true
           sleep 4
@@ -20,9 +20,9 @@ class MessageBus::Diagnostics
         end
       end
 
-      bus.subscribe('/_diagnostics/discover') do |msg|
+      bus.subscribe("/_diagnostics/discover") do |msg|
         bus.on_connect.call msg.site_id if bus.on_connect
-        bus.publish '/_diagnostics/process-discovery', {
+        bus.publish "/_diagnostics/process-discovery", {
           pid: Process.pid,
           process_name: $0,
           full_path: full_path,
@@ -44,7 +44,7 @@ class MessageBus::Diagnostics
           `ps -o command -p #{Process.pid}`.split("\n", 2)[1].strip
         else
           info = `ps -eo "%p|$|%a" | grep '^\\s*#{Process.pid}'`
-          info.strip.split('|$|')[1]
+          info.strip.split("|$|")[1]
         end
       rescue
         # skip it ... not linux or something weird

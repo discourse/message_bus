@@ -1,7 +1,7 @@
-require_relative '../../spec_helper'
-require 'minitest/hooks/default'
-require 'message_bus'
-require 'message_bus/distributed_cache'
+require_relative "../../spec_helper"
+require "minitest/hooks/default"
+require "message_bus"
+require "message_bus/distributed_cache"
 
 describe MessageBus::DistributedCache do
   before :all do
@@ -27,7 +27,7 @@ describe MessageBus::DistributedCache do
     @cache2 = cache(cache_name)
   end
 
-  it 'supports arrays with hashes' do
+  it "supports arrays with hashes" do
     c1 = cache("test1")
     c2 = cache("test1")
 
@@ -40,7 +40,7 @@ describe MessageBus::DistributedCache do
     expect(c2[:test]).must_equal([{ test: :test }])
   end
 
-  it 'allows us to store Set' do
+  it "allows us to store Set" do
     c1 = cache("test1")
     c2 = cache("test1")
 
@@ -69,7 +69,7 @@ describe MessageBus::DistributedCache do
     expect(c1["cats"]).must_equal(set)
   end
 
-  it 'does not leak state across caches' do
+  it "does not leak state across caches" do
     c2 = cache("test1")
     c3 = cache("test1")
     c2["hi"] = "hi"
@@ -81,7 +81,7 @@ describe MessageBus::DistributedCache do
     assert_nil(@cache1["hi"])
   end
 
-  it 'allows coerces symbol keys to strings' do
+  it "allows coerces symbol keys to strings" do
     @cache1[:key] = "test"
     expect(@cache1["key"]).must_equal("test")
 
@@ -91,14 +91,14 @@ describe MessageBus::DistributedCache do
     expect(@cache2["key"]).must_equal("test")
   end
 
-  it 'sets other caches' do
+  it "sets other caches" do
     @cache1["test"] = "world"
     wait_for do
       @cache2["test"] == "world"
     end
   end
 
-  it 'deletes from other caches' do
+  it "deletes from other caches" do
     @cache1["foo"] = "bar"
 
     wait_for do
@@ -113,7 +113,7 @@ describe MessageBus::DistributedCache do
     end
   end
 
-  it 'clears cache on request' do
+  it "clears cache on request" do
     @cache1["foo"] = "bar"
 
     wait_for do

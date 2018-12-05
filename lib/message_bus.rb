@@ -13,7 +13,7 @@ require "message_bus/timer_thread"
 
 # we still need to take care of the logger
 if defined?(::Rails)
-  require 'message_bus/rails/railtie'
+  require "message_bus/rails/railtie"
 end
 
 # @see MessageBus::Implementation
@@ -64,7 +64,7 @@ module MessageBus::Implementation
   def logger
     return @config[:logger] if @config[:logger]
 
-    require 'logger'
+    require "logger"
     logger = Logger.new(STDOUT)
     logger.level = Logger::INFO
     configure(logger: logger)
@@ -574,7 +574,7 @@ module MessageBus::Implementation
   end
 
   def global?(channel)
-    channel && channel.start_with?('/global/'.freeze)
+    channel && channel.start_with?("/global/".freeze)
   end
 
   def decode_message!(msg)
@@ -692,17 +692,17 @@ module MessageBus::Implementation
 
           # do the best we can to terminate self cleanly
           fork do
-            Process.kill('TERM', pid)
+            Process.kill("TERM", pid)
             sleep 10
             begin
-              Process.kill('KILL', pid)
+              Process.kill("KILL", pid)
             rescue Errno::ESRCH
               logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
             end
           end
 
           sleep 10
-          Process.kill('KILL', pid)
+          Process.kill("KILL", pid)
 
         else
           timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE

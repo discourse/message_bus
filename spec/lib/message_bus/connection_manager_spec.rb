@@ -1,5 +1,5 @@
-require_relative '../../spec_helper'
-require 'message_bus'
+require_relative "../../spec_helper"
+require "message_bus"
 
 class FakeAsync
   attr_accessor :cleanup_timer
@@ -29,7 +29,7 @@ describe MessageBus::ConnectionManager do
     @client = MessageBus::Client.new(client_id: "xyz", user_id: 1, site_id: 10)
     @resp = FakeAsync.new
     @client.async_response = @resp
-    @client.subscribe('test', -1)
+    @client.subscribe("test", -1)
     @manager.add_client(@client)
     @client.cleanup_timer = FakeTimer.new
   end

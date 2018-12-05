@@ -1,5 +1,5 @@
-require_relative '../../spec_helper'
-require 'message_bus/timer_thread'
+require_relative "../../spec_helper"
+require "message_bus/timer_thread"
 
 describe MessageBus::TimerThread do
   before do

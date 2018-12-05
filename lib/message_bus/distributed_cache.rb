@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
-require 'weakref'
-require 'base64'
-require 'securerandom'
+require "weakref"
+require "base64"
+require "securerandom"
 
 module MessageBus
   # Like a hash, just does its best to stay in sync across the farm.
   # On boot all instances are blank, but they populate as various processes
   # fill it up.
   class DistributedCache
-    DEFAULT_SITE_ID = 'default'
+    DEFAULT_SITE_ID = "default"
 
     class Manager
-      CHANNEL_NAME ||= '/distributed_hash'.freeze
+      CHANNEL_NAME ||= "/distributed_hash".freeze
 
       attr_accessor :app_version
 

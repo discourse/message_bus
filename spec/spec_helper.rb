@@ -1,21 +1,21 @@
 $: << File.dirname(__FILE__)
-$: << File.join(File.dirname(__FILE__), '..', 'lib')
-require 'thin'
-require 'lib/fake_async_middleware'
-require 'message_bus'
+$: << File.join(File.dirname(__FILE__), "..", "lib")
+require "thin"
+require "lib/fake_async_middleware"
+require "message_bus"
 
-require 'minitest/autorun'
-require 'minitest/spec'
+require "minitest/autorun"
+require "minitest/spec"
 
-backend = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
+backend = (ENV["MESSAGE_BUS_BACKEND"] || :redis).to_sym
 MESSAGE_BUS_CONFIG = { backend: backend }
 require "message_bus/backends/#{backend}"
 PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
 case backend
 when :redis
-  MESSAGE_BUS_CONFIG.merge!(url: ENV['REDISURL'])
+  MESSAGE_BUS_CONFIG.merge!(url: ENV["REDISURL"])
 when :postgres
-  MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV['PGHOST'], user: ENV['PGUSER'] || ENV['USER'], password: ENV['PGPASSWORD'], dbname: ENV['PGDATABASE'] || 'message_bus_test' })
+  MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV["PGHOST"], user: ENV["PGUSER"] || ENV["USER"], password: ENV["PGPASSWORD"], dbname: ENV["PGDATABASE"] || "message_bus_test" })
 end
 puts "Running with backend: #{backend}"
 

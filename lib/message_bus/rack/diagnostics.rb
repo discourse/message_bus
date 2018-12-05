@@ -16,39 +16,39 @@ class MessageBus::Rack::Diagnostics
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
-    return @app.call(env) unless env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
+    return @app.call(env) unless env["PATH_INFO"].start_with? "/message-bus/_diagnostics"
 
-    route = env['PATH_INFO'].split('/message-bus/_diagnostics')[1]
+    route = env["PATH_INFO"].split("/message-bus/_diagnostics")[1]
 
     if @bus.is_admin_lookup.nil? || !@bus.is_admin_lookup.call(env)
-      return [403, {}, ['not allowed']]
+      return [403, {}, ["not allowed"]]
     end
 
     return index unless route
 
-    if route == '/discover'
+    if route == "/discover"
       user_id = @bus.user_id_lookup.call(env)
-      @bus.publish('/_diagnostics/discover', user_id: user_id)
-      return [200, {}, ['ok']]
+      @bus.publish("/_diagnostics/discover", user_id: user_id)
+      return [200, {}, ["ok"]]
     end
 
     if route =~ /^\/hup\//
-      hostname, pid = route.split('/hup/')[1].split('/')
-      @bus.publish('/_diagnostics/hup', hostname: hostname, pid: pid.to_i)
-      return [200, {}, ['ok']]
+      hostname, pid = route.split("/hup/")[1].split("/")
+      @bus.publish("/_diagnostics/hup", hostname: hostname, pid: pid.to_i)
+      return [200, {}, ["ok"]]
     end
 
-    asset = route.split('/assets/')[1]
+    asset = route.split("/assets/")[1]
     if asset && !asset !~ /\//
       content = asset_contents(asset)
-      split = asset.split('.')
-      if split[1] == 'handlebars'
+      split = asset.split(".")
+      if split[1] == "handlebars"
         content = translate_handlebars(split[0], content)
       end
-      return [200, { 'content-type' => 'text/javascript;' }, [content]]
+      return [200, { "content-type" => "text/javascript;" }, [content]]
     end
 
-    return [404, {}, ['not found']]
+    return [404, {}, ["not found"]]
   end
 
   private
@@ -66,7 +66,7 @@ class MessageBus::Rack::Diagnostics
   end
 
   def file_hash(asset)
-    require 'digest/sha1'
+    require "digest/sha1"
     Digest::SHA1.hexdigest(asset_contents(asset))
   end
 
@@ -86,13 +86,13 @@ class MessageBus::Rack::Diagnostics
         </head>
         <body>
           <div id="app"></div>
-          #{js_asset "jquery-1.8.2.js"}
-          #{js_asset "handlebars.js"}
-          #{js_asset "ember.js"}
-          #{js_asset "message-bus.js"}
-          #{js_asset "application.handlebars"}
-          #{js_asset "index.handlebars"}
-          #{js_asset "application.js"}
+          #{js_asset 'jquery-1.8.2.js'}
+          #{js_asset 'handlebars.js'}
+          #{js_asset 'ember.js'}
+          #{js_asset 'message-bus.js'}
+          #{js_asset 'application.handlebars'}
+          #{js_asset 'index.handlebars'}
+          #{js_asset 'application.js'}
         </body>
       </html>
     HTML

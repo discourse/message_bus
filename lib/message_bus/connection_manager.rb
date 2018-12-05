@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'json' unless defined? ::JSON
+require "json" unless defined? ::JSON
 
 # Manages a set of subscribers with active connections to the server, such that
 # messages which are published during the connection may be dispatched.
 class MessageBus::ConnectionManager
-  require 'monitor'
+  require "monitor"
   include MonitorMixin
 
   # @param [MessageBus::Instance] bus the message bus for which to manage connections

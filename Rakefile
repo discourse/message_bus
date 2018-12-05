@@ -1,17 +1,17 @@
-require 'rubygems'
-require 'rake/testtask'
-require 'bundler'
-require 'bundler/gem_tasks'
-require 'bundler/setup'
-require 'jasmine'
+require "rubygems"
+require "rake/testtask"
+require "bundler"
+require "bundler/gem_tasks"
+require "bundler/setup"
+require "jasmine"
 
-ENV['JASMINE_CONFIG_PATH'] ||= File.join(Dir.pwd, 'spec', 'assets', 'support', 'jasmine.yml')
-load 'jasmine/tasks/jasmine.rake'
+ENV["JASMINE_CONFIG_PATH"] ||= File.join(Dir.pwd, "spec", "assets", "support", "jasmine.yml")
+load "jasmine/tasks/jasmine.rake"
 
-require 'rubocop/rake_task'
+require "rubocop/rake_task"
 RuboCop::RakeTask.new
 
-require 'yard'
+require "yard"
 YARD::Rake::YardocTask.new
 
 desc "Generate documentation for Yard, and fail if there are any warnings"
@@ -38,25 +38,25 @@ end
 
 run_spec = proc do |backend|
   begin
-    ENV['MESSAGE_BUS_BACKEND'] = backend
+    ENV["MESSAGE_BUS_BACKEND"] = backend
     sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{Dir['spec/**/*_spec.rb'].to_a.join(' ')}"
   ensure
-    ENV.delete('MESSAGE_BUS_BACKEND')
+    ENV.delete("MESSAGE_BUS_BACKEND")
   end
 end
 
 task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop, :test_doc]
 
-task spec_client_js: 'jasmine:ci'
+task spec_client_js: "jasmine:ci"
 
 task :spec_redis do
-  run_spec.call('redis')
+  run_spec.call("redis")
 end
 
 task :spec_memory do
-  run_spec.call('memory')
+  run_spec.call("memory")
 end
 
 task :spec_postgres do
-  run_spec.call('postgres')
+  run_spec.call("postgres")
 end

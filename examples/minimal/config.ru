@@ -1,4 +1,4 @@
-require 'message_bus'
+require "message_bus"
 
 # MessageBus.long_polling_interval = 1000 * 2
 

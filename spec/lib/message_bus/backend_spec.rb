@@ -1,5 +1,5 @@
-require_relative '../../spec_helper'
-require 'message_bus'
+require_relative "../../spec_helper"
+require "message_bus"
 
 describe PUB_SUB_CLASS do
   def new_test_bus
@@ -22,8 +22,8 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "baz"
 
     @bus.backlog("/foo", 0).to_a.must_equal [
-      MessageBus::Message.new(1, 1, '/foo', 'bar'),
-      MessageBus::Message.new(2, 2, '/foo', 'baz')
+      MessageBus::Message.new(1, 1, "/foo", "bar"),
+      MessageBus::Message.new(2, 2, "/foo", "baz")
     ]
   end
 
@@ -43,8 +43,8 @@ describe PUB_SUB_CLASS do
     end
 
     @bus.backlog("/foo").to_a.must_equal [
-      MessageBus::Message.new(3, 3, '/foo', 'three'),
-      MessageBus::Message.new(4, 4, '/foo', 'four'),
+      MessageBus::Message.new(3, 3, "/foo", "three"),
+      MessageBus::Message.new(4, 4, "/foo", "four"),
     ]
   end
 
@@ -79,7 +79,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "should be able to encode and decode messages properly" do
-    m = MessageBus::Message.new 1, 2, '||', '||'
+    m = MessageBus::Message.new 1, 2, "||", "||"
     MessageBus::Message.decode(m.encode).must_equal m
   end
 

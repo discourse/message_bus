@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'redis'
-require 'digest'
+require "redis"
+require "digest"
 
 require "message_bus/backends/base"
 
@@ -436,7 +436,7 @@ LUA
           # in case we are not connected to the correct server
           # which can happen when sharing ips
           pub_redis.client.reconnect
-          pub_redis.client.call([:set, key, '1'])
+          pub_redis.client.call([:set, key, "1"])
           false
         rescue ::Redis::CommandError => e
           return true if e.message =~ /^READONLY/

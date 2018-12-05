@@ -1,2 +1,2 @@
-require './chat'
+require "./chat"
 run Chat

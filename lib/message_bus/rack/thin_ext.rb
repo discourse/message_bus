@@ -46,7 +46,7 @@ module Thin
     attr_accessor :status
 
     def initialize(env, status = 200, headers = {})
-      @callback = env['async.callback']
+      @callback = env["async.callback"]
       @body = DeferrableBody.new
       @status = status
       @headers = headers

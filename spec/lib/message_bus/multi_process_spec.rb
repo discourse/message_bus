@@ -1,5 +1,5 @@
-require_relative '../../spec_helper'
-require 'message_bus'
+require_relative "../../spec_helper"
+require "message_bus"
 
 describe PUB_SUB_CLASS do
   def self.error!
@@ -35,10 +35,10 @@ describe PUB_SUB_CLASS do
     end
   end
 
-  n = ENV['MULTI_PROCESS_TIMES'].to_i
+  n = ENV["MULTI_PROCESS_TIMES"].to_i
   n = 1 if n < 1
   n.times do
-    it 'gets every response from child processes' do
+    it "gets every response from child processes" do
       test_never :memory
       skip("previous error") if self.class.error?
       GC.start

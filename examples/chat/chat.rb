@@ -1,9 +1,9 @@
-$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
-require 'message_bus'
-require 'sinatra'
-require 'sinatra/base'
-require 'set'
-require 'json'
+$LOAD_PATH.unshift File.expand_path("../../../lib", __FILE__)
+require "message_bus"
+require "sinatra"
+require "sinatra/base"
+require "set"
+require "json"
 
 $online = Hash.new
 
@@ -17,7 +17,7 @@ MessageBus.subscribe "/presence" do |msg|
 end
 
 MessageBus.user_id_lookup do |env|
-  MessageBus.logger = env['rack.logger']
+  MessageBus.logger = env["rack.logger"]
   name = env["HTTP_X_NAME"]
   if name
     unless $online[name]
@@ -47,34 +47,34 @@ Thread.new do
 end
 
 class Chat < Sinatra::Base
-  set :public_folder, File.expand_path('../../../assets', __FILE__)
+  set :public_folder, File.expand_path("../../../assets", __FILE__)
 
   use MessageBus::Rack::Middleware
 
-  post '/enter' do
+  post "/enter" do
     name = params["name"]
     i = 1
     while $online.include? name
-      name = "#{params["name"]}#{i}"
+      name = "#{params['name']}#{i}"
       i += 1
     end
-    MessageBus.publish '/presence', enter: name
+    MessageBus.publish "/presence", enter: name
     { users: $online.keys, name: name }.to_json
   end
 
-  post '/leave' do
+  post "/leave" do
     # puts "Got leave for #{params["name"]}"
-    MessageBus.publish '/presence', leave: params["name"]
+    MessageBus.publish "/presence", leave: params["name"]
   end
 
-  post '/message' do
+  post "/message" do
     msg = { data: params["data"][0..500], name: params["name"][0..100] }
-    MessageBus.publish '/message', msg
+    MessageBus.publish "/message", msg
 
     "OK"
   end
 
-  get '/' do
+  get "/" do
     <<~HTML
 
       <html>

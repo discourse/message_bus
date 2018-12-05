@@ -1,5 +1,5 @@
-require_relative '../../spec_helper'
-require 'message_bus'
+require_relative "../../spec_helper"
+require "message_bus"
 
 describe MessageBus::Client do
   describe "subscriptions" do
@@ -10,7 +10,7 @@ describe MessageBus::Client do
     before do
       @bus = MessageBus::Instance.new
       @bus.configure(MESSAGE_BUS_CONFIG)
-      @client = setup_client('abc')
+      @client = setup_client("abc")
     end
 
     after do
@@ -57,8 +57,8 @@ describe MessageBus::Client do
       r, w = IO.pipe
       @client.io = w
       @client.headers = { "Content-Type" => "application/json; charset=utf-8" }
-      @client << MessageBus::Message.new(1, 1, '/test', 'test')
-      @client << MessageBus::Message.new(2, 2, '/test', "a|\r\n|\r\n|b")
+      @client << MessageBus::Message.new(1, 1, "/test", "test")
+      @client << MessageBus::Message.new(2, 2, "/test", "a|\r\n|\r\n|b")
 
       lines = r.read_nonblock(8000)
 
@@ -70,13 +70,13 @@ describe MessageBus::Client do
 
       chunk1 = parse_chunk(chunks[0])
       chunk1.length.must_equal 1
-      chunk1.first["data"].must_equal 'test'
+      chunk1.first["data"].must_equal "test"
 
       chunk2 = parse_chunk(chunks[1])
       chunk2.length.must_equal 1
       chunk2.first["data"].must_equal "a|\r\n|\r\n|b"
 
-      @client << MessageBus::Message.new(3, 3, '/test', 'test3')
+      @client << MessageBus::Message.new(3, 3, "/test", "test3")
       @client.close
 
       data = r.read
@@ -89,7 +89,7 @@ describe MessageBus::Client do
 
       chunk1 = parse_chunk(chunks[0])
       chunk1.length.must_equal 1
-      chunk1.first["data"].must_equal 'test3'
+      chunk1.first["data"].must_equal "test3"
 
       # end with []
       chunk2 = parse_chunk(chunks[1])
@@ -99,8 +99,8 @@ describe MessageBus::Client do
     it "does not bleed data accross sites" do
       @client.site_id = "test"
 
-      @client.subscribe('/hello', nil)
-      @bus.publish '/hello', 'world'
+      @client.subscribe("/hello", nil)
+      @bus.publish "/hello", "world"
       log = @client.backlog
       log.length.must_equal 0
     end
@@ -108,17 +108,17 @@ describe MessageBus::Client do
     it "does not bleed status accross sites" do
       @client.site_id = "test"
 
-      @client.subscribe('/hello', -1)
-      @bus.publish '/hello', 'world'
+      @client.subscribe("/hello", -1)
+      @bus.publish "/hello", "world"
       log = @client.backlog
       log[0].data.must_equal("/hello" => 0)
     end
 
     it "allows negative subscribes to look behind" do
-      @bus.publish '/hello', 'world'
-      @bus.publish '/hello', 'sam'
+      @bus.publish "/hello", "world"
+      @bus.publish "/hello", "sam"
 
-      @client.subscribe('/hello', -2)
+      @client.subscribe("/hello", -2)
 
       log = @client.backlog
       log.length.must_equal(1)
@@ -126,49 +126,49 @@ describe MessageBus::Client do
     end
 
     it "provides status" do
-      @client.subscribe('/hello', -1)
+      @client.subscribe("/hello", -1)
       log = @client.backlog
       log.length.must_equal 1
       log[0].data.must_equal("/hello" => 0)
     end
 
-    it 'provides status updates to clients that are not allowed to a message' do
-      another_client = setup_client('def')
+    it "provides status updates to clients that are not allowed to a message" do
+      another_client = setup_client("def")
       clients = [@client, another_client]
 
       channel = SecureRandom.hex
 
       clients.each { |client| client.subscribe(channel, nil) }
 
-      @bus.publish(channel, "world", client_ids: ['abc'])
+      @bus.publish(channel, "world", client_ids: ["abc"])
 
       log = @client.backlog
       log.length.must_equal 1
       log[0].channel.must_equal channel
-      log[0].data.must_equal 'world'
+      log[0].data.must_equal "world"
 
       log = another_client.backlog
       log.length.must_equal 1
-      log[0].channel.must_equal '/__status'
+      log[0].channel.must_equal "/__status"
       log[0].data.must_equal(channel => 1)
     end
 
     it "should provide a list of subscriptions" do
-      @client.subscribe('/hello', nil)
-      @client.subscriptions['/hello'].wont_equal nil
+      @client.subscribe("/hello", nil)
+      @client.subscriptions["/hello"].wont_equal nil
     end
 
     it "should provide backlog for subscribed channel" do
-      @client.subscribe('/hello', nil)
-      @bus.publish '/hello', 'world'
+      @client.subscribe("/hello", nil)
+      @bus.publish "/hello", "world"
       log = @client.backlog
       log.length.must_equal 1
-      log[0].channel.must_equal '/hello'
-      log[0].data.must_equal 'world'
+      log[0].channel.must_equal "/hello"
+      log[0].data.must_equal "world"
     end
 
     it "allows only client_id in list if message contains client_ids" do
-      @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+      @message = MessageBus::Message.new(1, 2, "/test", "hello")
       @message.client_ids = ["1", "2"]
       @client.client_id = "2"
       @client.allowed?(@message).must_equal true
@@ -179,7 +179,7 @@ describe MessageBus::Client do
 
     describe "targetted at group" do
       before do
-        @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+        @message = MessageBus::Message.new(1, 2, "/test", "hello")
         @message.group_ids = [1, 2, 3]
       end
 

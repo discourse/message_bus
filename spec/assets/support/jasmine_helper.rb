@@ -1,6 +1,6 @@
 Jasmine.configure do |_config|
   # patch for travis
-  if ENV['TRAVIS']
+  if ENV["TRAVIS"]
     module ::Phantomjs
       def self.version
         @phantom_version ||= `phantomjs --version`.strip

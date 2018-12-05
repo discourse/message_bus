@@ -1,7 +1,7 @@
-$LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
+$LOAD_PATH.unshift File.expand_path("../../../lib", __FILE__)
 
-require 'message_bus'
-require 'stackprof'
+require "message_bus"
+require "stackprof"
 
 if defined?(PhusionPassenger)
   PhusionPassenger.on_event(:starting_worker_process) do |forked|

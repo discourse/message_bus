@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'pg'
+require "pg"
 
 require "message_bus/backends/base"
 
@@ -51,40 +51,40 @@ module MessageBus
         end
 
         def add(channel, value)
-          hold { |conn| exec_prepared(conn, 'insert_message', [channel, value]) { |r| r.getvalue(0, 0).to_i } }
+          hold { |conn| exec_prepared(conn, "insert_message", [channel, value]) { |r| r.getvalue(0, 0).to_i } }
         end
 
         def clear_global_backlog(backlog_id, num_to_keep)
           if backlog_id > num_to_keep
-            hold { |conn| exec_prepared(conn, 'clear_global_backlog', [backlog_id - num_to_keep]) }
+            hold { |conn| exec_prepared(conn, "clear_global_backlog", [backlog_id - num_to_keep]) }
             nil
           end
         end
 
         def clear_channel_backlog(channel, backlog_id, num_to_keep)
-          hold { |conn| exec_prepared(conn, 'clear_channel_backlog', [channel, backlog_id, num_to_keep]) }
+          hold { |conn| exec_prepared(conn, "clear_channel_backlog", [channel, backlog_id, num_to_keep]) }
           nil
         end
 
         def expire(max_backlog_age)
-          hold { |conn| exec_prepared(conn, 'expire', [max_backlog_age]) }
+          hold { |conn| exec_prepared(conn, "expire", [max_backlog_age]) }
           nil
         end
 
         def backlog(channel, backlog_id)
           hold do |conn|
-            exec_prepared(conn, 'channel_backlog', [channel, backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
+            exec_prepared(conn, "channel_backlog", [channel, backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
           end || []
         end
 
         def global_backlog(backlog_id)
           hold do |conn|
-            exec_prepared(conn, 'global_backlog', [backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
+            exec_prepared(conn, "global_backlog", [backlog_id]) { |r| r.values.each { |a| a[0] = a[0].to_i } }
           end || []
         end
 
         def get_value(channel, id)
-          hold { |conn| exec_prepared(conn, 'get_message', [channel, id]) { |r| r.getvalue(0, 0) } }
+          hold { |conn| exec_prepared(conn, "get_message", [channel, id]) { |r| r.getvalue(0, 0) } }
         end
 
         def reconnect
@@ -97,7 +97,7 @@ module MessageBus
         # Dangerous, drops the message_bus table containing the backlog if it exists.
         def reset!
           hold do |conn|
-            conn.exec 'DROP TABLE IF EXISTS message_bus'
+            conn.exec "DROP TABLE IF EXISTS message_bus"
             create_table(conn)
           end
         end
@@ -117,14 +117,14 @@ module MessageBus
           end
 
           if channel
-            hold { |conn| exec_prepared(conn, 'max_channel_id', [channel], &block) }
+            hold { |conn| exec_prepared(conn, "max_channel_id", [channel], &block) }
           else
-            hold { |conn| exec_prepared(conn, 'max_id', &block) }
+            hold { |conn| exec_prepared(conn, "max_id", &block) }
           end
         end
 
         def publish(channel, data)
-          hold { |conn| exec_prepared(conn, 'publish', [channel, data]) }
+          hold { |conn| exec_prepared(conn, "publish", [channel, data]) }
         end
 
         def subscribe(channel)
@@ -163,9 +163,9 @@ module MessageBus
         end
 
         def create_table(conn)
-          conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
-          conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
-          conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
+          conn.exec "CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)"
+          conn.exec "CREATE INDEX table_channel_id_index ON message_bus (channel, id)"
+          conn.exec "CREATE INDEX table_added_at_index ON message_bus (added_at)"
           nil
         end
 
@@ -212,16 +212,16 @@ module MessageBus
             create_table(conn)
           end
 
-          conn.exec 'PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id'
-          conn.exec 'PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)'
-          conn.exec 'PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC LIMIT 1 OFFSET $3)))'
-          conn.exec 'PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id'
-          conn.exec 'PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id'
+          conn.exec "PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id"
+          conn.exec "PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)"
+          conn.exec "PREPARE clear_channel_backlog AS DELETE FROM message_bus WHERE ((channel = $1) AND (id <= (SELECT id FROM message_bus WHERE ((channel = $1) AND (id <= $2)) ORDER BY id DESC LIMIT 1 OFFSET $3)))"
+          conn.exec "PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id"
+          conn.exec "PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id"
           conn.exec "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - ($1::text || ' seconds')::interval"
-          conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
-          conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
-          conn.exec 'PREPARE max_id AS SELECT max(id) FROM message_bus'
-          conn.exec 'PREPARE publish AS SELECT pg_notify($1, $2)'
+          conn.exec "PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))"
+          conn.exec "PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)"
+          conn.exec "PREPARE max_id AS SELECT max(id) FROM message_bus"
+          conn.exec "PREPARE publish AS SELECT pg_notify($1, $2)"
 
           conn
         end

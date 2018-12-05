@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'json'
+require "json"
 
 # our little message bus, accepts long polling and polling
 module MessageBus::Rack; end
@@ -54,21 +54,21 @@ class MessageBus::Rack::Middleware
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
-    return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
+    return @app.call(env) unless env["PATH_INFO"] =~ /^\/message-bus\//
 
     # special debug/test route
-    if @bus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'
+    if @bus.allow_broadcast? && env["PATH_INFO"] == "/message-bus/broadcast"
       parsed = Rack::Request.new(env)
       @bus.publish parsed["channel"], parsed["data"]
       return [200, { "Content-Type" => "text/html" }, ["sent"]]
     end
 
-    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
+    if env["PATH_INFO"].start_with? "/message-bus/_diagnostics"
       diags = MessageBus::Rack::Diagnostics.new(@app, message_bus: @bus)
       return diags.call(env)
     end
 
-    client_id = env['PATH_INFO'].split("/")[2]
+    client_id = env["PATH_INFO"].split("/")[2]
     return [404, {}, ["not found"]] unless client_id
 
     user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
@@ -81,8 +81,8 @@ class MessageBus::Rack::Middleware
     client = MessageBus::Client.new(message_bus: @bus, client_id: client_id,
                                     user_id: user_id, site_id: site_id, group_ids: group_ids)
 
-    if channels = env['message_bus.channels']
-      if seq = env['message_bus.seq']
+    if channels = env["message_bus.channels"]
+      if seq = env["message_bus.seq"]
         client.seq = seq.to_i
       end
       channels.each do |k, v|
@@ -90,7 +90,7 @@ class MessageBus::Rack::Middleware
       end
     else
       request = Rack::Request.new(env)
-      is_json = request.content_type && request.content_type.include?('application/json')
+      is_json = request.content_type && request.content_type.include?("application/json")
       data = is_json ? JSON.parse(request.body.read) : request.POST
       data.each do |k, v|
         if k == "__seq"
@@ -118,11 +118,11 @@ class MessageBus::Rack::Middleware
     end
 
     long_polling = @bus.long_polling_enabled? &&
-                   env['QUERY_STRING'] !~ /dlp=t/ &&
+                   env["QUERY_STRING"] !~ /dlp=t/ &&
                    @connection_manager.client_count < @bus.max_active_clients
 
-    allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
-    allow_chunked &&= !env['HTTP_DONT_CHUNK']
+    allow_chunked = env["HTTP_VERSION"] == "HTTP/1.1"
+    allow_chunked &&= !env["HTTP_DONT_CHUNK"]
     allow_chunked &&= @bus.chunked_encoding_enabled?
 
     client.use_chunked = allow_chunked
@@ -133,8 +133,8 @@ class MessageBus::Rack::Middleware
       client.close
       @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
       [200, headers, [self.class.backlog_to_json(backlog)]]
-    elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
-      io = env['rack.hijack'].call
+    elsif long_polling && env["rack.hijack"] && @bus.rack_hijack_enabled?
+      io = env["rack.hijack"].call
       # TODO disable client till deliver backlog is called
       client.io = io
       client.headers = headers
@@ -144,13 +144,13 @@ class MessageBus::Rack::Middleware
         client.ensure_first_chunk_sent
       end
       [418, {}, ["I'm a teapot, undefined in spec"]]
-    elsif long_polling && env['async.callback']
+    elsif long_polling && env["async.callback"]
       response = nil
       # load extension if needed
       begin
         response = Thin::AsyncResponse.new(env)
       rescue NameError
-        require 'message_bus/rack/thin_ext'
+        require "message_bus/rack/thin_ext"
         response = Thin::AsyncResponse.new(env)
       end
 

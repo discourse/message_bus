@@ -186,7 +186,7 @@ class MessageBus::Client
       end
     end
 
-    r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
+    r << MessageBus::Message.new(-1, -1, "/__status", status_message) if status_message
 
     r || []
   end
