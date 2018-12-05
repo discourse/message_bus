@@ -45,7 +45,7 @@ run_spec = proc do |backend|
   end
 end
 
-task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop, :test_doc]
+task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_kafka, :spec_client_js, :rubocop, :test_doc]
 
 task spec_client_js: 'jasmine:ci'
 
@@ -59,4 +59,8 @@ end
 
 task :spec_postgres do
   run_spec.call('postgres')
+end
+
+task :spec_kafka do
+  run_spec.call('kafka')
 end

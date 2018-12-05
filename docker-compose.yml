@@ -4,6 +4,7 @@ volumes:
   bundle:
   redis_data:
   postgres_data:
+  kafka_data:
 services:
   tests:
     build:
@@ -14,6 +15,7 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: "1234"
+      KAFKA_BROKERS: "kafka:9092"
     volumes:
       - .:/usr/src/app
       - bundle_config:/home/src/app/.bundle
@@ -21,6 +23,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - kafka
   docs:
     build:
       context: .
@@ -44,3 +47,14 @@ services:
     environment:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=message_bus_test
+  zookeeper:
+    image: wurstmeister/zookeeper
+  kafka:
+    build: .
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - kafka_data:/kafka
+    depends_on:
+      - zookeeper

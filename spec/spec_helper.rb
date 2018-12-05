@@ -16,6 +16,8 @@ when :redis
   MESSAGE_BUS_CONFIG.merge!(url: ENV['REDISURL'])
 when :postgres
   MESSAGE_BUS_CONFIG.merge!(backend_options: { host: ENV['PGHOST'], user: ENV['PGUSER'] || ENV['USER'], password: ENV['PGPASSWORD'], dbname: ENV['PGDATABASE'] || 'message_bus_test' })
+when :kafka
+  MESSAGE_BUS_CONFIG.merge!(backend_options: { brokers: ENV['KAFKA_BROKERS'].split(";") })
 end
 puts "Running with backend: #{backend}"
 

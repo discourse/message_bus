@@ -321,6 +321,16 @@ The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ru
 
 A `:clear_every` option is also supported, which limits backlog trimming frequency to the specified number of publications. If you set `clear_every: 100`, the backlog will only be cleared every 100 publications. This can improve performance in cases where exact backlog length limiting is not required.
 
+### Kafka
+
+message_bus also supports Kafka as a backend, and can be configured like so:
+
+```ruby
+MessageBus.configure(backend: :kafka, backend_options: { brokers: ["kafka1.example.com:9092", "kafka2.example.com:9092"] })
+```
+
+The Kafka client message_bus uses is [ruby-kafka](https://github.com/zendesk/ruby-kafka), so check its documentation for other options you can include in `:backend_options`.
+
 ### Memory
 
 message_bus also supports an in-memory backend. This can be used for testing or simple single-process environments that do not require persistence or horizontal scalability.
@@ -568,13 +578,13 @@ When submitting a PR, please be sure to include notes on it in the `Unreleased` 
 
 ### Running tests
 
-To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
+To run tests you need Postgres, Redis & Kafka installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
 
 ```
 PGUSER=some_user PGDATABASE=some_db bundle exec rake
 ```
 
-We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
+We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis, Postgres or Kafka installed natively. To execute it, do `docker-compose run tests`.
 
 ### Generating the documentation
 
