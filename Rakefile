@@ -21,8 +21,6 @@ end
 
 Bundler.require(:default, :test)
 
-task default: :spec
-
 module CustomBuild
   def build_gem
     `cp assets/message-bus* vendor/assets/javascripts`
@@ -36,27 +34,26 @@ module Bundler
   end
 end
 
-run_spec = proc do |backend|
-  begin
-    ENV['MESSAGE_BUS_BACKEND'] = backend
-    sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{Dir['spec/**/*_spec.rb'].to_a.join(' ')}"
-  ensure
-    ENV.delete('MESSAGE_BUS_BACKEND')
+task spec_client_js: 'jasmine:ci'
+
+backends = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
+
+namespace :spec do
+  backends.each do |backend|
+    desc "Run tests on the #{backend} backend"
+    task backend do
+      begin
+        ENV['MESSAGE_BUS_BACKEND'] = backend
+        sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{Dir['spec/**/*_spec.rb'].to_a.join(' ')}"
+      ensure
+        ENV.delete('MESSAGE_BUS_BACKEND')
+      end
+    end
   end
 end
 
-task spec: [:spec_memory, :spec_redis, :spec_postgres, :spec_client_js, :rubocop, :test_doc]
+desc "Run tests on all backends, plus client JS tests"
+task spec: backends.map { |backend| "spec:#{backend}" } + [:spec_client_js]
 
-task spec_client_js: 'jasmine:ci'
-
-task :spec_redis do
-  run_spec.call('redis')
-end
-
-task :spec_memory do
-  run_spec.call('memory')
-end
-
-task :spec_postgres do
-  run_spec.call('postgres')
-end
+desc "Run all tests, link checks and confirm documentation compiles without error"
+task default: [:spec, :rubocop, :test_doc]
