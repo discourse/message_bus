@@ -11,6 +11,11 @@ group :test do
   gem 'thin'
   gem 'rack-test', require: 'rack/test'
   gem 'jasmine'
+  gem 'puma'
+end
+
+group :test, :development do
+  gem 'byebug'
 end
 
 gem 'rack'
