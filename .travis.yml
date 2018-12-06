@@ -12,6 +12,7 @@ env:
   - PGUSER=postgres
 before_script:
   - psql -c 'create database message_bus_test;' -U postgres
+script: rake ci
 services:
   - redis-server
   - postgresql
