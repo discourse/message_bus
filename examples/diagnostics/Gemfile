@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'message_bus', path: '../..'
+gem 'redis'
+gem 'puma'
