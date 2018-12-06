@@ -581,3 +581,7 @@ We include a Docker Compose configuration to run test suite in isolation, or if 
 Run `rake yard` (or `docker-compose run docs rake yard`) in order to generate the implementation's API docs in HTML format, and `open doc/index.html` to view them.
 
 While working on documentation, it is useful to automatically re-build it as you make changes. You can do `yard server --reload` (or `docker-compose up docs`) and `open http://localhost:8808` to browse live-built docs as you edit them.
+
+### Benchmarks
+
+Some simple benchmarks are implemented in `spec/performance` and can be executed using `rake performance` (or `docker-compose run tests rake performance`). You should run these before and after your changes to avoid introducing performance regressions.
