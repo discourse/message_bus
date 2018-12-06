@@ -129,6 +129,32 @@ curl -H "Content-Type: application/x-www-form-urlencoded" -X POST --data "/messa
 
 You should see a reply with the messages of that channel you requested (in this case `/message`) starting at the message ID you requested (`0`). The URL parameter `dlp=t` disables long-polling: we do not want this request to stay open.
 
+### Diagnostics
+
+MessageBus comes with a diagnostics interface, which you can access at `/message-bus/_diagnostics`. This interface allows you visibility into the runtime behaviour of message_bus.
+
+In order to use the diagnostics UI in your application, it is necessary to:
+
+* Enable it
+* Define a user ID for requests
+* Define a check for admin role
+
+as an example, you can do something like this:
+
+```ruby
+MessageBus.enable_diagnostics # Must be called after `MessageBus.after_fork` if using a forking webserver
+
+MessageBus.user_id_lookup do |_env|
+  1
+end
+
+MessageBus.is_admin_lookup do |_env|
+  true
+end
+```
+
+Of course, in your real-world application, you would define these values according to your authentication/authorization logic.
+
 ### Transport
 
 MessageBus ships with 3 transport mechanisms.
@@ -405,6 +431,18 @@ Rails.application.config do |config|
 end
 ```
 
+Specifically, if you use a Rack middleware-based authentication solution (such as Warden) in a Rails application and wish to use it for authenticating message_bus requests, you must ensure that the MessageBus middleware comes after it in the stack. Unfortunately, this can be difficult, but the following solution is known to work:
+
+```ruby
+# config/initializers/message_bus.rb
+Rails.application.config do |config|
+  # See https://github.com/rails/rails/issues/26303#issuecomment-442894832
+  MyAppMessageBusMiddleware = Class.new(MessageBus::Rack::Middleware)
+  config.middleware.delete(MessageBus::Rack::Middleware)
+  config.middleware.insert_after(Warden::Manager, MyAppMessageBusMiddleware)
+end
+```
+
 ### A Distributed Cache
 
 MessageBus ships with an optional `DistributedCache` API which provides a simple and efficient way of synchronizing a cache between processes, based on the core of message_bus:
@@ -585,3 +623,7 @@ While working on documentation, it is useful to automatically re-build it as you
 ### Benchmarks
 
 Some simple benchmarks are implemented in `spec/performance` and can be executed using `rake performance` (or `docker-compose run tests rake performance`). You should run these before and after your changes to avoid introducing performance regressions.
+
+### Diagnostics Interface
+
+It is possible to manually test the diagnostics interface by executing `docker-compose up example` and then `open http://localhost:9292`.
