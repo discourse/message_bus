@@ -10,16 +10,24 @@ class FakeAsync
     @sent << val
   end
 
-  def sent; @sent; end
+  def sent
+    @sent
+  end
 
-  def done; @done = true; end
+  def done
+    @done = true
+  end
 
-  def done?; @done; end
+  def done?
+    @done
+  end
 end
 
 class FakeTimer
   attr_accessor :cancelled
-  def cancel; @cancelled = true; end
+  def cancel
+    @cancelled = true
+  end
 end
 
 describe MessageBus::ConnectionManager do

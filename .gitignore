@@ -16,3 +16,4 @@ test/tmp
 test/version_tmp
 tmp
 *.swp
+.rubocop-https---raw-githubusercontent-com-discourse-discourse-master--rubocop-yml
