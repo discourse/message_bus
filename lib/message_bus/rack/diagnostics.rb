@@ -42,10 +42,7 @@ class MessageBus::Rack::Diagnostics
     if asset && !asset !~ /\//
       content = asset_contents(asset)
       split = asset.split('.')
-      if split[1] == 'handlebars'
-        content = translate_handlebars(split[0], content)
-      end
-      return [200, { 'content-type' => 'text/javascript;' }, [content]]
+      return [200, { 'Content-Type' => 'application/javascript;charset=UTF-8' }, [content]]
     end
 
     return [404, {}, ['not found']]
@@ -53,16 +50,16 @@ class MessageBus::Rack::Diagnostics
 
   private
 
-  def js_asset(name)
-    return generate_script_tag(name) unless @bus.cache_assets
+  def js_asset(name, type = "text/javascript")
+    return generate_script_tag(name, type) unless @bus.cache_assets
 
     @@asset_cache ||= {}
-    @@asset_cache[name] ||= generate_script_tag(name)
+    @@asset_cache[name] ||= generate_script_tag(name, type)
     @@asset_cache[name]
   end
 
-  def generate_script_tag(name)
-    "<script src='/message-bus/_diagnostics/assets/#{name}?#{file_hash(name)}' type='text/javascript'></script>"
+  def generate_script_tag(name, type)
+    "<script src='/message-bus/_diagnostics/assets/#{name}?#{file_hash(name)}' type='#{type}'></script>"
   end
 
   def file_hash(asset)
@@ -87,24 +84,14 @@ class MessageBus::Rack::Diagnostics
         <body>
           <div id="app"></div>
           #{js_asset "jquery-1.8.2.js"}
-          #{js_asset "handlebars.js"}
-          #{js_asset "ember.js"}
+          #{js_asset "react.js"}
+          #{js_asset "react-dom.js"}
+          #{js_asset "babel.min.js"}
           #{js_asset "message-bus.js"}
-          #{js_asset "application.handlebars"}
-          #{js_asset "index.handlebars"}
-          #{js_asset "application.js"}
+          #{js_asset "application.jsx", "text/jsx"}
         </body>
       </html>
     HTML
     return [200, { "content-type" => "text/html;" }, [html]]
-  end
-
-  def translate_handlebars(name, content)
-    "Ember.TEMPLATES['#{name}'] = Ember.Handlebars.compile(#{indent(content).inspect});"
-  end
-
-  # from ember-rails
-  def indent(string)
-    string.gsub(/$(.)/m, "\\1  ").strip
   end
 end

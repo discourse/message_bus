@@ -148,7 +148,7 @@ describe MessageBus::Rack::Middleware do
 
       get "/message-bus/_diagnostics/assets/message-bus.js"
       last_response.status.must_equal 200
-      last_response.content_type.must_equal "text/javascript;"
+      last_response.content_type.must_equal "application/javascript;charset=UTF-8"
     end
   end
 
