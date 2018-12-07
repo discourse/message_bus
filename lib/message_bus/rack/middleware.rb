@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'rack'
+
+if Gem::Version.new(Rack.release) < Gem::Version.new("1.1.3")
+  raise "A Rack version of 1.1.3 and greater is required to use this middleware"
+end
 
 # our little message bus, accepts long polling and polling
 module MessageBus::Rack; end
