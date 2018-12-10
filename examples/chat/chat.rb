@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../../lib', __FILE__)
 require 'message_bus'
+require 'message_bus/rack/middleware'
 require 'sinatra'
 require 'sinatra/base'
 require 'set'

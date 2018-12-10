@@ -1,4 +1,5 @@
 require 'message_bus'
+require 'message_bus/rack/middleware'
 
 MessageBus.configure(backend: :redis, url: ENV['REDISURL'])
 MessageBus.enable_diagnostics

@@ -7,12 +7,11 @@ require "message_bus/message"
 require "message_bus/client"
 require "message_bus/connection_manager"
 require "message_bus/diagnostics"
-require "message_bus/rack/middleware"
-require "message_bus/rack/diagnostics"
 require "message_bus/timer_thread"
 
 # we still need to take care of the logger
 if defined?(::Rails)
+  require "message_bus/rack/middleware"
   require 'message_bus/rails/railtie'
 end
 

@@ -2,6 +2,7 @@
 
 require_relative '../../../spec_helper'
 require 'message_bus'
+require 'message_bus/rack/middleware'
 require 'rack/test'
 
 describe MessageBus::Rack::Middleware do

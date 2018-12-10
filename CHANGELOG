@@ -1,6 +1,7 @@
 Unreleased
 
 - Re-wrote diagnostics UI using React
+- Remove gem's dependency on Rack which is only used in the middleware.
 
 30-11-2018
 
