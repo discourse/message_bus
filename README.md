@@ -221,6 +221,8 @@ MessageBus.publish "/global/channel", "will go to all sites"
 
 ### Client support
 
+#### JavaScript Client
+
 MessageBus ships a simple ~300 line JavaScript library which provides an API to interact with the server.
 
 JavaScript clients can listen on any channel and receive messages via polling or long polling. You may simply include the source file (located in `assets/` within the message_bus source code):
@@ -264,9 +266,7 @@ MessageBus.subscribe("/channel", function(data){
 }, -3);
 ```
 
-There is also [a Ruby implementation of the client library](https://github.com/lowjoel/message_bus-client) available with an API very similar to that of the JavaScript client.
-
-#### Client settings
+#### JavaScript Client settings
 
 All client settings are settable via `MessageBus.OPTION`
 
@@ -284,7 +284,7 @@ headers|{}|Extra headers to be include with requests. Properties and values of o
 minHiddenPollInterval|1500|Time to wait between poll requests performed by background or hidden tabs and windows, shared state via localStorage
 enableChunkedEncoding|true|Allows streaming of message bus data over the HTTP connection without closing the connection after each message.
 
-#### Client API
+#### Javascript Client API
 
 `MessageBus.start()` : Starts up the MessageBus poller
 
@@ -303,6 +303,46 @@ enableChunkedEncoding|true|Allows streaming of message bus data over the HTTP co
 `MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded. Returns a reference to the MessageBus object.
 
 `MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus.
+
+#### Ruby
+
+The gem ships with a Ruby implementation of the client library available with an
+API very similar to that of the JavaScript client. It was inspired by
+https://github.com/lowjoel/message_bus-client.
+
+```ruby
+# Creates a client with the default configuration
+client = MessageBus::HTTPClient.new('http://some.test.com')
+
+# Listen for the latest messages
+client.subscribe("/channel") { |data| puts data }
+
+# Listen for all messages after id 7
+client.subscribe("/channel", last_message_id: 7) { |data| puts data }
+
+# Listen for last message and all new messages
+client.subscribe("/channel", last_message_id: -2) { |data| puts data }
+
+# Unsubscribe from a channel
+client.unsubscribe("/channel")
+
+# Unsubscribe a particular callback from a channel
+callback = -> { |data| puts data }
+client.subscribe("/channel", &callback)
+client.unsubscribe("/channel", &callback)
+```
+
+#### Ruby Client Settings
+
+Setting|Default|Info
+----|---|---|
+enable_long_polling|true|Allow long-polling (provided it is enabled by the server)
+background_callback_interval|60s|Interval to poll when long polling is disabled
+min_poll_interval|0.1s|When polling requests succeed, this is the minimum amount of time to wait before making the next request.
+max_poll_interval|180s|If request to the server start failing, MessageBus will backoff, this is the upper limit of the backoff.
+enable_chunked_encoding|true|Allows streaming of message bus data over the HTTP connection without closing the connection after each message.
+headers|{}|Extra headers to be include with requests. Properties and values of object must be valid values for HTTP Headers, i.e. no spaces or control characters.
+
 
 ## Configuration
 
