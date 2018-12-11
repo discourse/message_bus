@@ -1,7 +1,11 @@
 Unreleased
 
-- Re-wrote diagnostics UI using React
-- MessageBus HTTP Ruby Client
+11-12-2018
+
+- Version 2.2.0.pre.2
+
+  - FEATURE: Re-wrote diagnostics UI using React
+  - FEATURE: MessageBus HTTP Ruby Client
 
 30-11-2018
 
