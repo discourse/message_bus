@@ -113,6 +113,7 @@ module MessageBus
           rescue StandardError => e
             @stats.failed += 1
             warn("#{e.class} #{e.message}: #{e.backtrace.join("\n")}")
+            sleep interval
             retry
           ensure
             stop
@@ -226,7 +227,7 @@ module MessageBus
     def interval
       if @enable_long_polling
         if (failed_count = @stats.failed) > 2
-          (@min_poll_interval * failed_count).clamp(
+          (@min_poll_interval * 2**failed_count).clamp(
             @min_poll_interval, @max_poll_interval
           )
         else

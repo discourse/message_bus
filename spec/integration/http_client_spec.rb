@@ -40,6 +40,41 @@ describe MessageBus::HTTPClient do
 
       assert_equal(new_threads, Thread.list - threads)
     end
+
+    describe 'when an error is encountered while trying to poll' do
+      let(:base_url) { "http://0.0.0.0:12312123" }
+
+      let(:client) do
+        MessageBus::HTTPClient.new(base_url, min_poll_interval: 1)
+      end
+
+      it 'should handle errors correctly' do
+        begin
+          original_stderr = $stderr
+          $stderr = fake = StringIO.new
+
+          client.channels[channel] = MessageBus::HTTPClient::Channel.new(
+            callbacks: [-> {}]
+          )
+
+          client.start
+
+          assert_equal(MessageBus::HTTPClient::STARTED, client.status)
+
+          while stats.failed < 1 do
+            sleep 0.05
+          end
+
+          # Sleep for more than the default min_poll_interval to ensure
+          # that we sleep for the right interval after failure
+          sleep 0.5
+
+          assert_equal(1, fake.string.scan("Errno::ECONNREFUSED").size)
+        ensure
+          $stderr = original_stderr
+        end
+      end
+    end
   end
 
   describe '#subscribe' do
