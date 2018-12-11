@@ -22,11 +22,11 @@ module MessageBus
   # @!attribute enable_chunked_encoding
   #   @return [Boolean] whether chunked encoding is enabled
   # @!attribute min_poll_interval
-  #   @return [Float] the min poll interval for long polling
+  #   @return [Float] the min poll interval for long polling in seconds
   # @!attribute max_poll_interval
-  #   @return [Float] the max poll interval for long polling
+  #   @return [Float] the max poll interval for long polling in seconds
   # @!attribute background_callback_interval
-  #   @return [Float] the polling interval
+  #   @return [Float] the polling interval in seconds
   class HTTPClient
     class InvalidChannel < StandardError; end
     class MissingBlock < StandardError; end
@@ -55,11 +55,11 @@ module MessageBus
     # @param base_url [String] Base URL of the message_bus server to connect to
     # @param enable_long_polling [Boolean] Enable long polling
     # @param enable_chunked_encoding [Boolean] Enable chunk encoding
-    # @param min_poll_interval [Float, Integer] Min poll interval when long polling
-    # @param max_poll_interval [Float, Integer] Max poll interval when long polling.
+    # @param min_poll_interval [Float, Integer] Min poll interval when long polling in seconds
+    # @param max_poll_interval [Float, Integer] Max poll interval when long polling in seconds.
     #   When requests fail, the client will backoff and this is the upper limit.
     # @param background_callback_interval [Float, Integer] Interval to poll when
-    #   when polling.
+    #   when polling in seconds.
     # @param headers [Hash] extra HTTP headers to be set on the polling requests.
     #
     # @return [Object] Instance of MessageBus::HTTPClient
