@@ -1,5 +1,11 @@
 Unreleased
 
+28-01-2019
+
+- Version 2.2.0
+
+  - FIX: Ruby HTTP Client not backing off polling on error.
+
 11-12-2018
 
 - Version 2.2.0.pre.2
