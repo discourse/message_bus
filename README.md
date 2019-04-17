@@ -631,6 +631,10 @@ This message indicates the last ID in the backlog for each channel that the clie
 
 The values provided in this status message can be used by the client to skip requesting messages it will never receive and move forward in polling.
 
+### Publishing to MessageBus from outside of MessageBus
+
+It may be necessary or desired for integration with existing systems to publish messages from outside the Ruby app where MessageBus is running. @tgodfrey has an example of how to do that, using the Redis backend, from Elixir here: https://gist.github.com/tgodfrey/1a67753d51cb202ca8eb04b933cec924.
+
 ## Contributing
 
 If you are looking to contribute to this project here are some ideas
