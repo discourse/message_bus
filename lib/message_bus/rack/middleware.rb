@@ -55,7 +55,13 @@ class MessageBus::Rack::Middleware
   # @param [Rack::Request::Env] env the request environment
   def call(env)
     return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
+    
+    handle_request(env)
+  end
 
+  private
+
+  def handle_request(env)
     # special debug/test route
     if @bus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'
       parsed = Rack::Request.new(env)
@@ -183,8 +189,6 @@ class MessageBus::Rack::Middleware
       raise
     end
   end
-
-  private
 
   def close_db_connection!
     # IMPORTANT
