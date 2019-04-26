@@ -55,7 +55,7 @@ class MessageBus::Rack::Middleware
   # @param [Rack::Request::Env] env the request environment
   def call(env)
     return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
-    
+
     handle_request(env)
   end
 
