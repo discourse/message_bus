@@ -1,4 +1,6 @@
-Unreleased
+30-04-2019
+
+- Version 2.2.1
 
   - FIX: No longer handles exceptions raised in downstream middleware via `on_middleware_error`
 
