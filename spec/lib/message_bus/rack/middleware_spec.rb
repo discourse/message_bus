@@ -369,6 +369,17 @@ describe MessageBus::Rack::Middleware do
 
         last_response.status.must_equal 407
       end
+
+      it "does not handle exceptions from downstream middleware" do
+        @bus.on_middleware_error do |_env, err|
+          [404, {}, []]
+        end
+
+        get("/")
+
+        last_response.status.must_equal 500
+        last_response.body.must_equal 'should not be called'
+      end
     end
 
     describe "messagebus.channels env support" do
