@@ -106,7 +106,7 @@
           }
           catch(e){
             if(console.log) {
-              console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.message);
+              console.log("MESSAGE BUS FAIL: callback " + callback.channel +  " caused exception " + e.stack);
             }
           }
         }
