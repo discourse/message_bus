@@ -433,10 +433,11 @@ LUA
         key = "__mb_is_readonly"
 
         begin
+          # disconnect to force a reconnect when attempting to set the key
           # in case we are not connected to the correct server
           # which can happen when sharing ips
-          pub_redis.client.reconnect
-          pub_redis.client.call([:set, key, '1'])
+          pub_redis.disconnect!
+          pub_redis.set(key, '1')
           false
         rescue ::Redis::CommandError => e
           return true if e.message =~ /^READONLY/
