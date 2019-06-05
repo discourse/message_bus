@@ -1,3 +1,7 @@
+Unreleased
+
+  - FIX: In the redis backend make the `is_readonly?` method compatible with the redis gem both pre and post v4.0 when the `client` attribute was removed
+
 30-04-2019
 
 - Version 2.2.1
