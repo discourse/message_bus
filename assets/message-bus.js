@@ -163,6 +163,9 @@
 
     var gotData = false;
     var aborted = false;
+    var rateLimited = false;
+    var rateLimitedSeconds;
+
     lastAjax = new Date();
     totalAjaxCalls += 1;
     data.__seq = totalAjaxCalls;
@@ -293,7 +296,18 @@
         }
       },
       error: function(xhr, textStatus, err) {
-        if (textStatus === "abort") {
+        if (xhr.status === 429) {
+          var tryAfter =
+            parseInt(
+              xhr.getResponseHeader && xhr.getResponseHeader("Retry-After")
+            ) || 0;
+          tryAfter = tryAfter || 0;
+          if (tryAfter < 15) {
+            tryAfter = 15;
+          }
+          rateLimitedSeconds = tryAfter;
+          rateLimited = true;
+        } else if (textStatus === "abort") {
           aborted = true;
         } else {
           failCount += 1;
@@ -305,7 +319,9 @@
 
         var interval;
         try {
-          if (gotData || aborted) {
+          if (rateLimited) {
+            interval = Math.max(me.minPollInterval, rateLimitedSeconds * 1000);
+          } else if (gotData || aborted) {
             interval = me.minPollInterval;
           } else {
             interval = me.callbackInterval;
