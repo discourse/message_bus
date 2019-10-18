@@ -64,8 +64,8 @@ describe PUB_SUB_CLASS do
         bus.global_unsubscribe
         t.join
 
-        expected_responses.must_be :empty?
-        unexpected_responses.must_be :empty?
+        _(expected_responses).must_be :empty?
+        _(unexpected_responses).must_be :empty?
       rescue Exception
         self.class.error!
         raise

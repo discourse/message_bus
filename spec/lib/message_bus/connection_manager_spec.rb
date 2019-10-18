@@ -46,11 +46,11 @@ describe MessageBus::ConnectionManager do
     m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 10
     @manager.notify_clients(m)
-    @client.cleanup_timer.cancelled.must_equal true
+    _(@client.cleanup_timer.cancelled).must_equal true
   end
 
   it "should be able to lookup an identical client" do
-    @manager.lookup_client(@client.client_id).must_equal @client
+    _(@manager.lookup_client(@client.client_id)).must_equal @client
   end
 
   it "should not notify clients on incorrect site" do
@@ -64,7 +64,7 @@ describe MessageBus::ConnectionManager do
     m = MessageBus::Message.new(1, 1, "test", "data")
     m.site_id = 10
     @manager.notify_clients(m)
-    @resp.sent.wont_equal nil
+    _(@resp.sent).wont_equal nil
   end
 
   it "should strip site id and user id from the payload delivered" do
@@ -96,7 +96,7 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
     manager.add_client(client2)
     manager.add_client(client1)
 
-    manager.lookup_client("a").must_equal client2
+    _(manager.lookup_client("a")).must_equal client2
   end
 
   it "is thread-safe" do
@@ -124,7 +124,7 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
       end
     end
 
-    client_threads.each(&:join).map(&:value).must_equal([1] * 10)
-    subscriber_threads.each(&:join).map(&:value).must_equal([1] * 10)
+    _(client_threads.each(&:join).map(&:value)).must_equal([1] * 10)
+    _(subscriber_threads.each(&:join).map(&:value)).must_equal([1] * 10)
   end
 end
