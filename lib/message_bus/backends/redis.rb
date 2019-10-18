@@ -327,7 +327,7 @@ LUA
       private
 
       def new_redis_connection
-        ::Redis.new(@redis_config)
+        ::Redis.new(@redis_config.dup)
       end
 
       # redis connection used for publishing messages
