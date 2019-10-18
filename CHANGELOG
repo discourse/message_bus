@@ -1,10 +1,17 @@
-Unreleased
+18-10-2019
 
-- Version 2.2.1
+- Version 2.2.3
+
+  - FIX: Protect redis config from being manipulated in backend
+
+09-08-2019
+
+- Version 2.2.2
 
   - FEATURE: Support rate limiting by server, 429 status codes are respected and we hold off as needed
 
   - FIX: In the redis backend make the `is_readonly?` method compatible with the redis gem both pre and post v4.0 when the `client` attribute was removed
+
 
 30-04-2019
 
