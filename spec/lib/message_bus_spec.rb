@@ -19,7 +19,7 @@ describe MessageBus do
   it "can be turned off" do
     @bus.off
 
-    @bus.off?.must_equal true
+    _(@bus.off?).must_equal true
   end
 
   it "can call destroy twice" do
@@ -61,9 +61,9 @@ describe MessageBus do
       data3.length == 3 && data2.length == 3 && data1.length == 2
     end
 
-    data1.must_equal ['bananana', "it's so fluffy"]
-    data2.must_equal ['banana', 'bananana', "it's so fluffy"]
-    data3.must_equal ['banana', 'bananana', "it's so fluffy"]
+    _(data1).must_equal ['bananana', "it's so fluffy"]
+    _(data2).must_equal ['banana', 'bananana', "it's so fluffy"]
+    _(data3).must_equal ['banana', 'bananana', "it's so fluffy"]
   end
 
   it "can transmit client_ids" do
@@ -76,7 +76,7 @@ describe MessageBus do
     @bus.publish("/chuck", { yeager: true }, client_ids: ['a', 'b'])
     wait_for(2000) { client_ids }
 
-    client_ids.must_equal ['a', 'b']
+    _(client_ids).must_equal ['a', 'b']
   end
 
   it "should recover from a redis flush" do
@@ -94,7 +94,7 @@ describe MessageBus do
 
     wait_for(2000) { data && data["yeager"] }
 
-    data["yeager"].must_equal true
+    _(data["yeager"]).must_equal true
   end
 
   it "should recover from a backlog expiring" do
@@ -112,7 +112,7 @@ describe MessageBus do
 
     wait_for(2000) { data && data["yeager"] }
 
-    data["yeager"].must_equal true
+    _(data["yeager"]).must_equal true
   end
 
   it "should automatically decode hashed messages" do
@@ -123,7 +123,7 @@ describe MessageBus do
     @bus.publish("/chuck", norris: true)
     wait_for(2000) { data }
 
-    data["norris"].must_equal true
+    _(data["norris"]).must_equal true
   end
 
   it "should get a message if it subscribes to it" do
@@ -140,10 +140,10 @@ describe MessageBus do
 
     wait_for(2000) { data }
 
-    data.must_equal 'norris'
-    site_id.must_equal 'magic'
-    channel.must_equal '/chuck'
-    user_ids.must_equal [1, 2, 3]
+    _(data).must_equal 'norris'
+    _(site_id).must_equal 'magic'
+    _(channel).must_equal '/chuck'
+    _(user_ids).must_equal [1, 2, 3]
   end
 
   it "should get global messages if it subscribes to them" do
@@ -159,9 +159,9 @@ describe MessageBus do
 
     wait_for(2000) { data }
 
-    data.must_equal 'norris'
-    site_id.must_equal 'magic'
-    channel.must_equal '/chuck'
+    _(data).must_equal 'norris'
+    _(site_id).must_equal 'magic'
+    _(channel).must_equal '/chuck'
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
@@ -171,7 +171,7 @@ describe MessageBus do
 
     r = @bus.backlog("/chuck", id)
 
-    r.map { |i| i.data }.to_a.must_equal ['foo', 'bar']
+    _(r.map { |i| i.data }.to_a).must_equal ['foo', 'bar']
   end
 
   it "should correctly get full backlog of a channel" do
@@ -179,13 +179,13 @@ describe MessageBus do
     @bus.publish("/chuck", "foo")
     @bus.publish("/chuckles", "bar")
 
-    @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['norris', 'foo']
+    _(@bus.backlog("/chuck").map { |i| i.data }.to_a).must_equal ['norris', 'foo']
   end
 
   it "allows you to look up last_message" do
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")
-    @bus.last_message("/bob").data.must_equal "marley"
+    _(@bus.last_message("/bob").data).must_equal "marley"
     assert_nil @bus.last_message("/nothing")
   end
 
@@ -203,9 +203,9 @@ describe MessageBus do
 
       wait_for(2000) { data }
 
-      data.must_equal 'norris'
-      site_id.must_equal 'law-and-order'
-      channel.must_equal '/chuck'
+      _(data).must_equal 'norris'
+      _(site_id).must_equal 'law-and-order'
+      _(channel).must_equal '/chuck'
     end
   end
 
@@ -219,7 +219,7 @@ describe MessageBus do
 
     it "can get last_message" do
       @bus.publish("/global/test", "test")
-      @bus.last_message("/global/test").data.must_equal "test"
+      _(@bus.last_message("/global/test").data).must_equal "test"
     end
 
     it "can subscribe globally" do
@@ -231,7 +231,7 @@ describe MessageBus do
       @bus.publish("/global/test", "test")
       wait_for(1000) { data }
 
-      data.must_equal "test"
+      _(data).must_equal "test"
     end
 
     it "can subscribe to channel" do
@@ -243,19 +243,19 @@ describe MessageBus do
       @bus.publish("/global/test", "test")
       wait_for(1000) { data }
 
-      data.must_equal "test"
+      _(data).must_equal "test"
     end
 
     it "should exception if publishing restricted messages to user" do
-      lambda do
+      _(lambda do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.must_raise(MessageBus::InvalidMessage)
+      end).must_raise(MessageBus::InvalidMessage)
     end
 
     it "should exception if publishing restricted messages to group" do
-      lambda do
+      _(lambda do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.must_raise(MessageBus::InvalidMessage)
+      end).must_raise(MessageBus::InvalidMessage)
     end
   end
 
@@ -288,6 +288,6 @@ describe MessageBus do
 
     wait_for(2000) { data.length == 3 }
 
-    data.must_equal(["pre-fork", "from-fork", "continuation"])
+    _(data).must_equal(["pre-fork", "from-fork", "continuation"])
   end
 end

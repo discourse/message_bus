@@ -22,14 +22,14 @@ describe MessageBus::TimerThread do
       end
     end
     sleep 0.002
-    i.must_equal 3
+    _(i).must_equal 3
   end
 
   it "allows you to cancel timers" do
     success = true
     @timer.queue(0.005) { success = false }.cancel
     sleep(0.006)
-    success.must_equal true
+    _(success).must_equal true
   end
 
   it "queues jobs in the correct order" do
@@ -44,7 +44,7 @@ describe MessageBus::TimerThread do
       4 == results.length
     }
 
-    results.must_equal [0, 1, 2, 3]
+    _(results).must_equal [0, 1, 2, 3]
   end
 
   it "should call the error callback if something goes wrong" do
@@ -66,6 +66,6 @@ describe MessageBus::TimerThread do
       error
     end
 
-    error.class.must_equal NameError
+    _(error.class).must_equal NameError
   end
 end
