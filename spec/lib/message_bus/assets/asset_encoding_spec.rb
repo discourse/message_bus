@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require_relative '../../../spec_helper'
 asset_directory = File.expand_path('../../../../../assets', __FILE__)
 asset_file_paths = Dir.glob(File.join(asset_directory, 'message-bus.js'))
