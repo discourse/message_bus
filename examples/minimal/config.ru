@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'message_bus'
 
 # MessageBus.long_polling_interval = 1000 * 2

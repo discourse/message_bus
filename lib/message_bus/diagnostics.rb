@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # MessageBus diagnostics are used for troubleshooting the bus and optimising its configuration
 # @see MessageBus::Rack::Diagnostics
 class MessageBus::Diagnostics

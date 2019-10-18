@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $: << File.dirname(__FILE__)
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 require 'thin'
