@@ -406,4 +406,12 @@ describe PUB_SUB_CLASS do
 
     got.map { |m| m.data }.must_equal ["12"]
   end
+
+  it 'should not lose redis config' do
+    test_only :redis
+    redis_config = { connector: Redis::Client::Connector }
+    @bus.instance_variable_set(:@redis_config, redis_config)
+    @bus.send(:new_redis_connection)
+    expect(@bus.instance_variable_get(:@redis_config)[:connector]).must_equal Redis::Client::Connector
+  end
 end
