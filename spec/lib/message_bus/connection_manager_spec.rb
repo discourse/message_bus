@@ -8,7 +8,7 @@ class FakeAsync
 
   def <<(val)
     sleep 0.01 # simulate IO
-    @sent ||= ""
+    @sent ||= +""
     @sent << val
   end
 

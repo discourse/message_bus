@@ -246,7 +246,7 @@ module MessageBus
       request.body = poll_payload
 
       if @enable_long_polling
-        buffer = ''
+        buffer = +""
 
         http.request(request) do |response|
           response.read_body do |chunk|

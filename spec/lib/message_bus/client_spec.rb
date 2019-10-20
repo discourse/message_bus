@@ -85,7 +85,7 @@ describe MessageBus::Client do
 
       _(data[-5..-1]).must_equal "0\r\n\r\n"
 
-      _, _, chunks = http_parse("HTTP/1.1 200 OK\r\n\r\n" << data)
+      _, _, chunks = http_parse(+"HTTP/1.1 200 OK\r\n\r\n" << data)
 
       _(chunks.length).must_equal 2
 
