@@ -7,7 +7,7 @@ require 'lib/fake_async_middleware'
 require 'message_bus'
 
 require 'minitest/autorun'
-require 'minitest/spec'
+require 'minitest/global_expectations'
 
 require_relative "helpers"
 
