@@ -7,6 +7,7 @@ gemspec
 group :test do
   gem 'minitest'
   gem 'minitest-hooks'
+  gem 'minitest-global_expectations'
   gem 'rake'
   gem 'http_parser.rb'
   gem 'thin'
