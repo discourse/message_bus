@@ -6,7 +6,7 @@ asset_file_names = asset_file_paths.map { |e| File.basename(e) }
 
 describe asset_file_names do
   it 'should contain .js files' do
-    _(asset_file_names).must_include('message-bus.js')
+    asset_file_names.must_include('message-bus.js')
   end
 end
 
