@@ -46,17 +46,17 @@ describe MessageBus::Rack::Middleware do
 
     it "should respond right away if dlp=t" do
       post "/message-bus/ABC?dlp=t", '/foo1' => 0
-      _(@async_middleware.in_async?).must_equal false
-      _(last_response.ok?).must_equal true
+      @async_middleware.in_async?.must_equal false
+      last_response.ok?.must_equal true
     end
 
     it "should respond right away to long polls that are polling on -1 with the last_id" do
       post "/message-bus/ABC", '/foo' => -1
-      _(last_response.ok?).must_equal true
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
-      _(parsed[0]["channel"]).must_equal "/__status"
-      _(parsed[0]["data"]["/foo"]).must_equal @bus.last_id("/foo")
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
     end
 
     it "should respond to long polls when data is available" do
@@ -74,12 +74,12 @@ describe MessageBus::Rack::Middleware do
 
       post "/message-bus/ABC", '/foo' => nil
 
-      _(last_response.ok?).must_equal true
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
-      _(parsed[0]["data"]).must_equal "םוֹלשָׁ"
+      parsed.length.must_equal 1
+      parsed[0]["data"].must_equal "םוֹלשָׁ"
 
-      _(last_response.headers["FOO"]).must_equal "BAR"
+      last_response.headers["FOO"].must_equal "BAR"
     end
 
     it "should timeout within its alloted slot" do
@@ -88,7 +88,7 @@ describe MessageBus::Rack::Middleware do
         s = Time.now.to_f * 1000
         post "/message-bus/ABC", '/foo' => nil
         # allow for some jitter
-        _(Time.now.to_f * 1000 - s).must_be :<, 100
+        (Time.now.to_f * 1000 - s).must_be :<, 100
       ensure
         @bus.long_polling_interval = 5000
       end
@@ -121,14 +121,14 @@ describe MessageBus::Rack::Middleware do
 
       middleware = MessageBus::Rack::Middleware.new(app, message_bus: bus)
 
-      _(middleware.started_listener).must_equal false
+      middleware.started_listener.must_equal false
     end
   end
 
   describe "diagnostics" do
     it "should return a 403 if a user attempts to get at the _diagnostics path" do
       get "/message-bus/_diagnostics"
-      _(last_response.status).must_equal 403
+      last_response.status.must_equal 403
     end
 
     it "should get a 200 with html for an authorized user" do
@@ -138,7 +138,7 @@ describe MessageBus::Rack::Middleware do
       end
 
       get "/message-bus/_diagnostics"
-      _(last_response.status).must_equal 200
+      last_response.status.must_equal 200
     end
 
     it "should get the script it asks for" do
@@ -148,8 +148,8 @@ describe MessageBus::Rack::Middleware do
       end
 
       get "/message-bus/_diagnostics/assets/message-bus.js"
-      _(last_response.status).must_equal 200
-      _(last_response.content_type).must_equal "application/javascript;charset=UTF-8"
+      last_response.status.must_equal 200
+      last_response.content_type.must_equal "application/javascript;charset=UTF-8"
     end
   end
 
@@ -170,7 +170,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => nil,
            '/bar' => nil
 
-      _(last_response.headers["FOO"]).must_equal "BAR"
+      last_response.headers["FOO"].must_equal "BAR"
     end
 
     it "should respond with a 200 to a subscribe" do
@@ -181,7 +181,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => nil,
            '/bar' => nil
 
-      _(last_response.ok?).must_equal true
+      last_response.ok?.must_equal true
     end
 
     # this means we recover from redis reset
@@ -195,13 +195,13 @@ describe MessageBus::Rack::Middleware do
            '/baz' => @bus.last_id('/baz') + 1,
            '/boom' => 1_000_000
 
-      _(last_response.ok?).must_equal true
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
 
-      _(parsed.length).must_equal 1
-      _(parsed[0]["channel"]).must_equal "/__status"
-      _(parsed[0]["data"]["/foo"]).must_equal @bus.last_id("/foo")
-      _(parsed[0]["data"]["/boom"]).must_equal @bus.last_id("/boom")
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
+      parsed[0]["data"]["/boom"].must_equal @bus.last_id("/boom")
     end
 
     it "should correctly understand that -1 means stuff from now onwards" do
@@ -217,13 +217,13 @@ describe MessageBus::Rack::Middleware do
            '/baz' => @bus.last_id('/baz') + 1,
            '/boom' => -1
 
-      _(last_response.ok?).must_equal true
+      last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
 
-      _(parsed.length).must_equal 1
-      _(parsed[0]["channel"]).must_equal "/__status"
-      _(parsed[0]["data"]["/foo"]).must_equal @bus.last_id("/foo")
-      _(parsed[0]["data"]["/boom"]).must_equal @bus.last_id("/boom")
+      parsed.length.must_equal 1
+      parsed[0]["channel"].must_equal "/__status"
+      parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
+      parsed[0]["data"]["/boom"].must_equal @bus.last_id("/boom")
     end
 
     it "should respond with the data if messages exist in the backlog" do
@@ -238,9 +238,9 @@ describe MessageBus::Rack::Middleware do
            '/bar' => nil
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 2
-      _(parsed[0]["data"]).must_equal "barbs"
-      _(parsed[1]["data"]).must_equal "borbs"
+      parsed.length.must_equal 2
+      parsed[0]["data"].must_equal "barbs"
+      parsed[1]["data"].must_equal "borbs"
     end
 
     it "should have no cross talk" do
@@ -257,7 +257,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => (msg - 1)
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 0
+      parsed.length.must_equal 0
     end
 
     it "should have global cross talk" do
@@ -272,7 +272,7 @@ describe MessageBus::Rack::Middleware do
            '/global/foo' => (msg - 1)
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
+      parsed.length.must_equal 1
     end
 
     it "should not get consumed messages" do
@@ -284,7 +284,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => id
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 0
+      parsed.length.must_equal 0
     end
 
     it "should filter by user correctly" do
@@ -298,12 +298,12 @@ describe MessageBus::Rack::Middleware do
            '/foo' => id - 1
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
+      parsed.length.must_equal 1
 
       message = parsed.first
 
-      _(message["channel"]).must_equal "/__status"
-      _(message["data"]).must_equal("/foo" => 1)
+      message["channel"].must_equal "/__status"
+      message["data"].must_equal("/foo" => 1)
 
       @bus.user_id_lookup do |_env|
         1
@@ -313,7 +313,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => id - 1
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
+      parsed.length.must_equal 1
     end
 
     it "should filter by group correctly" do
@@ -329,8 +329,8 @@ describe MessageBus::Rack::Middleware do
       parsed = JSON.parse(last_response.body)
       message = parsed.first
 
-      _(message["channel"]).must_equal "/__status"
-      _(message["data"]).must_equal("/foo" => 1)
+      message["channel"].must_equal "/__status"
+      message["data"].must_equal("/foo" => 1)
 
       @bus.group_ids_lookup do |_env|
         [1, 7, 4, 100]
@@ -340,7 +340,7 @@ describe MessageBus::Rack::Middleware do
            '/foo' => id - 1
 
       parsed = JSON.parse(last_response.body)
-      _(parsed.length).must_equal 1
+      parsed.length.must_equal 1
     end
 
     it "can decode a JSON encoded request" do
@@ -349,7 +349,7 @@ describe MessageBus::Rack::Middleware do
       post("/message-bus/1234",
            JSON.generate('/foo' => id),
            "CONTENT_TYPE" => "application/json")
-      _(JSON.parse(last_response.body).first["data"]).must_equal('json' => true)
+      JSON.parse(last_response.body).first["data"].must_equal('json' => true)
     end
 
     describe "on_middleware_error handling" do
@@ -368,7 +368,7 @@ describe MessageBus::Rack::Middleware do
              JSON.generate('/foo' => 1),
              "CONTENT_TYPE" => "application/json")
 
-        _(last_response.status).must_equal 407
+        last_response.status.must_equal 407
       end
 
       it "does not handle exceptions from downstream middleware" do
@@ -378,8 +378,8 @@ describe MessageBus::Rack::Middleware do
 
         get("/")
 
-        _(last_response.status).must_equal 500
-        _(last_response.body).must_equal 'should not be called'
+        last_response.status.must_equal 500
+        last_response.body.must_equal 'should not be called'
       end
     end
 
@@ -407,13 +407,13 @@ describe MessageBus::Rack::Middleware do
              '/foo' => foo_id - 1
 
         parsed = JSON.parse(last_response.body)
-        _(parsed.first['data']).must_equal 'testfoo'
+        parsed.first['data'].must_equal 'testfoo'
 
         post "/message-bus/ABCD",
              '/bar' => bar_id - 1
 
         parsed = JSON.parse(last_response.body)
-        _(parsed.first['data']).must_equal 'testfoo'
+        parsed.first['data'].must_equal 'testfoo'
       end
     end
   end
