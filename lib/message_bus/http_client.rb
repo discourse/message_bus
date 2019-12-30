@@ -33,7 +33,8 @@ module MessageBus
     class MissingBlock < StandardError; end
 
     attr_reader :channels,
-                :stats
+                :stats,
+                :thread
 
     attr_accessor :enable_long_polling,
                   :status,
@@ -100,7 +101,7 @@ module MessageBus
 
         @status = STARTED
 
-        thread = Thread.new do
+        @thread = Thread.new do
           begin
             while started?
               unless @channels.empty?
@@ -111,12 +112,14 @@ module MessageBus
 
               sleep interval
             end
+          rescue StopError
           rescue StandardError => e
             @stats.failed += 1
             warn("#{e.class} #{e.message}: #{e.backtrace.join("\n")}")
             sleep interval
             retry
           ensure
+            @thread = nil
             stop
           end
         end
@@ -132,6 +135,7 @@ module MessageBus
     # @return [Integer] the current status of the client
     def stop
       @status = STOPPED
+      @thread.raise StopError if @thread
     end
 
     # Subscribes to a channel which executes the given callback when a message
@@ -335,5 +339,8 @@ module MessageBus
 
       headers.merge!(@headers)
     end
+  end
+
+  class StopError < StandardError
   end
 end
