@@ -561,6 +561,18 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
 end)
 ```
 
+### Adding extra response headers
+
+In e.g. `config/initializers/message_bus.rb`:
+
+```ruby
+MessageBus.extra_response_headers_lookup do |env|
+  [
+      ["Access-Control-Allow-Origin", "http://example.com:3000"],
+  ]
+end
+```
+
 ## How it works
 
 MessageBus provides durable messaging following the publish-subscribe (pubsub) pattern to subscribers who track their own subscriptions. Durability is by virtue of the persistence of messages in backlogs stored in the selected backend implementation (Redis, Postgres, etc) which can be queried up until a configurable expiry. Subscribers must keep track of the ID of the last message they processed, and request only more-recent messages in subsequent connections.
