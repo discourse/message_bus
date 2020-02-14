@@ -8,6 +8,8 @@ Since long-polling is implemented using Rack Hijack and Thin::Async, all common 
 
 MessageBus is implemented as Rack middleware and can be used by any Rails / Sinatra or pure Rack application.
 
+Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
+
 ## Try it out!
 
 Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tree/master/examples/chat) is at:
