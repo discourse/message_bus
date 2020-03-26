@@ -99,7 +99,10 @@
   };
 
   shouldLongPoll = function() {
-    return me.alwaysLongPoll || !isHidden();
+    return (
+      me.alwaysLongPoll ||
+      (me.shouldLongPollCallback ? me.shouldLongPollCallback() : !isHidden())
+    );
   };
 
   var totalAjaxFailures = 0;
@@ -377,6 +380,7 @@
     callbacks: callbacks,
     clientId: clientId,
     alwaysLongPoll: false,
+    shouldLongPollCallback: undefined,
     baseUrl: baseUrl,
     headers: {},
     ajax: jQuery && jQuery.ajax,
