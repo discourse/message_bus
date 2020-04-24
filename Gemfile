@@ -20,8 +20,11 @@ group :test, :development do
   gem 'byebug'
 end
 
+group :development do
+  gem 'yard'
+  gem 'rubocop-discourse', require: false
+  gem 'rubocop-rspec', require: false
+end
+
 gem 'rack'
 gem 'concurrent-ruby' # for distributed-cache
-
-gem 'rubocop'
-gem 'yard'
