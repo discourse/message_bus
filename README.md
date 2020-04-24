@@ -74,38 +74,62 @@ id = MessageBus.last_id("/channel")
 MessageBus.backlog "/channel", id
 ```
 
+### Targetted messages
+
+Messages can be targetted to particular clients by supplying the `client_ids` option when publishing a message.
+
 ```ruby
-# messages can be targetted at particular users or groups
-MessageBus.publish "/channel", "hello", user_ids: [1,2,3], group_ids: [4,5,6]
+MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"] # (using MessageBus.clientId)
+```
 
-# messages can be targetted at particular clients (using MessageBus.clientId)
-MessageBus.publish "/channel", "hello", client_ids: ["XXX","YYY"]
+By configuring the `user_id_lookup` and `group_ids_lookup` options with a Proc or Lambda which will be called with a [Rack specification environment](https://github.com/rack/rack/blob/master/SPEC.rdoc#the-environment-), messages can be targetted to particular clients users or groups by supplying either the `user_ids` or `group_ids` options when publishing a message.
 
-# message bus determines the user ids and groups based on env
-
+```ruby
 MessageBus.configure(user_id_lookup: proc do |env|
   # this lookup occurs on JS-client poolings, so that server can retrieve backlog
   # for the client considering/matching/filtering user_ids set on published messages
   # if user_id is not set on publish time, any user_id returned here will receive the message
-
   # return the user id here
 end)
+
+# Target user_ids when publishing a message
+MessageBus.publish "/channel", "hello", user_ids: [1, 2, 3]
 
 MessageBus.configure(group_ids_lookup: proc do |env|
   # return the group ids the user belongs to
   # can be nil or []
 end)
 
-# example of message bus to set user_ids from an initializer in Rails and Devise:
+# Target group_ids when publishing a message
+MessageBus.publish "/channel", "hello", group_ids: [1, 2, 3]
+
+# example of MessageBus to set user_ids from an initializer in Rails and Devise:
 # config/inializers/message_bus.rb
 MessageBus.user_id_lookup do |env|
   req = Rack::Request.new(env)
+
   if req.session && req.session["warden.user.user.key"] && req.session["warden.user.user.key"][0][0]
     user = User.find(req.session["warden.user.user.key"][0][0])
     user.id
   end
 end
 ```
+
+If both `user_ids` and `group_ids` options are supplied when publishing a message, the message will be targetted at clients with lookup return values that  matches on either the `user_ids` **or** the `group_ids` options.
+
+```ruby
+MessageBus.publish "/channel", "hello", user_ids: [1, 2, 3], group_ids: [1, 2, 3]
+```
+
+If the `client_ids` option is supplied with either the `user_ids` or `group_ids` options when publising a message, the `client_ids` option will be applied unconditionally and messages will be filtered further using `user_id` or `group_id` clauses.
+
+```ruby
+MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"], user_ids: [1, 2, 3], group_ids: [1, 2, 3]
+```
+
+Passing `nil` or `[]` to either `client_ids`, `user_ids` or `group_ids` is equivalent to allowing all values on each option.
+
+### Error handling
 
 ```ruby
 MessageBus.configure(on_middleware_error: proc do |env, e|
