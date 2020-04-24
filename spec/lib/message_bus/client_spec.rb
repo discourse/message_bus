@@ -169,36 +169,186 @@ describe MessageBus::Client do
       log[0].data.must_equal 'world'
     end
 
-    it "allows only client_id in list if message contains client_ids" do
-      @message = MessageBus::Message.new(1, 2, '/test', 'hello')
-      @message.client_ids = ["1", "2"]
-      @client.client_id = "2"
-      @client.allowed?(@message).must_equal true
-
-      @client.client_id = "3"
-      @client.allowed?(@message).must_equal false
-    end
-
-    describe "targetted at group" do
-      before do
+    describe '#allowed?' do
+      it "allows only client_id in list if message contains client_ids" do
         @message = MessageBus::Message.new(1, 2, '/test', 'hello')
-        @message.group_ids = [1, 2, 3]
-      end
+        @message.client_ids = ["1", "2"]
+        @client.client_id = "2"
+        @client.allowed?(@message).must_equal true
 
-      it "denies users that are not members of group" do
-        @client.group_ids = [77, 0, 10]
+        @client.client_id = "3"
         @client.allowed?(@message).must_equal false
-      end
 
-      it "allows users that are members of group" do
-        @client.group_ids = [1, 2, 3]
+        @message.client_ids = []
+
+        @client.client_id = "3"
+        @client.allowed?(@message).must_equal true
+
+        @message.client_ids = nil
+
+        @client.client_id = "3"
         @client.allowed?(@message).must_equal true
       end
 
-      it "allows all users if groups not set" do
-        @message.group_ids = nil
-        @client.group_ids = [77, 0, 10]
-        @client.allowed?(@message).must_equal true
+      describe 'targetted at user' do
+        before do
+          @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+          @message.user_ids = [1, 2, 3]
+        end
+
+        it "allows client with user_id that is included in message's user_ids" do
+          @client.user_id = 1
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with user_id that is not included in message's user_ids" do
+          @client.user_id = 4
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it "denies client with nil user_id" do
+          @client.user_id = nil
+
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it "allows client if message's user_ids is not set" do
+          @message.user_ids = nil
+          @client.user_id = 4
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "allows client if message's user_ids is empty" do
+          @message.user_ids = []
+          @client.user_id = 4
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "allows client with client_id that is included in message's client_ids" do
+          @message.client_ids = ["1", "2"]
+          @client.client_id = "1"
+          @client.user_id = 1
+
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with client_id that is not included in message's client_ids" do
+          @message.client_ids = ["1", "2"]
+          @client.client_id = "3"
+          @client.user_id = 1
+
+          @client.allowed?(@message).must_equal(false)
+        end
+      end
+
+      describe "targetted at group" do
+        before do
+          @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+          @message.group_ids = [1, 2, 3]
+        end
+
+        it "denies client that are not members of group" do
+          @client.group_ids = [77, 0, 10]
+          @client.allowed?(@message).must_equal false
+        end
+
+        it 'denies client with nil group_ids' do
+          @client.group_ids = nil
+          @client.allowed?(@message).must_equal false
+        end
+
+        it "allows client that are members of group" do
+          @client.group_ids = [1, 2, 3]
+          @client.allowed?(@message).must_equal true
+        end
+
+        it "allows any client if message's group_ids is not set" do
+          @message.group_ids = nil
+          @client.group_ids = [77, 0, 10]
+          @client.allowed?(@message).must_equal true
+        end
+
+        it "allows any client if message's group_ids is empty" do
+          @message.group_ids = []
+          @client.group_ids = [77, 0, 10]
+          @client.allowed?(@message).must_equal true
+        end
+
+        it "allows client with client_id that is included in message's client_ids" do
+          @message.client_ids = ["1", "2"]
+          @client.client_id = "1"
+          @client.group_ids = [1]
+
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with client_id that is not included in message's client_ids" do
+          @message.client_ids = ["1", "2"]
+          @client.client_id = "3"
+          @client.group_ids = [1]
+
+          @client.allowed?(@message).must_equal(false)
+        end
+      end
+
+      describe 'targetted at group and user' do
+        before do
+          @message = MessageBus::Message.new(1, 2, '/test', 'hello')
+          @message.group_ids = [1, 2, 3]
+          @message.user_ids = [4, 5, 6]
+        end
+
+        it "allows client with user_id that is included in message's user_ids" do
+          @client.user_id = 4
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with user_id that is not included in message's user_ids" do
+          @client.user_id = 1
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it "allows client with group_ids that is included in message's group_ids" do
+          @client.group_ids = [1, 0, 3]
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with group_ids that is not included in message's group_ids" do
+          @client.group_ids = [8, 9, 10]
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it "allows client with allowed client_id and user_id" do
+          @message.client_ids = ["1", "2"]
+          @client.user_id = 4
+          @client.client_id = "2"
+
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with allowed client_id but disallowed user_id" do
+          @message.client_ids = ["1", "2"]
+          @client.user_id = 99
+          @client.client_id = "2"
+
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it "allows client with allowed client_id and group_id" do
+          @message.client_ids = ["1", "2"]
+          @client.group_ids = [1]
+          @client.client_id = "2"
+
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it "denies client with allowed client_id but disallowed group_id" do
+          @message.client_ids = ["1", "2"]
+          @client.group_ids = [99]
+          @client.client_id = "2"
+
+          @client.allowed?(@message).must_equal(false)
+        end
       end
     end
   end

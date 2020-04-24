@@ -1,5 +1,6 @@
 Unreleasd
   - Drop support for Ruby 2.3
+  - FIX: Don't publish message to intersection of `user_ids` and `group_ids`
 
 26-03-2020
 
