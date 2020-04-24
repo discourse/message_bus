@@ -1,2 +1,9 @@
 inherit_gem:
   rubocop-discourse: .rubocop.yml
+
+AllCops:
+  Exclude:
+    - 'examples/**/*'
+
+RSpec:
+  Enabled: false

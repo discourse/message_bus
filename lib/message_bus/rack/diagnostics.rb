@@ -45,7 +45,7 @@ class MessageBus::Rack::Diagnostics
       return [200, { 'Content-Type' => 'application/javascript;charset=UTF-8' }, [content]]
     end
 
-    return [404, {}, ['not found']]
+    [404, {}, ['not found']]
   end
 
   private
@@ -92,6 +92,7 @@ class MessageBus::Rack::Diagnostics
         </body>
       </html>
     HTML
-    return [200, { "content-type" => "text/html;" }, [html]]
+
+    [200, { "content-type" => "text/html;" }, [html]]
   end
 end
