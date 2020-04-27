@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module MessageBus
-  VERSION = "2.2.4"
+  VERSION = "3.0.0"
 end

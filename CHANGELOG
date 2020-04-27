@@ -1,6 +1,9 @@
-Unreleasd
+27-04-2020
+
+- Version 3.0.0
+
   - Drop support for Ruby 2.3
-  - FIX: Don't publish message to intersection of `user_ids` and `group_ids`
+  - FIX: Don't publish message to intersection of `user_ids` and `group_ids` - instead use the union, this is a behavior change, hence a new major release.
 
 26-03-2020
 
