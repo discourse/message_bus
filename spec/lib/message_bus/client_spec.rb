@@ -350,6 +350,37 @@ describe MessageBus::Client do
           @client.allowed?(@message).must_equal(false)
         end
       end
+
+      describe 'when MessageBus#client_message_filters has been configured' do
+        before do
+          @message = MessageBus::Message.new(1, 2, '/test/5', 'hello')
+          @client.allowed?(@message).must_equal(true)
+        end
+
+        it 'filters messages correctly' do
+          @bus.register_client_message_filter('/test') do |message|
+            message.data != 'hello'
+          end
+
+          @client.allowed?(@message).must_equal(false)
+        end
+
+        it 'filters messages correctly when multiple filters have been configured' do
+          called = false
+
+          @bus.register_client_message_filter('/test') do |message|
+            message.data == 'hello'
+          end
+
+          @bus.register_client_message_filter('/tes') do |message|
+            called = true
+            message.data != 'hello'
+          end
+
+          @client.allowed?(@message).must_equal(false)
+          called.must_equal(true)
+        end
+      end
     end
   end
 end
