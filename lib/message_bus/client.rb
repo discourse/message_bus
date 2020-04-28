@@ -153,7 +153,11 @@ class MessageBus::Client
 
     filters_allowed = true
 
-    @bus.client_message_filters.each do |channel_prefix, blk|
+    len = @bus.client_message_filters.length
+    while len > 0
+      len -= 1
+      channel_prefix, blk = @bus.client_message_filters[len]
+
       if msg.channel.start_with?(channel_prefix)
         filters_allowed = blk.call(msg)
         break if !filters_allowed

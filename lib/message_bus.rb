@@ -563,14 +563,15 @@ module MessageBus::Implementation
   # @return [void]
   def register_client_message_filter(channel_prefix, &blk)
     if blk
-      configure(client_message_filters: {}) if !@config[:client_message_filters]
-      @config[:client_message_filters][channel_prefix] = blk
+      configure(client_message_filters: []) if !@config[:client_message_filters]
+      @config[:client_message_filters] << [channel_prefix, blk]
     end
   end
 
-  # @return [Hash] returns a hash of message filters that have been registered
+  # @return [Array] returns a hash of message filters that have been registered
   def client_message_filters
-    @config[:client_message_filters] || {}
+    configure(client_message_filters: []) if !@config[:client_message_filters]
+    @config[:client_message_filters]
   end
 
   private

@@ -352,33 +352,35 @@ describe MessageBus::Client do
       end
 
       describe 'when MessageBus#client_message_filters has been configured' do
-        before do
-          @message = MessageBus::Message.new(1, 2, '/test/5', 'hello')
-          @client.allowed?(@message).must_equal(true)
-        end
 
         it 'filters messages correctly' do
-          @bus.register_client_message_filter('/test') do |message|
-            message.data != 'hello'
+          message = MessageBus::Message.new(1, 2, '/test/5', 'hello')
+          @client.allowed?(message).must_equal(true)
+
+          @bus.register_client_message_filter('/test') do |m|
+            m.data != 'hello'
           end
 
-          @client.allowed?(@message).must_equal(false)
+          @client.allowed?(message).must_equal(false)
         end
 
         it 'filters messages correctly when multiple filters have been configured' do
-          called = false
+
+          bob_message = MessageBus::Message.new(1, 2, '/test/5', 'bob')
+          fred_message = MessageBus::Message.new(1, 2, '/test/5', 'fred')
+          random_message = MessageBus::Message.new(1, 2, '/test/77', 'random')
 
           @bus.register_client_message_filter('/test') do |message|
-            message.data == 'hello'
+            message.data == 'bob' || message.data == 'fred'
           end
 
-          @bus.register_client_message_filter('/tes') do |message|
-            called = true
-            message.data != 'hello'
+          @bus.register_client_message_filter('/test') do |message|
+            message.data == 'fred'
           end
 
-          @client.allowed?(@message).must_equal(false)
-          called.must_equal(true)
+          @client.allowed?(fred_message).must_equal(true)
+          @client.allowed?(bob_message).must_equal(false)
+          @client.allowed?(random_message).must_equal(false)
         end
       end
     end

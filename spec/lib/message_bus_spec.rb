@@ -297,11 +297,14 @@ describe MessageBus do
     it 'should register the message filter correctly' do
       @bus.register_client_message_filter('/test')
 
-      @bus.client_message_filters.must_equal({})
+      @bus.client_message_filters.must_equal([])
 
       @bus.register_client_message_filter('/test') { puts "hello world" }
 
-      @bus.client_message_filters['/test'].must_respond_to(:call)
+      channel, blk = @bus.client_message_filters[0]
+
+      blk.must_respond_to(:call)
+      channel.must_equal('/test')
     end
   end
 end
