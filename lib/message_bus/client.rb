@@ -147,7 +147,20 @@ class MessageBus::Client
       ).length < msg.group_ids.length
     end
 
-    client_allowed && (user_allowed || group_allowed || (!has_users && !has_groups))
+    has_permission = client_allowed && (user_allowed || group_allowed || (!has_users && !has_groups))
+
+    return has_permission if !has_permission
+
+    filters_allowed = true
+
+    @bus.client_message_filters.each do |channel_prefix, blk|
+      if msg.channel.start_with?(channel_prefix)
+        filters_allowed = blk.call(msg)
+        break if !filters_allowed
+      end
+    end
+
+    filters_allowed
   end
 
   # @return [Array<MessageBus::Message>] the set of messages the client is due

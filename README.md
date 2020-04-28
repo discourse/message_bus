@@ -129,6 +129,20 @@ MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"], user_ids: [1
 
 Passing `nil` or `[]` to either `client_ids`, `user_ids` or `group_ids` is equivalent to allowing all values on each option.
 
+### Filtering Client Messages
+
+Custom client message filters can be registered via `MessageBus#register_client_message_filter`. This can be useful for filtering away messages from the client based on the message's payload.
+
+For example, ensuring that only messages seen by the server in the last 20 seconds are published to the client:
+
+```
+MessageBus.register_client_message_filter('/test') do |message|
+  (Time.now.to_i - message.data[:published_at]) <= 20
+end
+
+MessageBus.publish('/test/5', { data: "somedata", published_at: Time.now.to_i })
+```
+
 ### Error handling
 
 ```ruby

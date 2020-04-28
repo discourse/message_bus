@@ -554,6 +554,25 @@ module MessageBus::Implementation
     @config[:keepalive_interval] || 60
   end
 
+  # Registers a client message filter that allows messages to be filtered from the client.
+  #
+  # @param [String,Regexp] channel_prefix channel prefix to match against a message's channel
+  #
+  # @yieldparam [MessageBus::Message] message published to the channel that matched the prefix provided
+  # @yieldreturn [Boolean] whether the message should be published to the client
+  # @return [void]
+  def register_client_message_filter(channel_prefix, &blk)
+    if blk
+      configure(client_message_filters: {}) if !@config[:client_message_filters]
+      @config[:client_message_filters][channel_prefix] = blk
+    end
+  end
+
+  # @return [Hash] returns a hash of message filters that have been registered
+  def client_message_filters
+    @config[:client_message_filters] || {}
+  end
+
   private
 
   ENCODE_SITE_TOKEN = "$|$"

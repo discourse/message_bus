@@ -1,3 +1,7 @@
+Unreleased
+  - FEATURE: `MessageBus#register_client_message_filter` to register a custom filter so that messages can be inspected and filtered away from
+      clients.
+
 27-04-2020
 
 - Version 3.0.0

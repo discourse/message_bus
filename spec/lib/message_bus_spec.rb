@@ -292,4 +292,16 @@ describe MessageBus do
 
     data.must_equal(["pre-fork", "from-fork", "continuation"])
   end
+
+  describe '#register_client_message_filter' do
+    it 'should register the message filter correctly' do
+      @bus.register_client_message_filter('/test')
+
+      @bus.client_message_filters.must_equal({})
+
+      @bus.register_client_message_filter('/test') { puts "hello world" }
+
+      @bus.client_message_filters['/test'].must_respond_to(:call)
+    end
+  end
 end
