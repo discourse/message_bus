@@ -11,27 +11,29 @@ class MessageBus::Rails::Railtie < ::Rails::Railtie
     # the Rails app is configured that might be ActionDispatch::Session::CookieStore, or potentially
     # ActionDispatch::Session::ActiveRecordStore.
     #
-    # To handle either case, we insert it before ActionDispatch::Flash.
-    #
-    # For APIs or apps that have ActionDispatch::Flash deleted from the middleware
-    # stack we just push MessageBus to the bottom.
-    if api_only?(app.config) || flash_middleware_deleted?(app.middleware)
-      app.middleware.use(MessageBus::Rack::Middleware)
-    else
-      app.middleware.insert_before(ActionDispatch::Flash, MessageBus::Rack::Middleware)
+    # given https://github.com/rails/rails/commit/fedde239dcee256b417dc9bcfe5fef603bf0d952#diff-533a9a9cc17a8a899cb830626089e5f9
+    # there is no way of walking the stack for operations
+    if !skip_middleware?(app.config)
+      if api_only?(app.config)
+        app.middleware.use(MessageBus::Rack::Middleware)
+      else
+        app.middleware.insert_before(ActionDispatch::Flash, MessageBus::Rack::Middleware)
+      end
     end
 
     MessageBus.logger = Rails.logger
   end
 
+  def skip_middleware?(config)
+    return false if !config.respond_to?(:skip_message_bus_middleware)
+
+    config.skip_message_bus_middleware
+  end
+
   def api_only?(config)
-    return false unless config.respond_to?(:api_only)
+    return false if !config.respond_to?(:api_only)
 
     config.api_only
   end
 
-  def flash_middleware_deleted?(middleware)
-    ops = middleware.instance_variable_get(:@operations)
-    ops.any? { |m| m[0] == :delete && m[1].include?(ActionDispatch::Flash) }
-  end
 end
