@@ -149,6 +149,19 @@ module MessageBus::Implementation
     @config[:long_polling_interval] || 25 * 1000
   end
 
+  # @param [String] route Message bus will listen to requests on this route.
+  # @return [void]
+  def base_route=(route)
+    configure(base_route: route.gsub(Regexp.new('\A(?!/)|(?<!/)\Z|//+'), "/"))
+  end
+
+  # @return [String] the route that message bus will respond to. If not
+  #   explicitly set, defaults to "/". Requests to "#{base_route}message-bus/*" will be handled
+  #   by the message bus server.
+  def base_route
+    @config[:base_route] || "/"
+  end
+
   # @return [Boolean] whether the bus is disabled or not
   def off?
     @off

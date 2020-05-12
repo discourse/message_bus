@@ -16,9 +16,9 @@ class MessageBus::Rack::Diagnostics
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
-    return @app.call(env) unless env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
+    return @app.call(env) unless env['PATH_INFO'].start_with? "#{@bus.base_route}message-bus/_diagnostics"
 
-    route = env['PATH_INFO'].split('/message-bus/_diagnostics')[1]
+    route = env['PATH_INFO'].split("#{@bus.base_route}message-bus/_diagnostics")[1]
 
     if @bus.is_admin_lookup.nil? || !@bus.is_admin_lookup.call(env)
       return [403, {}, ['not allowed']]

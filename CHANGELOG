@@ -1,3 +1,7 @@
+- Unreleased
+
+   - FEATURE: `MessageBus.base_route=` to alter the route that message bus will listen on.
+
 07-05-2020
 
 - Version 3.2.0

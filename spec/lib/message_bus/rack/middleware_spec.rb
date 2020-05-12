@@ -50,6 +50,19 @@ describe MessageBus::Rack::Middleware do
       last_response.ok?.must_equal true
     end
 
+    it "should respond ok when the base route is altered" do
+      @bus.base_route = "/base/route/"
+
+      post "/base/route/message-bus/ABC?dlp=t", '/foo1' => 0
+      @async_middleware.in_async?.must_equal false
+      last_response.ok?.must_equal true
+    end
+
+    it "should respond with a 404 if the client_id is missing" do
+      post "/message-bus/?dlp=t", '/foo1' => 0
+      last_response.not_found?.must_equal true
+    end
+
     it "should respond right away to long polls that are polling on -1 with the last_id" do
       post "/message-bus/ABC", '/foo' => -1
       last_response.ok?.must_equal true
@@ -138,6 +151,16 @@ describe MessageBus::Rack::Middleware do
       end
 
       get "/message-bus/_diagnostics"
+      last_response.status.must_equal 200
+    end
+
+    it "should get a 200 with html for an authorized user on a different base route" do
+      def @bus.is_admin_lookup
+        proc { |_| true }
+      end
+      @bus.base_route = "/base/route/"
+
+      get "/base/route/message-bus/_diagnostics"
       last_response.status.must_equal 200
     end
 
@@ -241,6 +264,38 @@ describe MessageBus::Rack::Middleware do
       parsed.length.must_equal 2
       parsed[0]["data"].must_equal "barbs"
       parsed[1]["data"].must_equal "borbs"
+    end
+
+    it "should use the correct client ID" do
+      id = @bus.last_id('/foo')
+
+      client_id = "aBc123"
+      @bus.publish("/foo", "msg1", client_ids: [client_id])
+      @bus.publish("/foo", "msg2", client_ids: ["not_me#{client_id}"])
+
+      post "/message-bus/#{client_id}",
+           '/foo' => id
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.must_equal 2
+      parsed[0]["data"].must_equal("msg1")
+      parsed[1]["data"].wont_equal("msg2")
+    end
+
+    it "should use the correct client ID with additional path" do
+      id = @bus.last_id('/foo')
+
+      client_id = "aBc123"
+      @bus.publish("/foo", "msg1", client_ids: [client_id])
+      @bus.publish("/foo", "msg2", client_ids: ["not_me#{client_id}"])
+
+      post "/message-bus/#{client_id}/path/not/needed",
+           '/foo' => id
+
+      parsed = JSON.parse(last_response.body)
+      parsed.length.must_equal 2
+      parsed[0]["data"].must_equal("msg1")
+      parsed[1]["data"].wont_equal("msg2")
     end
 
     it "should have no cross talk" do
