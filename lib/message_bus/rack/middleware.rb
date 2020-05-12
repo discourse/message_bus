@@ -39,6 +39,7 @@ class MessageBus::Rack::Middleware
     @bus = config[:message_bus] || MessageBus
     @connection_manager = MessageBus::ConnectionManager.new(@bus)
     @started_listener = false
+    @client_id_regexp = Regexp.new(@bus.base_route + 'message-bus/(?<client_id>[[:alnum:]]+)')
     start_listener unless @bus.off?
   end
 
@@ -54,7 +55,7 @@ class MessageBus::Rack::Middleware
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
-    return @app.call(env) unless env['PATH_INFO'] =~ /^\/message-bus\//
+    return @app.call(env) unless env['PATH_INFO'] =~ /^#{@bus.base_route}message-bus\//
 
     handle_request(env)
   end
@@ -63,18 +64,18 @@ class MessageBus::Rack::Middleware
 
   def handle_request(env)
     # special debug/test route
-    if @bus.allow_broadcast? && env['PATH_INFO'] == '/message-bus/broadcast'
+    if @bus.allow_broadcast? && env['PATH_INFO'] == "#{@bus.base_route}message-bus/broadcast"
       parsed = Rack::Request.new(env)
       @bus.publish parsed["channel"], parsed["data"]
       return [200, { "Content-Type" => "text/html" }, ["sent"]]
     end
 
-    if env['PATH_INFO'].start_with? '/message-bus/_diagnostics'
+    if env['PATH_INFO'].start_with? "#{@bus.base_route}message-bus/_diagnostics"
       diags = MessageBus::Rack::Diagnostics.new(@app, message_bus: @bus)
       return diags.call(env)
     end
 
-    client_id = env['PATH_INFO'].split("/")[2]
+    client_id = env['PATH_INFO'].match(@client_id_regexp) { |m| m[:client_id] }
     return [404, {}, ["not found"]] unless client_id
 
     user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup

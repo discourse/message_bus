@@ -37,6 +37,23 @@ describe MessageBus do
     @bus.after_fork
   end
 
+  describe "#base_route=" do
+    it "adds leading and trailing slashes" do
+      @bus.base_route = "my/base/route"
+      @bus.base_route.must_equal '/my/base/route/'
+    end
+
+    it "leaves existing leading and trailing slashes" do
+      @bus.base_route = "/my/base/route/"
+      @bus.base_route.must_equal '/my/base/route/'
+    end
+
+    it "removes duplicate slashes" do
+      @bus.base_route = "//my///base/route"
+      @bus.base_route.must_equal '/my/base/route/'
+    end
+  end
+
   it "can subscribe from a point in time" do
     @bus.publish("/minion", "banana")
 
