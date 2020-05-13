@@ -55,7 +55,7 @@ class MessageBus::Rack::Middleware
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
-    return @app.call(env) unless env['PATH_INFO'] =~ /^#{@bus.base_route}message-bus\//
+    return @app.call(env) unless env['PATH_INFO'].start_with? "#{@bus.base_route}message-bus/"
 
     handle_request(env)
   end
