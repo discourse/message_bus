@@ -39,7 +39,7 @@ class MessageBus::Rack::Middleware
     @bus = config[:message_bus] || MessageBus
     @connection_manager = MessageBus::ConnectionManager.new(@bus)
     @started_listener = false
-    @client_id_regexp = Regexp.new(@bus.base_route + 'message-bus/(?<client_id>[[:alnum:]]+)')
+    @base_route_length = "#{@bus.base_route}message-bus/".length
     start_listener unless @bus.off?
   end
 
@@ -75,7 +75,7 @@ class MessageBus::Rack::Middleware
       return diags.call(env)
     end
 
-    client_id = env['PATH_INFO'].match(@client_id_regexp) { |m| m[:client_id] }
+    client_id = env['PATH_INFO'][@base_route_length..-1].split("/")[0]
     return [404, {}, ["not found"]] unless client_id
 
     user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
