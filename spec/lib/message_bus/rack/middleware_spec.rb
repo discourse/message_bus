@@ -8,11 +8,13 @@ require 'rack/test'
 describe MessageBus::Rack::Middleware do
   include Rack::Test::Methods
   let(:extra_middleware) { nil }
+  let(:base_route) { nil }
 
   before do
     bus = @bus = MessageBus::Instance.new
     @bus.configure(MESSAGE_BUS_CONFIG)
     @bus.long_polling_enabled = false
+    @bus.base_route = base_route if base_route
 
     e_m = extra_middleware
     builder = Rack::Builder.new {
@@ -44,16 +46,18 @@ describe MessageBus::Rack::Middleware do
       @bus.long_polling_enabled = true
     end
 
-    it "should respond right away if dlp=t" do
-      post "/message-bus/ABC?dlp=t", '/foo1' => 0
-      @async_middleware.in_async?.must_equal false
-      last_response.ok?.must_equal true
+    describe "with altered base_route" do
+      let(:base_route) { "/base/route/" }
+
+      it "should respond as normal" do
+        post "/base/route/message-bus/ABC?dlp=t", '/foo1' => 0
+        @async_middleware.in_async?.must_equal false
+        last_response.ok?.must_equal true
+      end
     end
 
-    it "should respond ok when the base route is altered" do
-      @bus.base_route = "/base/route/"
-
-      post "/base/route/message-bus/ABC?dlp=t", '/foo1' => 0
+    it "should respond right away if dlp=t" do
+      post "/message-bus/ABC?dlp=t", '/foo1' => 0
       @async_middleware.in_async?.must_equal false
       last_response.ok?.must_equal true
     end
@@ -154,14 +158,17 @@ describe MessageBus::Rack::Middleware do
       last_response.status.must_equal 200
     end
 
-    it "should get a 200 with html for an authorized user on a different base route" do
-      def @bus.is_admin_lookup
-        proc { |_| true }
-      end
-      @bus.base_route = "/base/route/"
+    describe "with an altered base_route" do
+      let(:base_route) { "/base/route/" }
 
-      get "/base/route/message-bus/_diagnostics"
-      last_response.status.must_equal 200
+      it "should get a 200 with html for an authorized user" do
+        def @bus.is_admin_lookup
+          proc { |_| true }
+        end
+
+        get "/base/route/message-bus/_diagnostics"
+        last_response.status.must_equal 200
+      end
     end
 
     it "should get the script it asks for" do
