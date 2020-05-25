@@ -360,10 +360,6 @@
     baseUrl: baseUrl,
     headers: {},
     ajax: jQuery && jQuery.ajax,
-    noConflict: function() {
-      global.MessageBus = global.MessageBus.previousMessageBus;
-      return this;
-    },
     diagnostics: function() {
       console.log("Stopped: " + stopped + " Started: " + started);
       console.log("Current callbacks");

@@ -341,8 +341,6 @@ enableChunkedEncoding|true|Allows streaming of message bus data over the HTTP co
 
 `MessageBus.status()` : Returns status (started, paused, stopped)
 
-`MessageBus.noConflict()` : Removes MessageBus from the global namespace by replacing it with whatever was present before MessageBus was loaded. Returns a reference to the MessageBus object.
-
 `MessageBus.diagnostics()` : Returns a log that may be used for diagnostics on the status of message bus.
 
 #### Ruby
