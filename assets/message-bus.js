@@ -92,11 +92,10 @@
 
   var processMessages = function(messages) {
     var gotData = false;
-    if (!messages) return false; // server unexpectedly closed connection
+    if ((!messages) || (messages.length == 0)) { return false; }
 
     for (var i = 0; i < messages.length; i++) {
       var message = messages[i];
-      gotData = true;
       for (var j = 0; j < callbacks.length; j++) {
         var callback = callbacks[j];
         if (callback.channel === message.channel) {
@@ -122,7 +121,7 @@
       }
     }
 
-    return gotData;
+    return true;
   };
 
   var reqSuccess = function(messages) {
