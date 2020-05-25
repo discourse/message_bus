@@ -1,5 +1,5 @@
 /*jshint bitwise: false*/
-(function(global, document) {
+(function(global, document, jQuery) {
   "use strict";
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -11,7 +11,6 @@
     });
   };
 
-  var previousMessageBus = global.MessageBus;
   var me;
   var delayPollTimeout;
   var ajaxInProgress = false;
@@ -25,7 +24,6 @@
   var paused = false;
   var later = [];
   var chunkedBackoff = 0;
-  var jQuery = global.jQuery;
   var stopped;
   var pollTimeout = null;
   var totalAjaxFailures = 0;
@@ -440,7 +438,7 @@
 
       // monitor visibility, issue a new long poll when the page shows
       if (document.addEventListener && "hidden" in document) {
-        me.visibilityEvent = global.document.addEventListener(
+        me.visibilityEvent = document.addEventListener(
           "visibilitychange",
           function() {
             if (!document.hidden && !me.longPoll && pollTimeout) {
@@ -542,4 +540,4 @@
     }
   };
   global.MessageBus = me;
-})(window, document);
+})(window, document, window.jQuery);
