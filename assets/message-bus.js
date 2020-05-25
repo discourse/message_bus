@@ -1,5 +1,5 @@
 /*jshint bitwise: false*/
-(function(global, document, undefined) {
+(function(global, document) {
   "use strict";
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -92,7 +92,7 @@
 
   var processMessages = function(messages) {
     var gotData = false;
-    if ((!messages) || (messages.length == 0)) { return false; }
+    if ((!messages) || (messages.length === 0)) { return false; }
 
     for (var i = 0; i < messages.length; i++) {
       var message = messages[i];
