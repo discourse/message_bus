@@ -1,5 +1,5 @@
 /*jshint bitwise: false*/
-(function(global, document, jQuery) {
+(function(exports, document, jQuery) {
   "use strict";
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -535,5 +535,5 @@
       return removed;
     }
   };
-  global.MessageBus = me;
+  exports.MessageBus = me;
 })(window, document, window.jQuery);
