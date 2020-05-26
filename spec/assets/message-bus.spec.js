@@ -75,15 +75,6 @@ describe("Messagebus", function() {
     })
   });
 
-  it('removes itself from root namespace when noConflict is called', function(){
-    expect(window.MessageBus).not.toBeUndefined();
-    var mb = window.MessageBus;
-    expect(mb).toEqual(window.MessageBus.noConflict());
-    expect(window.MessageBus).toBeUndefined();
-    // reset it so afterEach has something to work on
-    window.MessageBus = mb;
-  });
-
   it('respects minPollInterval setting with defaults', function(){
     expect(MessageBus.minPollInterval).toEqual(100);
     MessageBus.minPollInterval = 1000;

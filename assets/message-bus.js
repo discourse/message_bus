@@ -1,55 +1,38 @@
 /*jshint bitwise: false*/
-(function(global, document, undefined) {
+(function(exports, document, jQuery) {
   "use strict";
-  var previousMessageBus = global.MessageBus;
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-  var callbacks,
-    clientId,
-    failCount,
-    shouldLongPoll,
-    queue,
-    responseCallbacks,
-    uniqueId,
-    baseUrl;
-  var me,
-    started,
-    stopped,
-    longPoller,
-    pollTimeout,
-    paused,
-    later,
-    jQuery,
-    interval,
-    chunkedBackoff;
-  var delayPollTimeout;
-
-  var ajaxInProgress = false;
-
-  uniqueId = function() {
+  var uniqueId = function() {
     return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-      var r, v;
-      r = (Math.random() * 16) | 0;
-      v = c === "x" ? r : (r & 0x3) | 0x8;
+      var r = (Math.random() * 16) | 0;
+      var v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   };
 
-  clientId = uniqueId();
-  responseCallbacks = {};
-  callbacks = [];
-  queue = [];
-  interval = null;
-  failCount = 0;
-  baseUrl = "/";
-  paused = false;
-  later = [];
-  chunkedBackoff = 0;
-  jQuery = global.jQuery;
-  var hiddenProperty;
+  var me;
+  var delayPollTimeout;
+  var ajaxInProgress = false;
+  var started = false;
+  var clientId = uniqueId();
+  var callbacks = [];
+  var queue = [];
+  var interval = null;
+  var failCount = 0;
+  var baseUrl = "/";
+  var paused = false;
+  var later = [];
+  var chunkedBackoff = 0;
+  var stopped;
+  var pollTimeout = null;
+  var totalAjaxFailures = 0;
+  var totalAjaxCalls = 0;
+  var lastAjax;
 
-  (function() {
+  var isHidden = (function() {
     var prefixes = ["", "webkit", "ms", "moz"];
+    var hiddenProperty;
     for (var i = 0; i < prefixes.length; i++) {
       var prefix = prefixes[i];
       var check = prefix + (prefix === "" ? "hidden" : "Hidden");
@@ -57,15 +40,15 @@
         hiddenProperty = check;
       }
     }
-  })();
 
-  var isHidden = function() {
-    if (hiddenProperty !== undefined) {
-      return document[hiddenProperty];
-    } else {
-      return !document.hasFocus;
-    }
-  };
+    return function() {
+      if (hiddenProperty !== undefined) {
+        return document[hiddenProperty];
+      } else {
+        return !document.hasFocus;
+      }
+    };
+  })();
 
   var hasLocalStorage = (function() {
     try {
@@ -98,24 +81,19 @@
     return me.enableChunkedEncoding && hasonprogress;
   };
 
-  shouldLongPoll = function() {
+  var shouldLongPoll = function() {
     return (
       me.alwaysLongPoll ||
       (me.shouldLongPollCallback ? me.shouldLongPollCallback() : !isHidden())
     );
   };
 
-  var totalAjaxFailures = 0;
-  var totalAjaxCalls = 0;
-  var lastAjax;
-
   var processMessages = function(messages) {
     var gotData = false;
-    if (!messages) return false; // server unexpectedly closed connection
+    if ((!messages) || (messages.length === 0)) { return false; }
 
     for (var i = 0; i < messages.length; i++) {
       var message = messages[i];
-      gotData = true;
       for (var j = 0; j < callbacks.length; j++) {
         var callback = callbacks[j];
         if (callback.channel === message.channel) {
@@ -141,7 +119,7 @@
       }
     }
 
-    return gotData;
+    return true;
   };
 
   var reqSuccess = function(messages) {
@@ -158,7 +136,7 @@
     return false;
   };
 
-  longPoller = function(poll, data) {
+  var longPoller = function(poll, data) {
     if (ajaxInProgress) {
       // never allow concurrent ajax reqs
       return;
@@ -180,9 +158,7 @@
       chunked = false;
     }
 
-    var headers = {
-      "X-SILENCE-LOGGER": "true"
-    };
+    var headers = { "X-SILENCE-LOGGER": "true" };
     for (var name in me.headers) {
       headers[name] = me.headers[name];
     }
@@ -384,10 +360,6 @@
     baseUrl: baseUrl,
     headers: {},
     ajax: jQuery && jQuery.ajax,
-    noConflict: function() {
-      global.MessageBus = global.MessageBus.previousMessageBus;
-      return this;
-    },
     diagnostics: function() {
       console.log("Stopped: " + stopped + " Started: " + started);
       console.log("Current callbacks");
@@ -429,15 +401,11 @@
 
     // Start polling
     start: function() {
-      var poll;
-
       if (started) return;
       started = true;
       stopped = false;
 
-      poll = function() {
-        var data;
-
+      var poll = function() {
         if (stopped) {
           return;
         }
@@ -452,7 +420,7 @@
           return;
         }
 
-        data = {};
+        var data = {};
         for (var i = 0; i < callbacks.length; i++) {
           data[callbacks[i].channel] = callbacks[i].last_id;
         }
@@ -466,7 +434,7 @@
 
       // monitor visibility, issue a new long poll when the page shows
       if (document.addEventListener && "hidden" in document) {
-        me.visibilityEvent = global.document.addEventListener(
+        me.visibilityEvent = document.addEventListener(
           "visibilitychange",
           function() {
             if (!document.hidden && !me.longPoll && pollTimeout) {
@@ -532,7 +500,7 @@
       // TODO allow for globbing in the middle of a channel name
       // like /something/*/something
       // at the moment we only support globbing /something/*
-      var glob;
+      var glob = false;
       if (channel.indexOf("*", channel.length - 1) !== -1) {
         channel = channel.substr(0, channel.length - 1);
         glob = true;
@@ -567,5 +535,5 @@
       return removed;
     }
   };
-  global.MessageBus = me;
-})(window, document);
+  exports.MessageBus = me;
+})(window, document, window.jQuery);
