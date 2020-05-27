@@ -1,5 +1,19 @@
 /*jshint bitwise: false*/
-(function(exports, document, jQuery) {
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define([], function (b) {
+      // Also create a global in case some scripts
+      // that are loaded still are looking for
+      // a global even when an AMD loader is in use.
+      return (root.MessageBus = factory());
+    });
+  } else {
+    // Browser globals
+    root.MessageBus = factory();
+  }
+}(typeof self !== 'undefined' ? self : this, function () {
   "use strict";
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -359,7 +373,7 @@
     shouldLongPollCallback: undefined,
     baseUrl: baseUrl,
     headers: {},
-    ajax: jQuery && jQuery.ajax,
+    ajax: typeof jQuery !== "undefined" && jQuery.ajax,
     diagnostics: function() {
       console.log("Stopped: " + stopped + " Started: " + started);
       console.log("Current callbacks");
@@ -535,5 +549,5 @@
       return removed;
     }
   };
-  exports.MessageBus = me;
-})(window, document, window.jQuery);
+  return me;
+}));

@@ -1,0 +1,20 @@
+{
+  "name": "message-bus-client",
+  "version": "3.3.0",
+  "description": "A message bus client in Javascript",
+  "main": "assets/message-bus.js",
+  "keywords": "es6, modules",
+  "files": ["assets/message-bus.js"],
+  "jsnext:main": "assets/message-bus.js",
+  "module": "assets/message-bus.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/discourse/message_bus.git"
+  },
+  "author": "Sam Saffron, Robin Ward",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/discourse/message_bus/issues"
+  },
+  "homepage": "https://github.com/discourse/message_bus#readme"
+}
