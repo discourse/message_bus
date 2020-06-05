@@ -251,11 +251,11 @@ LUA
 
       # (see Base#global_unsubscribe)
       def global_unsubscribe
-        if @redis_global
-          # new connection to avoid deadlock
-          new_redis_connection.publish(redis_channel_name, UNSUB_MESSAGE)
-          @redis_global.disconnect
-          @redis_global = nil
+        begin
+          new_redis = new_redis_connection
+          new_redis.publish(redis_channel_name, UNSUB_MESSAGE)
+        ensure
+          new_redis&.disconnect!
         end
       end
 
@@ -278,13 +278,13 @@ LUA
         end
 
         begin
-          @redis_global = new_redis_connection
+          global_redis = new_redis_connection
 
           if highest_id
             clear_backlog.call(&blk)
           end
 
-          @redis_global.subscribe(redis_channel_name) do |on|
+          global_redis.subscribe(redis_channel_name) do |on|
             on.subscribe do
               if highest_id
                 clear_backlog.call(&blk)
@@ -298,7 +298,7 @@ LUA
 
             on.message do |_c, m|
               if m == UNSUB_MESSAGE
-                @redis_global.unsubscribe
+                global_redis.unsubscribe
                 return
               end
               m = MessageBus::Message.decode m
@@ -321,6 +321,8 @@ LUA
           @logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
           sleep 1
           retry
+        ensure
+          global_redis.disconnect!
         end
       end
 

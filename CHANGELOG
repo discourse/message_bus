@@ -1,3 +1,7 @@
+- Unreleased
+
+  - FIX: `MessageBus::Backends::Redis#global_subscribe` not closing Redis connections.
+
 - Version 3.3.0
 
    - FEATURE: `MessageBus.base_route=` to alter the route that message bus will listen on.
