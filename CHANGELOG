@@ -1,5 +1,9 @@
 - Unreleased
 
+08-06-2020
+
+- Version 3.3.2
+
   - FIX: Disconnect Redis conn when rescuing errors in global subscribe.
 
 - Version 3.3.1
