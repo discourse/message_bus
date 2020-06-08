@@ -320,10 +320,10 @@ LUA
         rescue => error
           @logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace}"
           sleep 1
-          global_redis.disconnect!
+          global_redis&.disconnect!
           retry
         ensure
-          global_redis.disconnect!
+          global_redis&.disconnect!
         end
       end
 
