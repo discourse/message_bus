@@ -1,6 +1,11 @@
-- Unreleased
+09-06-2020
+
+- Version 3.3.1
+
   - FIX: Disconnect Redis conn when rescuing errors in global subscribe.
   - FIX: `MessageBus::Backends::Redis#global_subscribe` not closing Redis connections.
+
+15-05-2020
 
 - Version 3.3.0
 
