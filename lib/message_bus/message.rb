@@ -20,10 +20,10 @@ class MessageBus::Message < Struct.new(:global_id, :message_id, :channel, :data)
 
   # only tricky thing to encode is pipes in a channel name ... do a straight replace
   def encode
-    global_id.to_s << "|" << message_id.to_s << "|" << channel.gsub("|", "$$123$$") << "|" << data
+    "#{global_id}|#{message_id}|#{channel.gsub("|", "$$123$$")}|#{data}"
   end
 
   def encode_without_ids
-    channel.gsub("|", "$$123$$") << "|" << data
+    "#{channel.gsub("|", "$$123$$")}|#{data}"
   end
 end
