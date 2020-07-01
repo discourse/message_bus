@@ -1,3 +1,7 @@
+- Unreleased
+
+  - BREAKING CHANGE: In the JavaScript client throw when when lastId is given but is not a number.
+
 09-06-2020
 
 - Version 3.3.1

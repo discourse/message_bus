@@ -304,6 +304,11 @@ MessageBus.subscribe("/channel", function(data){
 MessageBus.subscribe("/channel", function(data){
   // data shipped from server
 }, -3);
+
+// you will get the entire backlog
+MessageBus.subscribe("/channel", function(data){
+  // data shipped from server
+}, 0);
 ```
 
 #### JavaScript Client settings
