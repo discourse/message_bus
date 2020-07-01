@@ -484,13 +484,16 @@
     // -1 will subscribe to all new messages
     // -2 will recieve last message + all new messages
     // -3 will recieve last 2 messages + all new messages
+    // if undefined will default to -1
     subscribe: function(channel, func, lastId) {
       if (!started && !stopped) {
         me.start();
       }
 
-      if (typeof lastId !== "number") {
+      if (lastId === null || typeof lastId === "undefined") {
         lastId = -1;
+      } else if (typeof lastId !== "number") {
+        throw "lastId has type " + typeof lastId + " but a number was expected.";
       }
 
       if (typeof channel !== "string") {
