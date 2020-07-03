@@ -133,7 +133,6 @@ class MessageBus::Client
     user_allowed = false
     group_allowed = false
 
-    # this is an inconsistency we should fix anyway, publishing `user_ids: nil` should work same as groups
     has_users = msg.user_ids && msg.user_ids.length > 0
     has_groups = msg.group_ids && msg.group_ids.length > 0
 
