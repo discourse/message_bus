@@ -266,15 +266,37 @@ describe MessageBus do
     end
 
     it "should exception if publishing restricted messages to user" do
-      lambda do
+      assert_raises(MessageBus::InvalidMessage) do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.must_raise(MessageBus::InvalidMessage)
+      end
     end
 
     it "should exception if publishing restricted messages to group" do
-      lambda do
+      assert_raises(MessageBus::InvalidMessage) do
         @bus.publish("/global/test", "test", user_ids: [1])
-      end.must_raise(MessageBus::InvalidMessage)
+      end
+    end
+
+    it "should raise if we publish to an empty group or user list" do
+      assert_raises(MessageBus::InvalidMessageTarget) do
+        @bus.publish "/foo", "bar", user_ids: []
+      end
+
+      assert_raises(MessageBus::InvalidMessageTarget) do
+        @bus.publish "/foo", "bar", group_ids: []
+      end
+
+      assert_raises(MessageBus::InvalidMessageTarget) do
+        @bus.publish "/foo", "bar", client_ids: []
+      end
+
+      assert_raises(MessageBus::InvalidMessageTarget) do
+        @bus.publish "/foo", "bar", group_ids: [], user_ids: [1]
+      end
+
+      assert_raises(MessageBus::InvalidMessageTarget) do
+        @bus.publish "/foo", "bar", group_ids: [1], user_ids: []
+      end
     end
   end
 

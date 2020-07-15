@@ -20,6 +20,7 @@ end
 module MessageBus; end
 MessageBus::BACKENDS = {}
 class MessageBus::InvalidMessage < StandardError; end
+class MessageBus::InvalidMessageTarget < MessageBus::InvalidMessage; end
 class MessageBus::BusDestroyed < StandardError; end
 
 # The main server-side interface to a message bus for the purposes of
@@ -329,6 +330,7 @@ module MessageBus::Implementation
   #
   # @raise [MessageBus::BusDestroyed] if the bus is destroyed
   # @raise [MessageBus::InvalidMessage] if attempting to put permission restrictions on a globally-published message
+  # @raise [MessageBus::InvalidMessageTarget] if attempting to publish to a empty group of users
   def publish(channel, data, opts = nil)
     return if @off
 
@@ -348,7 +350,13 @@ module MessageBus::Implementation
       site_id = opts[:site_id]
     end
 
-    raise ::MessageBus::InvalidMessage if (user_ids || group_ids) && global?(channel)
+    if (user_ids || group_ids) && global?(channel)
+      raise ::MessageBus::InvalidMessage
+    end
+
+    if (user_ids == []) || (group_ids == []) || (client_ids == [])
+      raise ::MessageBus::InvalidMessageTarget
+    end
 
     encoded_data = JSON.dump(
       data: data,
