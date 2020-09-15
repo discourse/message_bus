@@ -1,6 +1,12 @@
-- Unreleased
+- Unrelease
 
-  - BREAKING CHANGE: In the JavaScript client throw when when lastId is given but is not a number.
+15-09-2020
+
+- Version 3.3.2
+
+  - FIX: In the JavaScript client throw when when lastId is given but is not a number.
+  - FEATURE: raise when attempting to publish to invalid targets
+  - Log when DistributedCache encounters an error when publishing.
 
 09-06-2020
 
