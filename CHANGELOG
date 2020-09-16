@@ -1,5 +1,7 @@
 - Unrelease
 
+  - FIX: `queue_in_memory` option not being passed to the backends.
+
 15-09-2020
 
 - Version 3.3.2

@@ -365,13 +365,17 @@ module MessageBus::Implementation
       client_ids: client_ids
     )
 
-    channel_opts = nil
+    channel_opts = {}
 
-    if opts && ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
-      channel_opts = {
-        max_backlog_size: size,
-        max_backlog_age: age
-      }
+    if opts
+      if ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
+        channel_opts[:max_backlog_size] = size,
+        channel_opts[:max_backlog_age] = age
+      end
+
+      if opts.has_key?(:queue_in_memory)
+        channel_opts[:queue_in_memory] = opts[:queue_in_memory]
+      end
     end
 
     encoded_channel_name = encode_channel_name(channel, site_id)
