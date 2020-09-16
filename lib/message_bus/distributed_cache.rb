@@ -75,13 +75,7 @@ module MessageBus
         message[:origin] = hash.identity
         message[:hash_key] = hash.key
         message[:app_version] = @app_version if @app_version
-
-        begin
-          @message_bus.publish(CHANNEL_NAME, message, user_ids: [-1])
-        rescue => e
-          @message_bus.logger.warn("DistributedCache failed to publish: #{e.message}\n#{e.backtrace.join("\n")}")
-          raise
-        end
+        @message_bus.publish(CHANNEL_NAME, message, user_ids: [-1], queue_in_memory: false)
       end
 
       def set(hash, key, value)
