@@ -1,6 +1,16 @@
 - Unrelease
 
   - FIX: `queue_in_memory` option not being passed to the backends.
+  - FIX: `MessageBus::DistributedCache#publish` should raise on error.
+
+    On the redis backend, any errors encountered during `MessageBus#publish`
+    will add the message into an in memory queue and silently swallow the
+    error. While this is behavior is OK for normal message_bus usage, it may
+    lead to inconsistency when using `DistributedCache`. If a process
+    doesn't publish successfully to another process, it will still update
+    its in memory cache leaving the other processes unaware. As such, the
+    distributed cache is out of sync and will require another successful
+    write to the cache to resync all the caches.
 
 15-09-2020
 
