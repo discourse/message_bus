@@ -45,7 +45,14 @@ class MessageBus::TimerThread
     while running
       @mutex.synchronize do
         running = @thread && @thread.alive?
-        @thread.wakeup if running
+
+        if running
+          begin
+            @thread.wakeup
+          rescue ThreadError
+            raise if @thread.alive?
+          end
+        end
       end
       sleep 0
     end
