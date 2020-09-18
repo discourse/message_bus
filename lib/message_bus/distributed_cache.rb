@@ -16,11 +16,12 @@ module MessageBus
 
       attr_accessor :app_version
 
-      def initialize(message_bus = nil)
+      def initialize(message_bus = nil, publish_queue_in_memory: true)
         @subscribers = []
         @subscribed = false
         @lock = Mutex.new
         @message_bus = message_bus || MessageBus
+        @publish_queue_in_memory = publish_queue_in_memory
       end
 
       def subscribers
@@ -75,7 +76,11 @@ module MessageBus
         message[:origin] = hash.identity
         message[:hash_key] = hash.key
         message[:app_version] = @app_version if @app_version
-        @message_bus.publish(CHANNEL_NAME, message, user_ids: [-1], queue_in_memory: false)
+
+        @message_bus.publish(CHANNEL_NAME, message,
+          user_ids: [-1],
+          queue_in_memory: @publish_queue_in_memory
+        )
       end
 
       def set(hash, key, value)
