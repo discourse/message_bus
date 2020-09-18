@@ -1,5 +1,9 @@
 - Unrelease
 
+18-09-2020
+
+- Version 3.3.3
+
   - FIX: `queue_in_memory` option not being passed to the backends.
   - FIX: `MessageBus::DistributedCache#publish` should raise on error.
 
