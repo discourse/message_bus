@@ -1,5 +1,11 @@
 - Unrelease
 
+02-10-2020
+
+- Version 3.3.4
+
+  - FIX: Remove trailing comma incorrectly added in ec60d8865.
+
 18-09-2020
 
 - Version 3.3.3
