@@ -201,6 +201,13 @@ describe MessageBus do
     @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['norris', 'foo']
   end
 
+  it "should correctly restrict the backlog size of a channel" do
+    @bus.publish("/chuck", "norris")
+    @bus.publish("/chuck", "foo", max_backlog_size: 1)
+
+    @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['foo']
+  end
+
   it "allows you to look up last_message" do
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")

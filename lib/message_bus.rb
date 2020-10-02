@@ -369,7 +369,7 @@ module MessageBus::Implementation
 
     if opts
       if ((age = opts[:max_backlog_age]) || (size = opts[:max_backlog_size]))
-        channel_opts[:max_backlog_size] = size,
+        channel_opts[:max_backlog_size] = size
         channel_opts[:max_backlog_age] = age
       end
 
