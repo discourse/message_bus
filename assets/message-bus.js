@@ -31,8 +31,6 @@
   var started = false;
   var clientId = uniqueId();
   var callbacks = [];
-  var queue = [];
-  var interval = null;
   var failCount = 0;
   var baseUrl = "/";
   var paused = false;
@@ -103,7 +101,6 @@
   };
 
   var processMessages = function(messages) {
-    var gotData = false;
     if ((!messages) || (messages.length === 0)) { return false; }
 
     for (var i = 0; i < messages.length; i++) {
@@ -213,24 +210,6 @@
       }
     };
 
-    var setOnProgressListener = function(xhr) {
-      var position = 0;
-      // if it takes longer than 3000 ms to get first chunk, we have some proxy
-      // this is messing with us, so just backoff from using chunked for now
-      var chunkedTimeout = setTimeout(disableChunked, 3000);
-      xhr.onprogress = function() {
-        clearTimeout(chunkedTimeout);
-        if (
-          xhr.getResponseHeader("Content-Type") ===
-          "application/json; charset=utf-8"
-        ) {
-          // not chunked we are sending json back
-          chunked = false;
-          return;
-        }
-        position = handle_progress(xhr.responseText, position);
-      };
-    };
     if (!me.ajax) {
       throw new Error("Either jQuery or the ajax adapter must be loaded");
     }
