@@ -1,6 +1,8 @@
 inherit_gem:
   rubocop-discourse: .rubocop.yml
-
+inherit_mode:
+  merge:
+    - Exclude
 AllCops:
   Exclude:
     - 'examples/**/*'
