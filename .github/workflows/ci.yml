@@ -1,0 +1,54 @@
+name: Message Bus Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  PGHOST: localhost
+  PGPORT: 5432
+  PGPASSWORD: postgres
+  PGUSER: postgres
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Ruby ${{ matrix.ruby }}
+    services:
+      postgres:
+        image: postgres:9.4
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    strategy:
+      matrix:
+        ruby: ["2.7", "2.6", "2.5"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: Bundler cache
+        uses: actions/cache@v2
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-${{ matrix.ruby }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.ruby }}-gems-
+      - name: Create Database
+        run: |
+          createdb message_bus_test
+      - name: Setup redis
+        uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: '5.x'
+      - name: Setup gems
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4
+      - name: Tests
+        run: bundle exec rake
