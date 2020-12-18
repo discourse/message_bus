@@ -430,7 +430,7 @@
         me.visibilityEvent = document.addEventListener(
           "visibilitychange",
           function() {
-            if (!document.hidden && !me.longPoll && pollTimeout) {
+            if (!document.hidden && !me.longPoll && (pollTimeout || delayPollTimeout)) {
               clearTimeout(pollTimeout);
               clearTimeout(delayPollTimeout);
 
