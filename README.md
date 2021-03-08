@@ -10,12 +10,6 @@ MessageBus is implemented as Rack middleware and can be used by any Rails / Sina
 
 Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
 
-## Try it out!
-
-Live chat demo per [examples/chat](https://github.com/SamSaffron/message_bus/tree/master/examples/chat) is at:
-
-### http://chat.samsaffron.com
-
 ## Ruby version support
 
 MessageBus only support officially supported versions of Ruby; as of [2018-06-20](https://www.ruby-lang.org/en/news/2018/06/20/support-of-ruby-2-2-has-ended/) this means we only support Ruby version 2.3 and up.
