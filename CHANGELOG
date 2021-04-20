@@ -1,5 +1,8 @@
 - Unrelease
 
+  - FEATURE: Permit tracing middleware performance via `MessageBus.tracer` and
+    `MessageBus#on_middleware_attributes`.
+
 02-10-2020
 
 - Version 3.3.4

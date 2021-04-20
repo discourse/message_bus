@@ -147,6 +147,33 @@ MessageBus.configure(on_middleware_error: proc do |env, e|
 end)
 ```
 
+### Performance monitoring
+
+MessageBus has hooks into its middleware for your application to perform monitoring of its performance.
+
+Firstly, the result of several decisions and the values used to arrive at them, such as whether to use long-polling or chunked encoding, can be provided to a logging routine of your definition:
+
+```ruby
+MessageBus.on_middleware_attributes do |attributes|
+  Rails.logger.debug(attributes)
+end
+```
+
+See `MessageBus.on_middleware_attributes` for the values that are provided.
+
+You can also specify a routine to wrap around various phases of the treatment of a request in order to measure its performance:
+
+```ruby
+MessageBus.tracer do |metric_name, &blk|
+  start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  blk.call
+  end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  Rails.logger.debug("Phase #{metric_name} took #{end_time - start_time} seconds")
+end
+```
+
+See `MessageBus.tracer` for the list of possible metric names. Don't forget to call the provided block.
+
 #### Disabling message_bus
 
 In certain cases, it is undesirable for message_bus to start up on application start, for example in a Rails application during the `db:create` rake task when using the Postgres backend (which will error trying to connect to the non-existent database to subscribe). You can invoke `MessageBus.off` before the middleware chain is loaded in order to prevent subscriptions and publications from happening; in a Rails app you might do this in an initializer based on some environment variable or some other conditional means.

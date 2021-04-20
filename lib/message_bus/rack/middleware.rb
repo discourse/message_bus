@@ -81,45 +81,53 @@ class MessageBus::Rack::Middleware
     client_id = env['PATH_INFO'][@base_route_length..-1].split("/")[0]
     return [404, {}, ["not found"]] unless client_id
 
-    user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
-    group_ids = @bus.group_ids_lookup.call(env) if @bus.group_ids_lookup
-    site_id = @bus.site_id_lookup.call(env) if @bus.site_id_lookup
+    user_id = group_ids = site_id = nil
+    @bus.trace("messagebus/middleware/authentication") do
+      user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
+      group_ids = @bus.group_ids_lookup.call(env) if @bus.group_ids_lookup
+      site_id = @bus.site_id_lookup.call(env) if @bus.site_id_lookup
+    end
 
     # close db connection as early as possible
     close_db_connection!
 
-    client = MessageBus::Client.new(message_bus: @bus, client_id: client_id,
-                                    user_id: user_id, site_id: site_id, group_ids: group_ids)
+    client = nil
+    @bus.trace("messagebus/middleware/subscriptions") do
+      client = MessageBus::Client.new(message_bus: @bus, client_id: client_id,
+                                      user_id: user_id, site_id: site_id, group_ids: group_ids)
 
-    if channels = env['message_bus.channels']
-      if seq = env['message_bus.seq']
-        client.seq = seq.to_i
-      end
-      channels.each do |k, v|
-        client.subscribe(k, v)
-      end
-    else
-      request = Rack::Request.new(env)
-      is_json = request.content_type && request.content_type.include?('application/json')
-      data = is_json ? JSON.parse(request.body.read) : request.POST
-      data.each do |k, v|
-        if k == "__seq"
-          client.seq = v.to_i
-        else
+      if channels = env['message_bus.channels']
+        if seq = env['message_bus.seq']
+          client.seq = seq.to_i
+        end
+        channels.each do |k, v|
           client.subscribe(k, v)
+        end
+      else
+        request = Rack::Request.new(env)
+        is_json = request.content_type && request.content_type.include?('application/json')
+        data = is_json ? JSON.parse(request.body.read) : request.POST
+        data.each do |k, v|
+          if k == "__seq"
+            client.seq = v.to_i
+          else
+            client.subscribe(k, v)
+          end
         end
       end
     end
 
     headers = {}
-    headers["Cache-Control"] = "must-revalidate, private, max-age=0"
-    headers["Content-Type"] = "application/json; charset=utf-8"
-    headers["Pragma"] = "no-cache"
-    headers["Expires"] = "0"
+    @bus.trace("messagebus/middleware/headers") do
+      headers["Cache-Control"] = "must-revalidate, private, max-age=0"
+      headers["Content-Type"] = "application/json; charset=utf-8"
+      headers["Pragma"] = "no-cache"
+      headers["Expires"] = "0"
 
-    if @bus.extra_response_headers_lookup
-      @bus.extra_response_headers_lookup.call(env).each do |k, v|
-        headers[k] = v
+      if @bus.extra_response_headers_lookup
+        @bus.extra_response_headers_lookup.call(env).each do |k, v|
+          headers[k] = v
+        end
       end
     end
 
@@ -127,33 +135,56 @@ class MessageBus::Rack::Middleware
       return [200, headers, ["OK"]]
     end
 
-    long_polling = @bus.long_polling_enabled? &&
-                   env['QUERY_STRING'] !~ /dlp=t/ &&
-                   @connection_manager.client_count < @bus.max_active_clients
+    long_polling = allow_chunked = false
+    @bus.trace("messagebus/middleware/check_chunked") do
+      long_polling = @bus.long_polling_enabled? &&
+                    env['QUERY_STRING'] !~ /dlp=t/ &&
+                    @connection_manager.client_count < @bus.max_active_clients
 
-    allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
-    allow_chunked &&= !env['HTTP_DONT_CHUNK']
-    allow_chunked &&= @bus.chunked_encoding_enabled?
+      allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
+      allow_chunked &&= !env['HTTP_DONT_CHUNK']
+      allow_chunked &&= @bus.chunked_encoding_enabled?
 
-    client.use_chunked = allow_chunked
+      client.use_chunked = allow_chunked
+    end
 
-    backlog = client.backlog
+    backlog = nil
+    @bus.trace("messagebus/middleware/calculate_backlog") do
+      backlog = client.backlog
+    end
+
+    if @bus.on_middleware_attributes
+      @bus.on_middleware_attributes.call(
+        messagebus_seq: client.seq,
+        messagebus_query_string: env['QUERY_STRING'],
+        messagebus_client_count: @connection_manager.client_count,
+        messagebus_long_polling: long_polling,
+        messagebus_http_version: env['HTTP_VERSION'],
+        messagebus_dont_chunk: env['HTTP_DONT_CHUNK'],
+        messagebus_allow_chunked: allow_chunked,
+        messagebus_backlog_size: backlog.size
+      )
+    end
 
     if backlog.length > 0 && !allow_chunked
-      client.close
-      @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
-      [200, headers, [self.class.backlog_to_json(backlog)]]
-    elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
-      io = env['rack.hijack'].call
-      # TODO disable client till deliver backlog is called
-      client.io = io
-      client.headers = headers
-      client.synchronize do
-        client.deliver_backlog(backlog)
-        add_client_with_timeout(client)
-        client.ensure_first_chunk_sent
+      @bus.trace("messagebus/middleware/immediate_response") do
+        client.close
+        @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"
+        [200, headers, [self.class.backlog_to_json(backlog)]]
       end
-      [418, {}, ["I'm a teapot, undefined in spec"]]
+    elsif long_polling && env['rack.hijack'] && @bus.rack_hijack_enabled?
+      @bus.trace("messagebus/middleware/setup_hijack") do
+        io = env['rack.hijack'].call
+        # TODO disable client till deliver backlog is called
+        client.io = io
+        client.headers = headers
+        client.synchronize do
+          client.deliver_backlog(backlog)
+          add_client_with_timeout(client)
+          client.ensure_first_chunk_sent
+        end
+        [418, {}, ["I'm a teapot, undefined in spec"]]
+      end
     elsif long_polling && env['async.callback']
       response = nil
       # load extension if needed
@@ -184,7 +215,9 @@ class MessageBus::Rack::Middleware
 
       throw :async
     else
-      [200, headers, [self.class.backlog_to_json(backlog)]]
+      @bus.trace("messagebus/middleware/simple_poll") do
+        [200, headers, [self.class.backlog_to_json(backlog)]]
+      end
     end
   rescue => e
     if @bus.on_middleware_error && result = @bus.on_middleware_error.call(env, e)

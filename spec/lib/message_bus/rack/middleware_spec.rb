@@ -478,5 +478,56 @@ describe MessageBus::Rack::Middleware do
         parsed.first['data'].must_equal 'testfoo'
       end
     end
+
+    describe "on_middleware_attributes handling" do
+      it "passes attributes of the request handling to the configured proc" do
+        @bus.chunked_encoding_enabled = true
+        @async_middleware.allow_chunked
+
+        attributes = nil
+        @bus.on_middleware_attributes do |attrs|
+          attributes = attrs
+        end
+
+        post("/message-bus/1234?dlp=t",
+             JSON.generate('/foo' => 1, __seq: 3),
+             "CONTENT_TYPE" => "application/json",
+             "HTTP_DONT_CHUNK" => "foo")
+
+        attributes.must_equal({
+          messagebus_seq: 3,
+          messagebus_query_string: "dlp=t",
+          messagebus_client_count: 0,
+          messagebus_long_polling: false,
+          messagebus_http_version: nil,
+          messagebus_dont_chunk: "foo",
+          messagebus_allow_chunked: false,
+          messagebus_backlog_size: 1
+        })
+      end
+    end
+
+    describe "tracer" do
+      it "passes attributes of the request handling to the configured proc" do
+        traces = []
+        @bus.tracer do |metric, &blk|
+          traces << metric
+          blk.call
+        end
+
+        post("/message-bus/1234",
+          JSON.generate('/foo' => 1),
+          "CONTENT_TYPE" => "application/json")
+
+        traces.must_equal([
+          "messagebus/middleware/authentication",
+          "messagebus/middleware/subscriptions",
+          "messagebus/middleware/headers",
+          "messagebus/middleware/check_chunked",
+          "messagebus/middleware/calculate_backlog",
+          "messagebus/middleware/immediate_response",
+        ])
+      end
+    end
   end
 end
