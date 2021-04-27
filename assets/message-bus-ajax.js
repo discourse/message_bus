@@ -12,8 +12,7 @@
     var XHRImpl = (global.MessageBus && global.MessageBus.xhrImplementation) || global.XMLHttpRequest;
     var xhr = new XHRImpl();
     xhr.dataType = options.dataType;
-    var url = options.url;
-    xhr.open('POST', url);
+    xhr.open('POST', options.url);
     for (var name in options.headers){
       xhr.setRequestHeader(name, options.headers[name]);
     }
