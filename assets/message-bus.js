@@ -225,7 +225,6 @@
         "/poll" +
         (!longPoll ? "?dlp=t" : ""),
       data: data,
-      cache: false,
       async: true,
       dataType: dataType,
       type: "POST",
