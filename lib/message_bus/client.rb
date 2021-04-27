@@ -176,44 +176,50 @@ class MessageBus::Client
     new_message_ids = nil
 
     @subscriptions.each do |k, v|
-      id = v.to_i
+      @bus.trace("messagebus/client/backlog/subscription") do
+        id = v.to_i
 
-      if id < -1
-        last_id = @bus.last_id(k, site_id)
-        id = last_id + id + 1
-        id = 0 if id < 0
-      end
-
-      next if id < 0
-
-      messages = @bus.backlog(k, id, site_id)
-
-      if messages.length == 0
-        if id > @bus.last_id(k, site_id)
-          @subscriptions[k] = -1
+        if id < -1
+          last_id = @bus.last_id(k, site_id)
+          id = last_id + id + 1
+          id = 0 if id < 0
         end
-      else
-        messages.each do |msg|
-          if allowed?(msg)
-            r << msg
-          else
-            new_message_ids ||= {}
-            new_message_ids[k] = msg.message_id
+
+        next if id < 0
+
+        @bus.trace("messagebus/client/backlog/subscription/messages") do
+          messages = @bus.backlog(k, id, site_id)
+        end
+
+        if messages.length == 0
+          if id > @bus.last_id(k, site_id)
+            @subscriptions[k] = -1
+          end
+        else
+          messages.each do |msg|
+            if allowed?(msg)
+              r << msg
+            else
+              new_message_ids ||= {}
+              new_message_ids[k] = msg.message_id
+            end
           end
         end
       end
     end
 
-    # stats message for all newly subscribed
-    status_message = nil
-    @subscriptions.each do |k, v|
-      if v.to_i == -1 || (new_message_ids && new_message_ids[k])
-        status_message ||= {}
-        @subscriptions[k] = status_message[k] = @bus.last_id(k, site_id)
+    @bus.trace("messagebus/client/backlog/status") do
+      # stats message for all newly subscribed
+      status_message = nil
+      @subscriptions.each do |k, v|
+        if v.to_i == -1 || (new_message_ids && new_message_ids[k])
+          status_message ||= {}
+          @subscriptions[k] = status_message[k] = @bus.last_id(k, site_id)
+        end
       end
-    end
 
-    r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
+      r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
+    end
 
     r || []
   end
