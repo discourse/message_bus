@@ -162,7 +162,8 @@ class MessageBus::Rack::Middleware
         messagebus_http_version: env['HTTP_VERSION'],
         messagebus_dont_chunk: env['HTTP_DONT_CHUNK'],
         messagebus_allow_chunked: allow_chunked,
-        messagebus_backlog_size: backlog.size
+        messagebus_backlog_size: backlog.size,
+        messagebus_subscription_count: client.subscriptions.count
       )
     end
 
