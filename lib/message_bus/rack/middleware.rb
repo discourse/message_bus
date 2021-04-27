@@ -81,6 +81,24 @@ class MessageBus::Rack::Middleware
     client_id = env['PATH_INFO'][@base_route_length..-1].split("/")[0]
     return [404, {}, ["not found"]] unless client_id
 
+    headers = {}
+    @bus.trace("messagebus/middleware/headers") do
+      headers["Cache-Control"] = "must-revalidate, private, max-age=0"
+      headers["Content-Type"] = "application/json; charset=utf-8"
+      headers["Pragma"] = "no-cache"
+      headers["Expires"] = "0"
+
+      if @bus.extra_response_headers_lookup
+        @bus.extra_response_headers_lookup.call(env).each do |k, v|
+          headers[k] = v
+        end
+      end
+    end
+
+    if env["REQUEST_METHOD"] == "OPTIONS"
+      return [200, headers, ["OK"]]
+    end
+
     user_id = group_ids = site_id = nil
     @bus.trace("messagebus/middleware/authentication") do
       user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
@@ -115,24 +133,6 @@ class MessageBus::Rack::Middleware
           end
         end
       end
-    end
-
-    headers = {}
-    @bus.trace("messagebus/middleware/headers") do
-      headers["Cache-Control"] = "must-revalidate, private, max-age=0"
-      headers["Content-Type"] = "application/json; charset=utf-8"
-      headers["Pragma"] = "no-cache"
-      headers["Expires"] = "0"
-
-      if @bus.extra_response_headers_lookup
-        @bus.extra_response_headers_lookup.call(env).each do |k, v|
-          headers[k] = v
-        end
-      end
-    end
-
-    if env["REQUEST_METHOD"] == "OPTIONS"
-      return [200, headers, ["OK"]]
     end
 
     long_polling = allow_chunked = false
