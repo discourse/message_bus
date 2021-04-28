@@ -1,4 +1,11 @@
-- Unrelease
+28-04-2021
+
+- Version 3.3.5
+
+  - PERF: Optimised CORS preflight handling
+  - FEATURE: Enable CORS preflight caching
+  - FEATURE: Removed trailing cache buster from message bus polls
+  - PERF: Improved delay poll timeout for cases where a tab moves in and out of the background
 
 02-10-2020
 
