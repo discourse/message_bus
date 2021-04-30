@@ -502,7 +502,8 @@ describe MessageBus::Rack::Middleware do
           messagebus_http_version: nil,
           messagebus_dont_chunk: "foo",
           messagebus_allow_chunked: false,
-          messagebus_backlog_size: 1
+          messagebus_backlog_size: 1,
+          messagebus_subscription_count: 1,
         })
       end
     end
