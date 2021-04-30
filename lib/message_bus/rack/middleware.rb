@@ -139,6 +139,20 @@ class MessageBus::Rack::Middleware
 
     backlog = client.backlog
 
+    if @bus.on_middleware_attributes
+      @bus.on_middleware_attributes.call(
+        messagebus_seq: client.seq,
+        messagebus_query_string: env['QUERY_STRING'],
+        messagebus_client_count: @connection_manager.client_count,
+        messagebus_long_polling: long_polling,
+        messagebus_http_version: env['HTTP_VERSION'],
+        messagebus_dont_chunk: env['HTTP_DONT_CHUNK'],
+        messagebus_allow_chunked: allow_chunked,
+        messagebus_backlog_size: backlog.size,
+        messagebus_subscription_count: client.subscriptions.count
+      )
+    end
+
     if backlog.length > 0 && !allow_chunked
       client.close
       @bus.logger.debug "Delivering backlog #{backlog} to client #{client_id} for user #{user_id}"

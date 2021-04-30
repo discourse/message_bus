@@ -599,6 +599,18 @@ module MessageBus::Implementation
     @config[:client_message_filters]
   end
 
+  # @yield [env] a routine to handle middleware decisions for tracing purposes
+  # @yieldparam [Hash<Symbol => Object>] attributes attributes detailing how message_bus handled the request
+  # @return [void]
+  #
+  # The provided attributes are: `:messagebus_seq`, `:messagebus_query_string`, `:messagebus_client_count`,
+  # `:messagebus_long_polling`, `:messagebus_http_version`, `:messagebus_dont_chunk`, `:messagebus_allow_chunked`,
+  # `:messagebus_backlog_size`, `:messagebus_subscription_count`.
+  def on_middleware_attributes(&blk)
+    configure(on_middleware_attributes: blk) if blk
+    @config[:on_middleware_attributes]
+  end
+
   private
 
   ENCODE_SITE_TOKEN = "$|$"

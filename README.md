@@ -611,6 +611,20 @@ MessageBus.extra_response_headers_lookup do |env|
 end
 ```
 
+### Performance monitoring
+
+MessageBus has hooks into its middleware for your application to perform monitoring of its performance.
+
+Firstly, the result of several decisions and the values used to arrive at them, such as whether to use long-polling or chunked encoding, can be provided to a logging routine of your definition:
+
+```ruby
+MessageBus.on_middleware_attributes do |attributes|
+  Rails.logger.debug(attributes)
+end
+```
+
+See `MessageBus.on_middleware_attributes` for the values that are provided.
+
 ## How it works
 
 MessageBus provides durable messaging following the publish-subscribe (pubsub) pattern to subscribers who track their own subscriptions. Durability is by virtue of the persistence of messages in backlogs stored in the selected backend implementation (Redis, Postgres, etc) which can be queried up until a configurable expiry. Subscribers must keep track of the ID of the last message they processed, and request only more-recent messages in subsequent connections.
