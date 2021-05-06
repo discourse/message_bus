@@ -2,18 +2,22 @@
 
 require "monitor"
 require "set"
-require "message_bus/version"
-require "message_bus/message"
-require "message_bus/client"
-require "message_bus/connection_manager"
-require "message_bus/diagnostics"
-require "message_bus/rack/middleware"
-require "message_bus/rack/diagnostics"
-require "message_bus/timer_thread"
+
+require_relative "message_bus/version"
+require_relative "message_bus/message"
+require_relative "message_bus/client"
+require_relative "message_bus/connection_manager"
+require_relative "message_bus/diagnostics"
+require_relative "message_bus/rack/middleware"
+require_relative "message_bus/rack/diagnostics"
+require_relative "message_bus/timer_thread"
+require_relative "message_bus/codec/base"
+require_relative "message_bus/backends"
+require_relative "message_bus/backends/base"
 
 # we still need to take care of the logger
 if defined?(::Rails)
-  require 'message_bus/rails/railtie'
+  require_relative 'message_bus/rails/railtie'
 end
 
 # @see MessageBus::Implementation
@@ -278,6 +282,17 @@ module MessageBus::Implementation
       end
   end
 
+  # @param [MessageBus::Codec::Base] codec used to encode and decode Message payloads
+  # @return [void]
+  def transport_codec=(codec)
+    configure(trasport_codec: codec)
+  end
+
+  # @return [MessageBus::Codec::Base] codec used to encode and decode Message payloads
+  def transport_codec
+    @config[:transport_codec] ||= MessageBus::Codec::Json.new
+  end
+
   # @param [MessageBus::Backend::Base] pub_sub a configured backend
   # @return [void]
   def reliable_pub_sub=(pub_sub)
@@ -358,7 +373,7 @@ module MessageBus::Implementation
       raise ::MessageBus::InvalidMessageTarget
     end
 
-    encoded_data = JSON.dump(
+    encoded_data = transport_codec.encode(
       data: data,
       user_ids: user_ids,
       group_ids: group_ids,
@@ -626,7 +641,7 @@ module MessageBus::Implementation
     channel, site_id = decode_channel_name(msg.channel)
     msg.channel = channel
     msg.site_id = site_id
-    parsed = JSON.parse(msg.data)
+    parsed = transport_codec.decode(msg.data)
     msg.data = parsed["data"]
     msg.user_ids = parsed["user_ids"]
     msg.group_ids = parsed["group_ids"]

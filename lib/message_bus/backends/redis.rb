@@ -3,8 +3,6 @@
 require 'redis'
 require 'digest'
 
-require "message_bus/backends/base"
-
 module MessageBus
   module Backends
     # The Redis backend stores published messages in Redis sorted sets (using

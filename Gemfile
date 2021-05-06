@@ -18,6 +18,7 @@ end
 
 group :test, :development do
   gem 'byebug'
+  gem 'oj'
 end
 
 group :development do

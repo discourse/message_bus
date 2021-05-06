@@ -2,8 +2,6 @@
 
 require 'pg'
 
-require "message_bus/backends/base"
-
 module MessageBus
   module Backends
     # The Postgres backend stores published messages in a single Postgres table
