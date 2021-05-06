@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'oj'
+require 'oj' unless defined? ::Oj
 
 module MessageBus
   module Codec

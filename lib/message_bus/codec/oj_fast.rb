@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'oj'
+require 'oj' unless defined? ::Oj
+require 'base64'
 
 module MessageBus
   module Codec
@@ -19,13 +20,11 @@ module MessageBus
 
       def include?(id)
         found = (0...length).bsearch do |index|
-          start = index * 4
-          @packed[start, start + 4].unpack1("V") >= id
+          @packed.byteslice(index * 4, 4).unpack1("V") >= id
         end
 
         if found
-          start = found * 4
-          found && @packed[start, start + 4].unpack1("V") == id
+          found && @packed.byteslice(found * 4, 4).unpack1("V") == id
         end
       end
 
@@ -52,18 +51,19 @@ module MessageBus
         #if group_ids
         #  group_ids = FastIdList.from_array(group_ids).to_s
         #end
+        data = ::Oj.dump(data, mode: :compat)
 
-        ::Oj.dump({
-            data: data,
-            user_ids: user_ids,
-            group_ids: group_ids,
-            client_ids: client_ids
-          },
-          mode: :compat)
+        Marshal.dump(
+          "data" => data,
+          "user_ids" => user_ids,
+          "group_ids" => group_ids,
+          "client_ids" => client_ids
+        )
       end
 
       def decode(payload)
-        result = ::Oj.load(payload, mode: :compat)
+        result = Marshal.load(payload)
+        result["data"] = ::Oj.load(result["data"], mode: :compat)
 
         if str = result["user_ids"]
           result["user_ids"] = FastIdList.from_string(str)
@@ -73,6 +73,7 @@ module MessageBus
         # if str = result["group_ids"]
         #  result["group_ids"] = FastIdList.from_string(str)
         # end
+        #
 
         result
       end
