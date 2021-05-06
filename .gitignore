@@ -18,3 +18,5 @@ tmp
 *.swp
 .rubocop-https---raw-githubusercontent-com-discourse-discourse-master--rubocop-yml
 .byebug_history
+node_modules/
+yarn.lock
