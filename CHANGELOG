@@ -1,5 +1,9 @@
 28-04-2021
 
+- Version TBD
+
+  - FEATURE: Introduce support for transport codecs
+
 - Version 3.3.5
 
   - PERF: Optimised CORS preflight handling

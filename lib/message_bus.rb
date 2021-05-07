@@ -16,7 +16,7 @@ require_relative "message_bus/backends"
 require_relative "message_bus/backends/base"
 
 # we still need to take care of the logger
-if defined?(::Rails)
+if defined?(::Rails::Engine)
   require_relative 'message_bus/rails/railtie'
 end
 
@@ -373,12 +373,12 @@ module MessageBus::Implementation
       raise ::MessageBus::InvalidMessageTarget
     end
 
-    encoded_data = transport_codec.encode(
-      data: data,
-      user_ids: user_ids,
-      group_ids: group_ids,
-      client_ids: client_ids
-    )
+    encoded_data = transport_codec.encode({
+      "data" => data,
+      "user_ids" => user_ids,
+      "group_ids" => group_ids,
+      "client_ids" => client_ids
+    })
 
     channel_opts = {}
 

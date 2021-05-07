@@ -5,18 +5,15 @@ require 'oj' unless defined? ::Oj
 module MessageBus
   module Codec
     class Oj < Base
-      def encode(data:, user_ids:, group_ids:, client_ids:)
-        ::Oj.dump({
-            data: data,
-            user_ids: user_ids,
-            group_ids: group_ids,
-            client_ids: client_ids
-          },
-          mode: :compat)
+      def initialize(options = { mode: :compat })
+        @options = options
+      end
+      def encode(hash)
+        ::Oj.dump(hash, @options)
       end
 
       def decode(payload)
-        ::Oj.load(payload, mode: :compat)
+        ::Oj.load(payload, @options)
       end
     end
   end

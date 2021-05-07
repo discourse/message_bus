@@ -3,13 +3,8 @@
 module MessageBus
   module Codec
     class Json < Base
-      def encode(data:, user_ids:, group_ids:, client_ids:)
-        JSON.dump(
-          data: data,
-          user_ids: user_ids,
-          group_ids: group_ids,
-          client_ids: client_ids
-        )
+      def encode(hash)
+        JSON.dump(hash)
       end
 
       def decode(payload)

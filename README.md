@@ -435,6 +435,31 @@ MessageBus.configure(backend: :memory)
 
 The `:clear_every` option supported by the PostgreSQL backend is also supported by the in-memory backend.
 
+
+### Transport codecs
+
+By default MessageBus serializes messages to the backend using JSON. Under most situation this performs extremely well.
+
+In some exceptional cases you may consider a different transport codec. To configure a custom codec use:
+
+```ruby
+MessageBus.configure(transport_codec: codec)
+```
+
+A codec class must implement MessageBus::Codec::Base. Specifically an `encode` and `decode` method.
+
+See the `bench` directory for examples where the default JSON codec can perform poorly. A specific examples may be
+attempting to distribute a message to a restricted list of thousands of users. In cases like this you may consider
+using a packed string encoder.
+
+Keep in mind, much of MessageBus internals and supporting tools expect data to be converted to JSON and back, if you use a naive (and fast) `Marshal` based codec you may need to limit the features you use. Specifically the Postgresql backend expects the codec never to return a string with `\u0000`, additionally some classes like DistributedCache expect keys to be converted to Strings.
+
+Another example may be very large and complicated messages where Oj in compatability mode outperforms JSON. To opt for the Oj codec use:
+
+```
+MessageBus.configure(transport_codec: MessageBus::Codec::Oj.new)
+```
+
 ### Forking/threading app servers
 
 If you're using a forking or threading app server and you're not getting immediate delivery of published messages, you might need to configure your web server to re-connect to the message_bus backend
