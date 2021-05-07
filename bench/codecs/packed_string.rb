@@ -22,9 +22,7 @@ class PackedString
         @packed.byteslice(index * @slot_size, @slot_size).unpack1(@pack_with) >= id
       end
 
-      if found
-        found && @packed.byteslice(found * @slot_size, @slot_size).unpack1(@pack_with) == id
-      end
+      found && @packed.byteslice(found * @slot_size, @slot_size).unpack1(@pack_with) == id
     end
 
     def length
