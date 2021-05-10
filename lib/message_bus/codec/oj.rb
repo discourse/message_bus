@@ -8,6 +8,7 @@ module MessageBus
       def initialize(options = { mode: :compat })
         @options = options
       end
+
       def encode(hash)
         ::Oj.dump(hash, @options)
       end
