@@ -3,8 +3,6 @@
 require 'redis'
 require 'digest'
 
-require "message_bus/backends/base"
-
 module MessageBus
   module Backends
     # The Redis backend stores published messages in Redis sorted sets (using
@@ -104,8 +102,8 @@ module MessageBus
 
       local global_id = redis.call("INCR", global_id_key)
       local backlog_id = redis.call("INCR", backlog_id_key)
-      local payload = string.format("%i|%i|%s", global_id, backlog_id, start_payload)
-      local global_backlog_message = string.format("%i|%s", backlog_id, channel)
+      local payload = table.concat({ global_id, backlog_id, start_payload }, "|")
+      local global_backlog_message = table.concat({ backlog_id, channel }, "|")
 
       redis.call("ZADD", backlog_key, backlog_id, payload)
       redis.call("EXPIRE", backlog_key, max_backlog_age)

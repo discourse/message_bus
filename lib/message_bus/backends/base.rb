@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "message_bus/backends"
-
 module MessageBus
   module Backends
     # Backends provide a consistent API over a variety of options for persisting

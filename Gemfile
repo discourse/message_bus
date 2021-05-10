@@ -14,10 +14,12 @@ group :test do
   gem 'rack-test', require: 'rack/test'
   gem 'jasmine'
   gem 'puma'
+  gem 'm'
 end
 
 group :test, :development do
   gem 'byebug'
+  gem 'oj'
 end
 
 group :development do

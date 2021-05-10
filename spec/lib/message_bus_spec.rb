@@ -162,7 +162,7 @@ describe MessageBus do
     data.must_equal 'norris'
     site_id.must_equal 'magic'
     channel.must_equal '/chuck'
-    user_ids.must_equal [1, 2, 3]
+    user_ids.to_a.must_equal [1, 2, 3]
   end
 
   it "should get global messages if it subscribes to them" do

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "message_bus/backends/base"
-
 module MessageBus
   module Backends
     # The memory backend stores published messages in a simple array per
