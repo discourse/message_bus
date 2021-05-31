@@ -1,6 +1,10 @@
-UNRELEASED
+31-05-2021
+
+- Version 3.3.6
 
   - FEATURE: Introduce support for transport codecs
+  - FIX: event subscription leak in JS after start/stop/start sequence
+  - FEATURE: MessageBus.onVisibilityChange() can be used to trigger a visiblity change check by hand
 
 28-04-2021
 
