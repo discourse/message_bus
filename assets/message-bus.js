@@ -1,9 +1,9 @@
-/*jshint bitwise: false*/
+/*global define, jQuery*/
 
 (function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
+  if (typeof define === "function" && define.amd) {
     // AMD. Register as an anonymous module.
-    define([], function (b) {
+    define([], function () {
       // Also create a global in case some scripts
       // that are loaded still are looking for
       // a global even when an AMD loader is in use.
@@ -13,12 +13,12 @@
     // Browser globals
     root.MessageBus = factory();
   }
-}(typeof self !== 'undefined' ? self : this, function () {
+})(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
   // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-  var uniqueId = function() {
-    return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+  var uniqueId = function () {
+    return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
       var r = (Math.random() * 16) | 0;
       var v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
@@ -42,7 +42,7 @@
   var totalAjaxCalls = 0;
   var lastAjax;
 
-  var isHidden = (function() {
+  var isHidden = (function () {
     var prefixes = ["", "webkit", "ms", "moz"];
     var hiddenProperty;
     for (var i = 0; i < prefixes.length; i++) {
@@ -53,7 +53,7 @@
       }
     }
 
-    return function() {
+    return function () {
       if (hiddenProperty !== undefined) {
         return document[hiddenProperty];
       } else {
@@ -62,7 +62,7 @@
     };
   })();
 
-  var hasLocalStorage = (function() {
+  var hasLocalStorage = (function () {
     try {
       localStorage.setItem("mbTestLocalStorage", Date.now());
       localStorage.removeItem("mbTestLocalStorage");
@@ -72,13 +72,13 @@
     }
   })();
 
-  var updateLastAjax = function() {
+  var updateLastAjax = function () {
     if (hasLocalStorage) {
       localStorage.setItem("__mbLastAjax", Date.now());
     }
   };
 
-  var hiddenTabShouldWait = function() {
+  var hiddenTabShouldWait = function () {
     if (hasLocalStorage && isHidden()) {
       var lastAjaxCall = parseInt(localStorage.getItem("__mbLastAjax"), 10);
       var deltaAjax = Date.now() - lastAjaxCall;
@@ -89,19 +89,21 @@
   };
 
   var hasonprogress = new XMLHttpRequest().onprogress === null;
-  var allowChunked = function() {
+  var allowChunked = function () {
     return me.enableChunkedEncoding && hasonprogress;
   };
 
-  var shouldLongPoll = function() {
+  var shouldLongPoll = function () {
     return (
       me.alwaysLongPoll ||
       (me.shouldLongPollCallback ? me.shouldLongPollCallback() : !isHidden())
     );
   };
 
-  var processMessages = function(messages) {
-    if ((!messages) || (messages.length === 0)) { return false; }
+  var processMessages = function (messages) {
+    if (!messages || messages.length === 0) {
+      return false;
+    }
 
     for (var i = 0; i < messages.length; i++) {
       var message = messages[i];
@@ -133,7 +135,7 @@
     return true;
   };
 
-  var reqSuccess = function(messages) {
+  var reqSuccess = function (messages) {
     failCount = 0;
     if (paused) {
       if (messages) {
@@ -147,7 +149,7 @@
     return false;
   };
 
-  var longPoller = function(poll, data) {
+  var longPoller = function (poll, data) {
     if (ajaxInProgress) {
       // never allow concurrent ajax reqs
       return;
@@ -180,7 +182,7 @@
 
     var dataType = chunked ? "text" : "json";
 
-    var handle_progress = function(payload, position) {
+    var handle_progress = function (payload, position) {
       var separator = "\r\n|\r\n";
       var endChunk = payload.indexOf(separator, position);
 
@@ -203,7 +205,7 @@
       return handle_progress(payload, endChunk + separator.length);
     };
 
-    var disableChunked = function() {
+    var disableChunked = function () {
       if (me.longPoll) {
         me.longPoll.abort();
         chunkedBackoff = 30;
@@ -231,12 +233,12 @@
       headers: headers,
       messageBus: {
         chunked: chunked,
-        onProgressListener: function(xhr) {
+        onProgressListener: function (xhr) {
           var position = 0;
           // if it takes longer than 3000 ms to get first chunk, we have some proxy
           // this is messing with us, so just backoff from using chunked for now
           var chunkedTimeout = setTimeout(disableChunked, 3000);
-          return (xhr.onprogress = function() {
+          return (xhr.onprogress = function () {
             clearTimeout(chunkedTimeout);
             if (
               xhr.getResponseHeader("Content-Type") ===
@@ -247,9 +249,9 @@
               position = handle_progress(xhr.responseText, position);
             }
           });
-        }
+        },
       },
-      xhr: function() {
+      xhr: function () {
         var xhr = jQuery.ajaxSettings.xhr();
         if (!chunked) {
           return xhr;
@@ -257,7 +259,7 @@
         this.messageBus.onProgressListener(xhr);
         return xhr;
       },
-      success: function(messages) {
+      success: function (messages) {
         if (!chunked) {
           // we may have requested text so jQuery will not parse
           if (typeof messages === "string") {
@@ -266,7 +268,7 @@
           gotData = reqSuccess(messages);
         }
       },
-      error: function(xhr, textStatus, err) {
+      error: function (xhr, textStatus) {
         if (xhr.status === 429) {
           var tryAfter =
             parseInt(
@@ -285,7 +287,7 @@
           totalAjaxFailures += 1;
         }
       },
-      complete: function() {
+      complete: function () {
         ajaxInProgress = false;
 
         var interval;
@@ -323,14 +325,14 @@
         }
 
         if (started) {
-          pollTimeout = setTimeout(function() {
+          pollTimeout = setTimeout(function () {
             pollTimeout = null;
             poll();
           }, interval);
         }
 
         me.longPoll = null;
-      }
+      },
     });
 
     return req;
@@ -352,7 +354,7 @@
     baseUrl: baseUrl,
     headers: {},
     ajax: typeof jQuery !== "undefined" && jQuery.ajax,
-    diagnostics: function() {
+    diagnostics: function () {
       console.log("Stopped: " + stopped + " Started: " + started);
       console.log("Current callbacks");
       console.log(callbacks);
@@ -369,17 +371,17 @@
       );
     },
 
-    pause: function() {
+    pause: function () {
       paused = true;
     },
 
-    resume: function() {
+    resume: function () {
       paused = false;
       processMessages(later);
       later = [];
     },
 
-    stop: function() {
+    stop: function () {
       stopped = true;
       started = false;
       if (delayPollTimeout) {
@@ -392,19 +394,19 @@
     },
 
     // Start polling
-    start: function() {
+    start: function () {
       if (started) return;
       started = true;
       stopped = false;
 
-      var poll = function() {
+      var poll = function () {
         if (stopped) {
           return;
         }
 
         if (callbacks.length === 0 || hiddenTabShouldWait()) {
           if (!delayPollTimeout) {
-            delayPollTimeout = setTimeout(function() {
+            delayPollTimeout = setTimeout(function () {
               delayPollTimeout = null;
               poll();
             }, parseInt(500 + Math.random() * 500));
@@ -428,8 +430,12 @@
       if (document.addEventListener && "hidden" in document) {
         me.visibilityEvent = document.addEventListener(
           "visibilitychange",
-          function() {
-            if (!document.hidden && !me.longPoll && (pollTimeout || delayPollTimeout)) {
+          function () {
+            if (
+              !document.hidden &&
+              !me.longPoll &&
+              (pollTimeout || delayPollTimeout)
+            ) {
               clearTimeout(pollTimeout);
               clearTimeout(delayPollTimeout);
 
@@ -444,7 +450,7 @@
       poll();
     },
 
-    status: function() {
+    status: function () {
       if (paused) {
         return "paused";
       } else if (started) {
@@ -463,7 +469,7 @@
     // -2 will recieve last message + all new messages
     // -3 will recieve last 2 messages + all new messages
     // if undefined will default to -1
-    subscribe: function(channel, func, lastId) {
+    subscribe: function (channel, func, lastId) {
       if (!started && !stopped) {
         me.start();
       }
@@ -471,7 +477,9 @@
       if (lastId === null || typeof lastId === "undefined") {
         lastId = -1;
       } else if (typeof lastId !== "number") {
-        throw "lastId has type " + typeof lastId + " but a number was expected.";
+        throw (
+          "lastId has type " + typeof lastId + " but a number was expected."
+        );
       }
 
       if (typeof channel !== "string") {
@@ -481,7 +489,7 @@
       callbacks.push({
         channel: channel,
         func: func,
-        last_id: lastId
+        last_id: lastId,
       });
       if (me.longPoll) {
         me.longPoll.abort();
@@ -491,7 +499,7 @@
     },
 
     // Unsubscribe from a channel
-    unsubscribe: function(channel, func) {
+    unsubscribe: function (channel, func) {
       // TODO allow for globbing in the middle of a channel name
       // like /something/*/something
       // at the moment we only support globbing /something/*
@@ -528,7 +536,7 @@
       }
 
       return removed;
-    }
+    },
   };
   return me;
-}));
+});

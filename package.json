@@ -4,7 +4,9 @@
   "description": "A message bus client in Javascript",
   "main": "assets/message-bus.js",
   "keywords": "es6, modules",
-  "files": ["assets/message-bus.js"],
+  "files": [
+    "assets/message-bus.js"
+  ],
   "jsnext:main": "assets/message-bus.js",
   "module": "assets/message-bus.js",
   "repository": {
@@ -16,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/discourse/message_bus/issues"
   },
-  "homepage": "https://github.com/discourse/message_bus#readme"
+  "homepage": "https://github.com/discourse/message_bus#readme",
+  "devDependencies": {
+    "eslint": "^7.27.0"
+  }
 }
