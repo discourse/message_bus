@@ -388,8 +388,16 @@
         clearTimeout(delayPollTimeout);
         delayPollTimeout = null;
       }
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+        pollTimeout = null;
+      }
       if (me.longPoll) {
         me.longPoll.abort();
+      }
+      if (me.onVisibilityChange) {
+        document.removeEventListener("visibilitychange", me.onVisibilityChange);
+        me.onVisibilityChange = null;
       }
     },
 
@@ -428,23 +436,22 @@
 
       // monitor visibility, issue a new long poll when the page shows
       if (document.addEventListener && "hidden" in document) {
-        me.visibilityEvent = document.addEventListener(
-          "visibilitychange",
-          function () {
-            if (
-              !document.hidden &&
-              !me.longPoll &&
-              (pollTimeout || delayPollTimeout)
-            ) {
-              clearTimeout(pollTimeout);
-              clearTimeout(delayPollTimeout);
+        me.onVisibilityChange = function () {
+          if (
+            !document.hidden &&
+            !me.longPoll &&
+            (pollTimeout || delayPollTimeout)
+          ) {
+            clearTimeout(pollTimeout);
+            clearTimeout(delayPollTimeout);
 
-              delayPollTimeout = null;
-              pollTimeout = null;
-              poll();
-            }
+            delayPollTimeout = null;
+            pollTimeout = null;
+            poll();
           }
-        );
+        };
+
+        document.addEventListener("visibilitychange", me.onVisibilityChange);
       }
 
       poll();
