@@ -27,28 +27,21 @@ jobs:
     strategy:
       matrix:
         ruby: ["2.7", "2.6", "2.5"]
+        redis: ["5.x"]
+        include:
+          - { ruby: "2.7", redis: "6.x" }
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-      - name: Bundler cache
-        uses: actions/cache@v2
-        with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-${{ matrix.ruby }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.ruby }}-gems-
+          bundler-cache: true # 'bundle install' and cache
       - name: Create Database
         run: |
           createdb message_bus_test
       - name: Setup redis
         uses: shogo82148/actions-setup-redis@v1
         with:
-          redis-version: '5.x'
-      - name: Setup gems
-        run: |
-          bundle config path vendor/bundle
-          bundle install --jobs 4
+          redis-version: ${{ matrix.redis }}
       - name: Tests
         run: bundle exec rake
