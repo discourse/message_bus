@@ -18,7 +18,7 @@ jobs:
     name: Ruby ${{ matrix.ruby }}
     services:
       postgres:
-        image: postgres:9.4
+        image: postgres:14.0
         env:
           POSTGRES_PASSWORD: postgres
         ports:
@@ -26,10 +26,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     strategy:
       matrix:
-        ruby: ["2.7", "2.6", "2.5"]
-        redis: ["5.x"]
-        include:
-          - { ruby: "2.7", redis: "6.x" }
+        ruby: ["3.0", "2.7", "2.6"]
+        redis: ["5.x", "6.x"]
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
