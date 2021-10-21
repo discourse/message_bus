@@ -15,7 +15,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
+    name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
     services:
       postgres:
         image: postgres:9.6 # Oldest supported Postgres version
@@ -28,6 +28,7 @@ jobs:
       matrix:
         ruby: ["3.0", "2.7", "2.6"]
         redis: ["5.x", "6.x"]
+        fail-fast: [false]
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
