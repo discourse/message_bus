@@ -18,7 +18,7 @@ jobs:
     name: Ruby ${{ matrix.ruby }}
     services:
       postgres:
-        image: postgres:14.0
+        image: postgres:9.6 # Oldest supported Postgres version
         env:
           POSTGRES_PASSWORD: postgres
         ports:
