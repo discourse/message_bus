@@ -24,10 +24,13 @@ jobs:
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: "redis:${{ matrix.redis }}-alpine" # Docker Hub image tag
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     strategy:
       matrix:
         ruby: ["3.0", "2.7", "2.6"]
-        redis: ["5.x", "6.x"]
+        redis: ["5.0", "6.0", "6.2"]
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
@@ -36,10 +39,6 @@ jobs:
           bundler-cache: true # 'bundle install' and cache
       - name: Create Database
         run: |
-          createdb message_bus_test
-      - name: Setup redis
-        uses: shogo82148/actions-setup-redis@v1
-        with:
-          redis-version: ${{ matrix.redis }}
+          createdb message_bus_test          
       - name: Tests
         run: bundle exec rake
