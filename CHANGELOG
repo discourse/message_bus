@@ -1,3 +1,7 @@
+Unreleased
+
+  - FIX: Prevent simple polling from clobbering the session
+
 31-05-2021
 
 - Version 3.3.6

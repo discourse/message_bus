@@ -66,6 +66,12 @@ class MessageBus::Rack::Middleware
   private
 
   def handle_request(env)
+    # Prevent simple polling from clobbering the session
+    # See: https://github.com/discourse/message_bus/issues/257
+    if (rack_session_options = env[Rack::RACK_SESSION_OPTIONS])
+      rack_session_options[:skip] = true
+    end
+
     # special debug/test route
     if @bus.allow_broadcast? && env['PATH_INFO'] == @broadcast_route
       parsed = Rack::Request.new(env)
