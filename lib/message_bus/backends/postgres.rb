@@ -277,7 +277,7 @@ module MessageBus
         msg = MessageBus::Message.new backlog_id, backlog_id, channel, data
         payload = msg.encode
         c.publish postgresql_channel_name, payload
-        if backlog_id % clear_every == 0
+        if backlog_id && backlog_id % clear_every == 0
           max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
           max_backlog_age = (opts && opts[:max_backlog_age]) || self.max_backlog_age
           c.clear_global_backlog(backlog_id, @max_global_backlog_size)
