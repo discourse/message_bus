@@ -275,11 +275,7 @@ class MessageBus::Client
       @async_response << postfix
       @async_response << NEWLINE
     else
-      @io.write(chunk_length.to_s(16))
-      @io.write(NEWLINE)
-      @io.write(data)
-      @io.write(postfix)
-      @io.write(NEWLINE)
+      @io.write(chunk_length.to_s(16) << NEWLINE << data << postfix << NEWLINE)
     end
   end
 
@@ -287,11 +283,7 @@ class MessageBus::Client
     @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
       write_headers
-      @io.write(CONTENT_LENGTH)
-      @io.write(data.bytes.to_a.length)
-      @io.write(NEWLINE)
-      @io.write(NEWLINE)
-      @io.write(data)
+      @io.write(CONTENT_LENGTH.dup << data.bytes.to_a.length << NEWLINE << NEWLINE << data)
       @io.close
       @io = nil
     else
