@@ -283,7 +283,11 @@ class MessageBus::Client
     @bus.logger.debug "Delivering messages #{data} to client #{client_id} for user #{user_id}"
     if @io
       write_headers
-      @io.write(CONTENT_LENGTH.dup << data.bytes.to_a.length << NEWLINE << NEWLINE << data)
+      @io.write(CONTENT_LENGTH)
+      @io.write(data.bytes.to_a.length)
+      @io.write(NEWLINE)
+      @io.write(NEWLINE)
+      @io.write(data)
       @io.close
       @io = nil
     else
