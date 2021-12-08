@@ -415,7 +415,7 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should tell Rack to skip committing the session" do
-      post "/message-bus/1234", {}, {"rack.session.options" => {}}
+      post "/message-bus/1234", {}, { "rack.session.options" => {} }
       last_request.env["rack.session.options"][:skip].must_equal true
     end
 

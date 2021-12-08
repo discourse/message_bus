@@ -6,6 +6,6 @@ class MarshalCodec
   end
 
   def decode(payload)
-    ::Marshal.load(payload)
+    ::Marshal.load(payload) # rubocop:disable Security/MarshalLoad
   end
 end
