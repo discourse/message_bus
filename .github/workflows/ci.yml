@@ -35,6 +35,8 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true # 'bundle install' and cache
+      - name: Setup npm
+        run: npm install
       - name: Create Database
         run: |
           createdb message_bus_test
