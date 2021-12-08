@@ -1,0 +1,16 @@
+{
+  "srcDir": "assets",
+  "srcFiles": [
+    "message-bus.js",
+    "message-bus-ajax.js"
+  ],
+  "specDir": "spec/assets",
+  "specFiles": [
+    "message-bus.spec.js"
+  ],
+  "helpers": [
+    "SpecHelper.js"
+  ],
+  "random": true,
+  "browser": "headlessChrome"
+}

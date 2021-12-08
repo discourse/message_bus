@@ -4,12 +4,8 @@ require 'rake/testtask'
 require 'bundler'
 require 'bundler/gem_tasks'
 require 'bundler/setup'
-require 'jasmine'
-
-ENV['JASMINE_CONFIG_PATH'] ||= File.join(Dir.pwd, 'spec', 'assets', 'support', 'jasmine.yml')
-load 'jasmine/tasks/jasmine.rake'
-
 require 'rubocop/rake_task'
+
 RuboCop::RakeTask.new
 
 require 'yard'
@@ -35,7 +31,14 @@ module Bundler
   end
 end
 
-task spec_client_js: 'jasmine:ci'
+namespace :jasmine do
+  desc "Run Jasmine tests in headless mode"
+  task 'ci' do
+    if !system("npx jasmine-browser-runner runSpecs")
+      exit 1
+    end
+  end
+end
 
 backends = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
 
