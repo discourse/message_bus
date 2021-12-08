@@ -55,7 +55,7 @@ class PackedString
   end
 
   def decode(payload)
-    result = Marshal.load(payload)
+    result = Marshal.load(payload) # rubocop:disable Security/MarshalLoad
     result["data"] = ::Oj.load(result["data"], @oj_options)
 
     if str = result["user_ids"]
