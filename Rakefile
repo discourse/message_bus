@@ -81,7 +81,7 @@ namespace :spec do
 end
 
 desc "Run tests on all backends, plus client JS tests"
-task spec: backends.map { |backend| "spec:#{backend}" } + [:spec_client_js, "spec:integration"]
+task spec: backends.map { |backend| "spec:#{backend}" } + ["jasmine:ci", "spec:integration"]
 
 desc "Run performance benchmarks on all backends"
 task :performance do
