@@ -8,10 +8,11 @@ describe("Messagebus", function() {
     MessageBus.subscribe('/test', function(){
       expect(spec.MockedXMLHttpRequest.prototype.send)
         .toHaveBeenCalled()
-      var req = JSON.parse(spec.MockedXMLHttpRequest.prototype.send.calls.argsFor(0)[0]);
-      expect(req['/test']).toEqual(-1)
-      expect(req['__seq']).not.toBeUndefined();
-      done()
+      var data = spec.MockedXMLHttpRequest.prototype.send.calls.argsFor(0)[0];
+      var params = new URLSearchParams(data);
+      expect(params.get("/test")).toEqual("-1");
+      expect(params.get("__seq")).toMatch(/\d+/);
+      done();
     });
   });
 
@@ -89,7 +90,7 @@ describe("Messagebus", function() {
       expect(xhr.headers).toEqual({
         'X-SILENCE-LOGGER': 'true',
         'X-MB-TEST-VALUE': '42',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       });
     }).finally(function(){
       MessageBus.headers = {};
