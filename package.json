@@ -3,7 +3,10 @@
   "version": "3.3.5",
   "description": "A message bus client in Javascript",
   "main": "assets/message-bus.js",
-  "keywords": "es6, modules",
+  "keywords": [
+    "es6",
+    "modules"
+  ],
   "files": [
     "assets/message-bus.js"
   ],

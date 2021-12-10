@@ -2,7 +2,7 @@
 // as a fallback if jQuery is not present
 //
 // Only implements methods & options used by MessageBus
-(function(global, undefined) {
+(function(global) {
   'use strict';
   if (!global.MessageBus){
       throw new Error("MessageBus must be loaded before the ajax adapter");

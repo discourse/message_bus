@@ -1,3 +1,5 @@
+/* global beforeEach, afterEach, it, spyOn, MessageBus */
+
 var message_id = 1;
 var SEPARATOR = "\r\n|\r\n";
 
@@ -12,7 +14,7 @@ var encodeChunks = function(xhr, chunks) {
   }
   if (xhr.onprogress){ // using longPoll if onprogress is set
     var responses = []
-    for (var i=0;i<chunks.length;i++) {
+    for (var j=0;j<chunks.length;j++) {
       responses.push( JSON.stringify([chunk]) );
     }
     return responses.join(SEPARATOR) + SEPARATOR;
@@ -26,7 +28,7 @@ beforeEach(function () {
 
   function MockedXMLHttpRequest(){
     this.headers = {};
-  };
+  }
 
   MockedXMLHttpRequest.prototype.send              = function(){
     this.readyState = 4
@@ -75,8 +77,8 @@ window.testMB = function(description, testFn, path, data){
     {channel: path || '/test', data: data || {password: 'MessageBusRocks!'}}
   ];
   it(description, function(done){
-    spec = this;
-    promisy = {
+    var spec = this;
+    var promisy = {
       finally: function(fn){
         this.resolve = fn;
       }
@@ -105,4 +107,3 @@ window.testMB = function(description, testFn, path, data){
   });
 
 }
-
