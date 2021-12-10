@@ -11,7 +11,6 @@ env:
   PGPORT: 5432
   PGPASSWORD: postgres
   PGUSER: postgres
-  REDISURL: redis://redis:6379
 
 jobs:
   build:
