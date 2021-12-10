@@ -318,6 +318,7 @@ describe MessageBus do
     wait_for(2000) { data.length == 1 }
 
     data.length.must_equal(1)
+    puts "must_equal(1)"
 
     if child = Process.fork
       # The child was forked and we received its PID
