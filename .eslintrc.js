@@ -10,4 +10,10 @@ module.exports = {
     sourceType: "module",
   },
   rules: {},
+  ignorePatterns: [
+    "/assets/babel.min.js",
+    "/assets/jquery-1.8.2.js",
+    "/assets/react-dom.js",
+    "/assets/react.js",
+  ],
 };

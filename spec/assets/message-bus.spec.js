@@ -1,3 +1,5 @@
+/* global describe, it, spyOn, MessageBus, expect, jasmine, testMB */
+
 describe("Messagebus", function() {
 
   it("submits change requests", function(done){
