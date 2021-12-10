@@ -91,37 +91,6 @@ describe PUB_SUB_CLASS do
     @bus.last_id("/foo").must_equal 1
   end
 
-  describe "readonly" do
-    after do
-      @bus.pub_redis.slaveof "no", "one"
-    end
-
-    it "should be able to store messages in memory for a period while in read only" do
-      test_only :redis
-      skip "This spec changes redis behavior that in turn means other specs run slow"
-
-      @bus.pub_redis.slaveof "127.0.0.80", "666"
-      @bus.max_in_memory_publish_backlog = 2
-
-      current_threads = Thread.list
-      current_threads_length = current_threads.count
-
-      3.times do
-        result = @bus.publish "/foo", "bar"
-        assert_nil result
-        Thread.list.length.must_equal(current_threads_length + 1)
-      end
-
-      @bus.pub_redis.slaveof "no", "one"
-      sleep 0.01
-
-      (Thread.list - current_threads).each(&:join)
-      Thread.list.length.must_equal current_threads_length
-
-      @bus.backlog("/foo", 0).map(&:data).must_equal ["bar", "bar"]
-    end
-  end
-
   it "can set backlog age" do
     @bus.max_backlog_age = 1
 
