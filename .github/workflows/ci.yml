@@ -70,7 +70,7 @@ jobs:
       - name: Tests
         run: bundle exec rake test
         env:
-          TESTOPS: --verbose
+          TESTOPTS: --verbose
           MESSAGE_BUS_BACKEND: postgres
         timeout-minutes: 3
 
