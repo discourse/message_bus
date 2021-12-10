@@ -71,6 +71,7 @@ jobs:
         run: bundle exec rake test
         env:
           TESTOPS: --verbose
+          MESSAGE_BUS_BACKEND: postgres
         timeout-minutes: 3
 
       - name: Linting
