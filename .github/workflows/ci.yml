@@ -68,7 +68,9 @@ jobs:
           createdb message_bus_test
 
       - name: Tests
-        run: bundle exec rake
+        run: bundle exec rake test
+        env:
+          TESTOPS: --verbose
         timeout-minutes: 3
 
       - name: Linting

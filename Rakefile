@@ -88,3 +88,11 @@ task default: [:spec, :rubocop, :test_doc]
 Rake::Task['release'].enhance do
   sh "yarn publish"
 end
+
+desc 'Run unit tests'
+Rake::TestTask.new(:test) do |t|
+  t.libs << 'lib'
+  t.libs << 'spec'
+  t.pattern = 'spec/lib/**/*_spec.rb'
+  t.verbose = true
+end

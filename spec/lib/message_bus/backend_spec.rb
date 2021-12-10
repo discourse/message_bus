@@ -72,6 +72,7 @@ describe PUB_SUB_CLASS do
       threads << Thread.new do
         25.times {
           @bus.publish "/foo", "foo"
+          puts "☀️"
         }
       end
     end
@@ -268,7 +269,9 @@ describe PUB_SUB_CLASS do
     got = []
 
     t = Thread.new do
+      puts "🌚"
       @bus.subscribe("/foo") do |msg|
+        puts "🥮"
         got << msg
       end
     end
@@ -284,6 +287,7 @@ describe PUB_SUB_CLASS do
     @bus.publish("/foo", "three")
 
     wait_for(100) do
+      puts "🔥"
       got.length == 2
     end
 
@@ -314,7 +318,9 @@ describe PUB_SUB_CLASS do
     got = []
 
     t = Thread.new do
+      puts "🧨"
       @bus.global_subscribe(0) do |msg|
+        puts "🍏"
         got << msg
       end
     end
@@ -322,6 +328,7 @@ describe PUB_SUB_CLASS do
     @bus.publish("/bar", "13")
 
     wait_for(100) do
+      puts "😹"
       got.length == 3
     end
 
@@ -337,7 +344,9 @@ describe PUB_SUB_CLASS do
     got = []
 
     t = Thread.new do
+      puts "🐶"
       @bus.subscribe("/foo", 0) do |msg|
+        puts "🐈"
         got << msg
       end
     end
@@ -345,6 +354,7 @@ describe PUB_SUB_CLASS do
     @bus.publish("/foo", "13")
 
     wait_for(100) do
+      puts "🐳"
       got.length == 2
     end
 
@@ -358,7 +368,9 @@ describe PUB_SUB_CLASS do
     got = []
 
     t = Thread.new do
+      puts "❤️"
       @bus.subscribe("/foo") do |msg|
+        puts "🦋"
         got << msg
       end
     end
@@ -370,6 +382,7 @@ describe PUB_SUB_CLASS do
     @bus.publish("/foo", "12")
 
     wait_for(100) do
+      puts "🍀"
       got.length == 1
     end
 
