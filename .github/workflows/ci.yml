@@ -16,6 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
+    timeout-minutes: 10
 
     services:
       postgres:
@@ -60,6 +61,7 @@ jobs:
 
       - name: Tests
         run: bundle exec rake
+        timeout-minutes: 3
 
       - name: Linting
         run: npx eslint .
