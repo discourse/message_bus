@@ -11,6 +11,7 @@ env:
   PGPORT: 5432
   PGPASSWORD: postgres
   PGUSER: postgres
+  REDISURL: redis://redis:6379
 
 jobs:
   build:
@@ -67,7 +68,7 @@ jobs:
         run: bundle exec rake test
         env:
           TESTOPTS: --verbose
-          MESSAGE_BUS_BACKEND: postgres
+          MESSAGE_BUS_BACKEND: redis
         timeout-minutes: 3
 
       - name: Linting
