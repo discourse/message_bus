@@ -64,10 +64,7 @@ jobs:
         run: npm install
 
       - name: Tests
-        run: bundle exec rake test
-        env:
-          TESTOPTS: --verbose --seed=8564
-          MESSAGE_BUS_BACKEND: redis
+        run: bundle exec rake
         timeout-minutes: 3
 
       - name: Linting
