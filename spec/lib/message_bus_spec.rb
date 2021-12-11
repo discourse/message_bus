@@ -37,6 +37,7 @@ describe MessageBus do
 
     puts "after_fork"
     @bus.after_fork
+    puts "after after_fork"
   end
 
   describe "#base_route=" do
