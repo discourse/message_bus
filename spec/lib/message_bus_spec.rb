@@ -29,6 +29,7 @@ describe MessageBus do
   end
 
   it "can be turned on after destroy" do
+    skip "@bus.after_fork and @bus.destroy in the after block can cause a deadlock"
     @bus.destroy
 
     @bus.on
