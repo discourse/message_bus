@@ -70,9 +70,11 @@ module MessageBus
 
       # (see Base#reset!)
       def reset!
+        puts "redis reset!"
         pub_redis.keys("__mb_*").each do |k|
           pub_redis.del k
         end
+        puts "redis reset! done"
       end
 
       # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.

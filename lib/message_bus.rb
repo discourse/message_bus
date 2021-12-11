@@ -575,6 +575,7 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
+    puts "reset!"
     reliable_pub_sub.reset! if reliable_pub_sub
   end
 
@@ -741,6 +742,7 @@ module MessageBus::Implementation
       puts "thrd"
       begin
         global_subscribe_thread unless @destroyed
+        puts "after global_subscribe_thread"
       rescue => e
         logger.warn "Unexpected error in subscriber thread #{e}"
       end
@@ -792,15 +794,18 @@ module MessageBus::Implementation
   end
 
   def global_subscribe_thread
+    puts "global_subscribe_thread"
     # pretend we just got a message
     @last_message = Time.now
     reliable_pub_sub.global_subscribe do |msg|
+      puts "global subs block"
       begin
         @last_message = Time.now
         decode_message!(msg)
         globals, locals, local_globals, global_globals = nil
 
         @mutex.synchronize do
+          puts "in subs mutex"
           return if @destroyed
           next unless @subscriptions
 
@@ -814,6 +819,7 @@ module MessageBus::Implementation
           locals = locals[msg.channel] if locals
         end
 
+        puts "before multi"
         multi_each(globals, locals, global_globals, local_globals) do |c|
           begin
             c.call msg
