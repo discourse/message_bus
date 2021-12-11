@@ -92,6 +92,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "can set backlog age" do
+    skip "slow"
     @bus.max_backlog_age = 1
 
     expected_backlog_size = 0
@@ -142,6 +143,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "can set backlog age on publish" do
+    skip "slow"
     @bus.max_backlog_age = 100
 
     expected_backlog_size = 0
