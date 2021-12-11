@@ -77,7 +77,7 @@ describe PUB_SUB_CLASS do
     end
 
     threads.each(&:join)
-    @bus.backlog("/foo").length == 100
+    @bus.backlog("/foo").length.must_equal 100
   end
 
   it "should be able to encode and decode messages properly" do
