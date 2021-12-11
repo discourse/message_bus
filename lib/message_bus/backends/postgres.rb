@@ -99,6 +99,13 @@ module MessageBus
             conn.exec 'DROP TABLE IF EXISTS message_bus'
             create_table(conn)
           end
+
+          sync do
+            INHERITED_CONNECTIONS.each(&:close)
+            INHERITED_CONNECTIONS.clear
+            @available.each(&:close)
+            @available.clear
+          end
         end
 
         # use with extreme care, will nuke all of the data
