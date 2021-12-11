@@ -550,7 +550,7 @@ module MessageBus::Implementation
     end
     puts "after mutex"
 
-    @subscriber_thread.join if @subscriber_thread
+    @subscriber_thread.join if @subscriber_thread&.alive?
     puts "timer"
     timer.stop
   end
