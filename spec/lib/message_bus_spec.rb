@@ -13,11 +13,8 @@ describe MessageBus do
   end
 
   after do
-    puts "after"
     @bus.reset!
-    puts "after2"
     @bus.destroy
-    puts "after done"
   end
 
   it "can be turned off" do
@@ -32,32 +29,25 @@ describe MessageBus do
   end
 
   it "can be turned on after destroy" do
-    puts "can be turned on after destroy"
     @bus.destroy
 
-    puts "on"
     @bus.on
 
-    puts "after_fork"
     @bus.after_fork
-    puts "after after_fork"
   end
 
   describe "#base_route=" do
     it "adds leading and trailing slashes" do
-      puts "adds leading and trailing slashes"
       @bus.base_route = "my/base/route"
       @bus.base_route.must_equal '/my/base/route/'
     end
 
     it "leaves existing leading and trailing slashes" do
-      puts "leaves existing leading and trailing slashes"
       @bus.base_route = "/my/base/route/"
       @bus.base_route.must_equal '/my/base/route/'
     end
 
     it "removes duplicate slashes" do
-      puts "removes duplicate slashes"
       @bus.base_route = "//my///base/route"
       @bus.base_route.must_equal '/my/base/route/'
     end
@@ -138,7 +128,6 @@ describe MessageBus do
 
     @bus.publish("/chuck", yeager: true)
 
-    puts "wait for yeager, backlog expiring"
     wait_for(2000) { data && data["yeager"] }
 
     data["yeager"].must_equal true
@@ -150,7 +139,6 @@ describe MessageBus do
       data = msg.data
     end
     @bus.publish("/chuck", norris: true)
-    puts "waitfor data, hashed"
     wait_for(2000) { data }
 
     data["norris"].must_equal true
@@ -168,7 +156,6 @@ describe MessageBus do
 
     @bus.publish("/chuck", "norris", user_ids: [1, 2, 3])
 
-    puts "waitfor, subscribes"
     wait_for(2000) { data }
 
     data.must_equal 'norris'
@@ -196,7 +183,6 @@ describe MessageBus do
   end
 
   it "should have the ability to grab the backlog messages in the correct order" do
-    puts "should have the ability to grab the backlog messages in the correct order"
     id = @bus.publish("/chuck", "norris")
     @bus.publish("/chuck", "foo")
     @bus.publish("/chuck", "bar")
@@ -222,7 +208,6 @@ describe MessageBus do
   end
 
   it "allows you to look up last_message" do
-    puts "allows you to look up last_message"
     @bus.publish("/bob", "dylan")
     @bus.publish("/bob", "marley")
     @bus.last_message("/bob").data.must_equal "marley"
@@ -333,7 +318,6 @@ describe MessageBus do
     wait_for(2000) { data.length == 1 }
 
     data.length.must_equal(1)
-    puts "must_equal(1)"
 
     if child = Process.fork
       # The child was forked and we received its PID

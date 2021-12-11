@@ -536,22 +536,16 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
-    puts "destroy"
     reliable_pub_sub.global_unsubscribe
 
-    puts "mutex"
     @mutex.synchronize do
-      puts "in mutex"
       return if @destroyed
 
-      puts "mid mutex"
       @subscriptions ||= {}
       @destroyed = true
     end
-    puts "after mutex"
 
     @subscriber_thread.join if @subscriber_thread&.alive?
-    puts "timer"
     timer.stop
   end
 
@@ -575,7 +569,6 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
-    puts "reset!"
     reliable_pub_sub.reset! if reliable_pub_sub
   end
 
@@ -726,7 +719,6 @@ module MessageBus::Implementation
   end
 
   def ensure_subscriber_thread
-    puts "ensure_subscriber_thread"
     @mutex.synchronize do
       return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
 
@@ -737,12 +729,9 @@ module MessageBus::Implementation
   MIN_KEEPALIVE = 20
 
   def new_subscriber_thread
-    puts "new_subscriber_thread"
     thread = Thread.new do
-      puts "thrd"
       begin
         global_subscribe_thread unless @destroyed
-        puts "after global_subscribe_thread"
       rescue => e
         logger.warn "Unexpected error in subscriber thread #{e}"
       end
@@ -752,7 +741,6 @@ module MessageBus::Implementation
     @last_message = Time.now
 
     blk = proc do
-      puts "blk"
       if !@destroyed && thread.alive? && keepalive_interval > MIN_KEEPALIVE
 
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
@@ -769,7 +757,6 @@ module MessageBus::Implementation
 
           # do the best we can to terminate self cleanly
           fork do
-            puts "forkin"
             Process.kill('TERM', pid)
             sleep 10
             begin
@@ -794,18 +781,15 @@ module MessageBus::Implementation
   end
 
   def global_subscribe_thread
-    puts "global_subscribe_thread"
     # pretend we just got a message
     @last_message = Time.now
     reliable_pub_sub.global_subscribe do |msg|
-      puts "global subs block"
       begin
         @last_message = Time.now
         decode_message!(msg)
         globals, locals, local_globals, global_globals = nil
 
         @mutex.synchronize do
-          puts "in subs mutex"
           return if @destroyed
           next unless @subscriptions
 
@@ -819,7 +803,6 @@ module MessageBus::Implementation
           locals = locals[msg.channel] if locals
         end
 
-        puts "before multi"
         multi_each(globals, locals, global_globals, local_globals) do |c|
           begin
             c.call msg
