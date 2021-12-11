@@ -725,6 +725,7 @@ module MessageBus::Implementation
   end
 
   def ensure_subscriber_thread
+    puts "ensure_subscriber_thread"
     @mutex.synchronize do
       return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
 
@@ -735,7 +736,9 @@ module MessageBus::Implementation
   MIN_KEEPALIVE = 20
 
   def new_subscriber_thread
+    puts "new_subscriber_thread"
     thread = Thread.new do
+      puts "thrd"
       begin
         global_subscribe_thread unless @destroyed
       rescue => e
@@ -747,6 +750,7 @@ module MessageBus::Implementation
     @last_message = Time.now
 
     blk = proc do
+      puts "blk"
       if !@destroyed && thread.alive? && keepalive_interval > MIN_KEEPALIVE
 
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
@@ -763,6 +767,7 @@ module MessageBus::Implementation
 
           # do the best we can to terminate self cleanly
           fork do
+            puts "forkin"
             Process.kill('TERM', pid)
             sleep 10
             begin
