@@ -64,7 +64,10 @@ jobs:
         run: npm install
 
       - name: Tests
-        run: bundle exec rake
+        run: bundle exec rake test
+        env:
+          TESTOPTS: --verbose
+          MESSAGE_BUS_BACKEND: postgres
         timeout-minutes: 3
 
       - name: Linting
