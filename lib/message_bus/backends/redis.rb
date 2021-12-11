@@ -295,6 +295,7 @@ LUA
 
           puts "before global_redis subsc"
           global_redis.subscribe(redis_channel_name) do |on|
+            puts "in global_redis.subscribe block"
             on.subscribe do
               if highest_id
                 clear_backlog.call(&blk)
@@ -327,11 +328,19 @@ LUA
               end
             end
           end
+          puts "at the end of global_subscribe"
         rescue => error
+          puts "error in global_subscribe"
+          puts error
+          puts error.backtrace.join("\n")
           @logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace.join("\n")}"
+          puts "zz"
           sleep 1
+          puts "zz2"
           global_redis&.disconnect!
+          puts "zz3"
           retry
+          puts "zz4"
         ensure
           puts "global_redis ensure"
           global_redis&.disconnect!
