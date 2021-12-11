@@ -251,11 +251,16 @@ LUA
 
       # (see Base#global_unsubscribe)
       def global_unsubscribe
+        puts "global_unsubscribe"
         begin
           new_redis = new_redis_connection
+          puts "has new connection"
           new_redis.publish(redis_channel_name, UNSUB_MESSAGE)
+          puts "after publish"
         ensure
+          puts "disconnecting"
           new_redis&.disconnect!
+          puts "disconnected"
         end
       end
 

@@ -66,7 +66,7 @@ jobs:
       - name: Tests
         run: bundle exec rake test
         env:
-          TESTOPTS: --verbose
+          TESTOPTS: --verbose --seed=8564
           MESSAGE_BUS_BACKEND: redis
         timeout-minutes: 3
 
