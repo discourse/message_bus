@@ -536,7 +536,7 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
-    puts "global_unsubscribe"
+    puts "destroy"
     reliable_pub_sub.global_unsubscribe
 
     puts "mutex"

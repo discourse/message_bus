@@ -266,10 +266,12 @@ LUA
 
       # (see Base#global_subscribe)
       def global_subscribe(last_id = nil, &blk)
+        puts "global_subscribe"
         raise ArgumentError unless block_given?
 
         highest_id = last_id
 
+        puts "after last_id"
         clear_backlog = lambda do
           retries = 4
           begin
@@ -283,12 +285,15 @@ LUA
         end
 
         begin
+          puts "before new global_redis"
           global_redis = new_redis_connection
+          puts "after new global_redis"
 
           if highest_id
             clear_backlog.call(&blk)
           end
 
+          puts "before global_redis subsc"
           global_redis.subscribe(redis_channel_name) do |on|
             on.subscribe do
               if highest_id
@@ -328,6 +333,7 @@ LUA
           global_redis&.disconnect!
           retry
         ensure
+          puts "global_redis ensure"
           global_redis&.disconnect!
         end
       end
