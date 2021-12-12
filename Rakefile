@@ -60,6 +60,8 @@ namespace :spec do
 
   desc "Run integration tests"
   task :integration do
+    require "socket"
+
     def port_available?(port)
       server = TCPServer.open("0.0.0.0", port)
       server.close
