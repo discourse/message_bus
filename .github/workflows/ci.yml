@@ -26,12 +26,21 @@ jobs:
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: ${{ format('redis:{0}', matrix.redis) }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     strategy:
       fail-fast: false
       matrix:
         ruby: ["3.0", "2.7", "2.6"]
-        redis: ["5.x", "6.x"]
+        redis: ["5", "6"]
 
     steps:
       - uses: actions/checkout@v2
@@ -53,11 +62,6 @@ jobs:
       - name: Create Database
         run: |
           createdb message_bus_test
-
-      - name: Setup redis
-        uses: shogo82148/actions-setup-redis@v1
-        with:
-          redis-version: ${{ matrix.redis }}
 
       - name: Tests
         run: bundle exec rake
