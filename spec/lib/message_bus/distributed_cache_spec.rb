@@ -6,13 +6,16 @@ require 'message_bus'
 require 'message_bus/distributed_cache'
 
 describe MessageBus::DistributedCache do
-  before :all do
+  before do
     @bus = MessageBus::Instance.new
     @bus.configure(backend: :memory)
     @manager = MessageBus::DistributedCache::Manager.new(@bus)
+    @cache1 = cache(cache_name)
+    @cache2 = cache(cache_name)
   end
 
-  after :all do
+  after do
+    @bus.reset!
     @bus.destroy
   end
 
@@ -22,11 +25,6 @@ describe MessageBus::DistributedCache do
 
   let :cache_name do
     SecureRandom.hex
-  end
-
-  before do
-    @cache1 = cache(cache_name)
-    @cache2 = cache(cache_name)
   end
 
   it 'supports arrays with hashes' do
