@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 
 require 'logger'
+require 'method_source'
 
-def wait_for(timeout_milliseconds = 2000)
-  timeout = (timeout_milliseconds + 0.0) / 1000
+def wait_for(timeout_milliseconds = 2000, &blk)
+  timeout = timeout_milliseconds / 1000.0
   finish = Time.now + timeout
+  result = nil
 
-  Thread.new do
-    sleep(0.001) while Time.now < finish && !yield
-  end.join
+  while Time.now < finish && !(result = blk.call)
+    sleep(0.001)
+  end
+
+  flunk("wait_for timed out:\n#{blk.source}") if !result
 end
 
 def test_config_for_backend(backend)
