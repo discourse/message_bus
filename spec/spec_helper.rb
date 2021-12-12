@@ -11,18 +11,17 @@ require 'minitest/global_expectations'
 
 require_relative "helpers"
 
-backend = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
-MESSAGE_BUS_CONFIG = test_config_for_backend(backend)
-require "message_bus/backends/#{backend}"
-PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(backend)
-puts "Running with backend: #{backend}"
+CURRENT_BACKEND = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
+
+require "message_bus/backends/#{CURRENT_BACKEND}"
+PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(CURRENT_BACKEND)
+
+puts "Running with backend: #{CURRENT_BACKEND}"
 
 def test_only(*backends)
-  backend = MESSAGE_BUS_CONFIG[:backend]
-  skip "Test doesn't apply to #{backend}" unless backends.include?(backend)
+  skip "Test doesn't apply to #{CURRENT_BACKEND}" unless backends.include?(CURRENT_BACKEND)
 end
 
 def test_never(*backends)
-  backend = MESSAGE_BUS_CONFIG[:backend]
-  skip "Test doesn't apply to #{backend}" if backends.include?(backend)
+  skip "Test doesn't apply to #{CURRENT_BACKEND}" if backends.include?(CURRENT_BACKEND)
 end
