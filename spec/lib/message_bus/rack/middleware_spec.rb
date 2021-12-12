@@ -12,7 +12,7 @@ describe MessageBus::Rack::Middleware do
 
   before do
     bus = @bus = MessageBus::Instance.new
-    @bus.configure(MESSAGE_BUS_CONFIG)
+    @bus.configure(test_config_for_backend(CURRENT_BACKEND))
     @bus.long_polling_enabled = false
     @bus.base_route = base_route if base_route
 

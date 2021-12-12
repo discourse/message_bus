@@ -5,7 +5,7 @@ require 'message_bus'
 
 describe PUB_SUB_CLASS do
   def new_test_bus
-    PUB_SUB_CLASS.new(MESSAGE_BUS_CONFIG)
+    PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
   end
 
   before do
@@ -15,7 +15,7 @@ describe PUB_SUB_CLASS do
 
   describe "API parity" do
     it "has the same public methods as the base class" do
-      @bus.public_methods.sort.must_equal MessageBus::Backends::Base.new(MESSAGE_BUS_CONFIG).public_methods.sort
+      @bus.public_methods.sort.must_equal MessageBus::Backends::Base.new(test_config_for_backend(CURRENT_BACKEND)).public_methods.sort
     end
   end
 
@@ -137,7 +137,7 @@ describe PUB_SUB_CLASS do
     sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
     expected_backlog_size = 0
 
-    case MESSAGE_BUS_CONFIG[:backend]
+    case CURRENT_BACKEND
     when :postgres
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
@@ -161,7 +161,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "baz" # Publish something else to ward off another expiry
     expected_backlog_size += 1
 
-    case MESSAGE_BUS_CONFIG[:backend]
+    case CURRENT_BACKEND
     when :postgres
       # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
       expected_backlog_size -= 1
@@ -189,7 +189,7 @@ describe PUB_SUB_CLASS do
     sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
     expected_backlog_size = 0
 
-    case MESSAGE_BUS_CONFIG[:backend]
+    case CURRENT_BACKEND
     when :postgres
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
@@ -204,7 +204,7 @@ describe PUB_SUB_CLASS do
 
     # for the time being we can give pg a pass here
     # TODO: make the implementation here consistent
-    if MESSAGE_BUS_CONFIG[:backend] != :postgres
+    if CURRENT_BACKEND != :postgres
       # ids are not opaque we expect them to be reset on our channel if it
       # got cleared due to an expire, the reason for this is cause we will leak entries due to tracking
       # this in turn can bloat storage for the backend
@@ -222,7 +222,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "baz", max_backlog_age: 1 # Publish something else to ward off another expiry
     expected_backlog_size += 1
 
-    case MESSAGE_BUS_CONFIG[:backend]
+    case CURRENT_BACKEND
     when :postgres
       # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
       expected_backlog_size -= 1
@@ -249,7 +249,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/foo", "baz"
     @bus.publish "/hello", "planet"
 
-    expected_messages = case MESSAGE_BUS_CONFIG[:backend]
+    expected_messages = case CURRENT_BACKEND
                         when :redis
                           # Redis has channel-specific message IDs
                           [
@@ -277,7 +277,7 @@ describe PUB_SUB_CLASS do
     @bus.publish "/bar", "a1"
     @bus.publish "/bar", "b1"
 
-    expected_messages = case MESSAGE_BUS_CONFIG[:backend]
+    expected_messages = case CURRENT_BACKEND
                         when :redis
                           # Redis has channel-specific message IDs
                           [

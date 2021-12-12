@@ -2,7 +2,6 @@
 
 require_relative '../spec_helper'
 require 'message_bus'
-require 'redis'
 
 describe MessageBus do
   before do
@@ -10,7 +9,7 @@ describe MessageBus do
     @bus.site_id_lookup do
       "magic"
     end
-    @bus.configure(MESSAGE_BUS_CONFIG)
+    @bus.configure(test_config_for_backend(CURRENT_BACKEND))
   end
 
   after do

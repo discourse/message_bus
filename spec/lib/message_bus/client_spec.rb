@@ -11,7 +11,7 @@ describe MessageBus::Client do
 
     before do
       @bus = MessageBus::Instance.new
-      @bus.configure(MESSAGE_BUS_CONFIG)
+      @bus.configure(test_config_for_backend(CURRENT_BACKEND))
       @client = setup_client('abc')
     end
 
