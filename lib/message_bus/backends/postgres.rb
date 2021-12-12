@@ -145,6 +145,8 @@ module MessageBus
 
           conn.exec "UNLISTEN #{channel}"
           nil
+        ensure
+          conn&.close
         end
 
         def unsubscribe
