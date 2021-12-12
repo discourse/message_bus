@@ -37,7 +37,7 @@ class MessageBus::ConnectionManager
             rescue
               # pipe may be broken, move on
             end
-            # turns out you can delete from a set while itereating
+            # turns out you can delete from a set while iterating
             remove_client(client) if client.closed?
           end
         end

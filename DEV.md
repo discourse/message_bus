@@ -5,5 +5,3 @@
 2. Log in to npm `yarn login`
 
 3. Publish: `yarn publish`
-
-

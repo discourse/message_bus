@@ -8,7 +8,7 @@ Unreleased
 
   - FEATURE: Introduce support for transport codecs
   - FIX: event subscription leak in JS after start/stop/start sequence
-  - FEATURE: MessageBus.onVisibilityChange() can be used to trigger a visiblity change check by hand
+  - FEATURE: MessageBus.onVisibilityChange() can be used to trigger a visibility change check by hand
 
 28-04-2021
 
@@ -66,7 +66,7 @@ Unreleased
 
 - Version 3.2.0
 
-   - FIX: compatability with Rails 6.0.3, note: apps without ActionDispatch::Flash may stop working after this upgrade
+   - FIX: compatibility with Rails 6.0.3, note: apps without ActionDispatch::Flash may stop working after this upgrade
    to correct this disable middleware injection with `config.skip_message_bus_middleware = true` and configure middleware by hand with `app.middleware.use(MessageBus::Rack::Middleware)`
 
 28-04-2020
@@ -193,7 +193,7 @@ Unreleased
 
 - Version 2.1.6
 
-- FEATURE: `MesssageBus.publish` accepts option `site_id` to publish to a site
+- FEATURE: `MessageBus.publish` accepts option `site_id` to publish to a site
 - FEATURE: Added MessageBus::DistributedCache for cross process caching
 - PERF: Use monotonic times in timer thread
 - FEATURE: min poll interval is now configurable client side
@@ -257,7 +257,7 @@ Unreleased
 
 - Version 2.0.6
 
-- Fix: correct after_fork so it correctly disconnnects redis
+- Fix: correct after_fork so it correctly disconnects redis
 - Fix: correct message_bus #destroy used in tests to clean up spec (deadlock)
 - Fix: deliver backlog unconditionally when polling (and not long polling)
 
@@ -327,7 +327,7 @@ Unreleased
 
 - Version 2.0.0.beta.6
 
-- Feature: Support standalone opertion without depending on jQuery @nathanstitt
+- Feature: Support standalone operation without depending on jQuery @nathanstitt
 - Feature: Support a noconflict mode @nathanstitt
 - Feature: Support JSON POST payload @nathanstitt
 
@@ -373,7 +373,7 @@ Unreleased
 - Version 1.1.0
 - Fix: keep track of client sequence on server, abandon old subscribes
 - Fix: rare concurrency issue when subscribing concurrently
-- Fature: remove most jQuery dependency from message-bus.js
+- Feature: remove most jQuery dependency from message-bus.js
 
 09-07-2015
 - Version 1.0.16
@@ -397,7 +397,7 @@ Unreleased
 
 28-05-2015
 - Version 1.0.12
-- Feature: Support client_id targetted message
+- Feature: Support client_id targeted message
 
 06-05-2015
 - Version 1.0.11
@@ -406,7 +406,7 @@ Unreleased
 01-05-2015
 - Version: 1.0.10
 - Feature: no longer depends on EventMachine (only used for Thin backend)
-- Feature: realiable pub sub will queue messages in memory if redis is readonly, configurable
+- Feature: reliable pub sub will queue messages in memory if redis is readonly, configurable
 - Fix: if redis is flushed we will continue to deliver messages
 
 23-03-2015

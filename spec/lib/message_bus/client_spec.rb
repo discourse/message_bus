@@ -98,7 +98,7 @@ describe MessageBus::Client do
       chunk2.length.must_equal 0
     end
 
-    it "does not bleed data accross sites" do
+    it "does not bleed data across sites" do
       @client.site_id = "test"
 
       @client.subscribe('/hello', nil)
@@ -107,7 +107,7 @@ describe MessageBus::Client do
       log.length.must_equal 0
     end
 
-    it "does not bleed status accross sites" do
+    it "does not bleed status across sites" do
       @client.site_id = "test"
 
       @client.subscribe('/hello', -1)
@@ -190,7 +190,7 @@ describe MessageBus::Client do
         @client.allowed?(@message).must_equal true
       end
 
-      describe 'targetted at user' do
+      describe 'targeted at user' do
         before do
           @message = MessageBus::Message.new(1, 2, '/test', 'hello')
           @message.user_ids = [1, 2, 3]
@@ -241,7 +241,7 @@ describe MessageBus::Client do
         end
       end
 
-      describe "targetted at group" do
+      describe "targeted at group" do
         before do
           @message = MessageBus::Message.new(1, 2, '/test', 'hello')
           @message.group_ids = [1, 2, 3]
@@ -291,7 +291,7 @@ describe MessageBus::Client do
         end
       end
 
-      describe 'targetted at group and user' do
+      describe 'targeted at group and user' do
         before do
           @message = MessageBus::Message.new(1, 2, '/test', 'hello')
           @message.group_ids = [1, 2, 3]

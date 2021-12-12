@@ -60,7 +60,7 @@ describe("Messagebus", function() {
     });
   });
 
-  testMB('sets dlp paramater when longPolling is disabled', function(){
+  testMB('sets dlp parameter when longPolling is disabled', function(){
     MessageBus.enableLongPolling = false
     this.perform(function(message, xhr){
       expect(xhr.url).toMatch("dlp=t");

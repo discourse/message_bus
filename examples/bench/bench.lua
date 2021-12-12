@@ -1,9 +1,9 @@
 -- wrk returns lots of read errors, this is unavoidable cause
 --
--- 1. There is no internal implmentation of chunked encoding in wrk (which would be ideal)
+-- 1. There is no internal implementation of chunked encoding in wrk (which would be ideal)
 --
 -- 2. MessageBus gem does not provide http keepalive (by design), and can not provide content length
---   if MessageBus provided keepalive it would have to be able to redispatch the reqs to rack, something
+--   if MessageBus provided keepalive it would have to be able to re-dispatch requests to rack, something
 --   that is not supported by the underlying rack hijack protocol, once a req is hijacked it can not be
 --   returned
 --

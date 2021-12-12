@@ -62,7 +62,7 @@ module MessageBus
       attr_accessor :max_backlog_size
       # @return [Integer] the largest permitted size (number of messages) for the global backlog; beyond this capacity, old messages will be dropped.
       attr_accessor :max_global_backlog_size
-      # @return [Integer] the longest amount of time a message may live in a backlog before beging removed, in seconds.
+      # @return [Integer] the longest amount of time a message may live in a backlog before being removed, in seconds.
       attr_accessor :max_backlog_age
       # Typically, backlogs are trimmed whenever we publish to them. This setting allows some tolerance in order to improve performance.
       # @return [Integer] the interval of publications between which the backlog will not be cleared.
@@ -74,7 +74,7 @@ module MessageBus
       # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
       def initialize(config = {}, max_backlog_size = 1000); end
 
-      # Performs routines specific to the backend that are necessary after a process fork, typically triggerd by a forking webserver. Typically this re-opens sockets to the backend.
+      # Performs routines specific to the backend that are necessary after a process fork, typically triggered by a forking webserver. Typically this re-opens sockets to the backend.
       def after_fork
         raise ConcreteClassMustImplementError
       end
@@ -96,7 +96,7 @@ module MessageBus
       # @param [JSON] data some data to publish to the channel. Must be an object that can be encoded as JSON
       # @param [Hash] opts
       # @option opts [Boolean] :queue_in_memory (true) whether or not to hold the message in an in-memory buffer if publication fails, to be re-tried later
-      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a message may live in a backlog before beging removed, in seconds
+      # @option opts [Integer] :max_backlog_age (`self.max_backlog_age`) the longest amount of time a message may live in a backlog before being removed, in seconds
       # @option opts [Integer] :max_backlog_size (`self.max_backlog_size`) the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
       #
       # @return [Integer] the channel-specific ID the message was given
