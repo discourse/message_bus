@@ -4,12 +4,11 @@ require_relative '../../spec_helper'
 require 'message_bus'
 
 describe PUB_SUB_CLASS do
-  def new_test_bus
-    PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
+  before do
+    @bus = PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
   end
 
-  before do
-    @bus = new_test_bus
+  after do
     @bus.reset!
   end
 

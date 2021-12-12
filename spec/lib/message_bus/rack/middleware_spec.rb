@@ -26,7 +26,6 @@ describe MessageBus::Rack::Middleware do
 
     @async_middleware = builder.to_app
     @message_bus_middleware = @async_middleware.app
-    @bus.reset!
   end
 
   after do
