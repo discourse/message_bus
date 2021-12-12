@@ -275,7 +275,7 @@ module MessageBus::Implementation
   #   set, defaults to false unless we're in Rails test or development mode.
   def allow_broadcast?
     @config[:allow_broadcast] ||=
-      if defined? ::Rails
+      if defined? ::Rails.env
         ::Rails.env.test? || ::Rails.env.development?
       else
         false
