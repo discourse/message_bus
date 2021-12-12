@@ -251,7 +251,7 @@ module MessageBus
         @clear_every = config[:clear_every] || 1
       end
 
-      # Reconnects to Postgres; used after a process fork, typically triggerd by a forking webserver
+      # Reconnects to Postgres; used after a process fork, typically triggered by a forking webserver
       # @see Base#after_fork
       def after_fork
         client.reconnect

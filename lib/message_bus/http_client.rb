@@ -146,8 +146,8 @@ module MessageBus
     #
     # A last_message_id may be provided.
     #  * -1 will subscribe to all new messages
-    #  * -2 will recieve last message + all new messages
-    #  * -3 will recieve last 2 message + all new messages
+    #  * -2 will receive last message + all new messages
+    #  * -3 will receive last 2 message + all new messages
     #
     # @example Subscribing to a channel with `last_message_id`
     #   client.subscribe("/test", last_message_id: -2) do |payload|

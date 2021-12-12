@@ -38,7 +38,7 @@ module Thin
     end
   end
 
-  # Response whos body is sent asynchronously.
+  # Response which body is sent asynchronously.
   class AsyncResponse
     include Rack::Response::Helpers
 

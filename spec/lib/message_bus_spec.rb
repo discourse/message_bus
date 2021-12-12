@@ -97,7 +97,7 @@ describe MessageBus do
     client_ids.must_equal ['a', 'b']
   end
 
-  it "should recover from a redis flush" do
+  it "should recover from a reset" do
     data = nil
     @bus.subscribe("/chuck") do |msg|
       data = msg.data
@@ -306,7 +306,7 @@ describe MessageBus do
     end
   end
 
-  it "should support forking properly do" do
+  it "should support forking properly" do
     test_never :memory
 
     data = []

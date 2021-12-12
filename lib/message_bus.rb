@@ -100,14 +100,14 @@ module MessageBus::Implementation
     configure(long_polling_enabled: val)
   end
 
-  # @param [Integer] val The number of simultanuous clients we can service;
+  # @param [Integer] val The number of simultaneous clients we can service;
   #   will revert to polling if we are out of slots
   # @return [void]
   def max_active_clients=(val)
     configure(max_active_clients: val)
   end
 
-  # @return [Integer] The number of simultanuous clients we can service;
+  # @return [Integer] The number of simultaneous clients we can service;
   #   will revert to polling if we are out of slots. Defaults to 1000 if not
   #   explicitly set.
   def max_active_clients
@@ -285,7 +285,7 @@ module MessageBus::Implementation
   # @param [MessageBus::Codec::Base] codec used to encode and decode Message payloads
   # @return [void]
   def transport_codec=(codec)
-    configure(trasport_codec: codec)
+    configure(transport_codec: codec)
   end
 
   # @return [MessageBus::Codec::Base] codec used to encode and decode Message payloads
@@ -338,7 +338,7 @@ module MessageBus::Implementation
   # @option opts [Array<String,Integer>] :group_ids (`nil`) the group IDs to which the message should be available. If nil, available to all.
   # @option opts [String] :site_id (`nil`) the site ID to scope the message to; used for hosting multiple
   #   applications or instances of an application against a single message_bus
-  # @option opts [nil,Integer] :max_backlog_age the longest amount of time a message may live in a backlog before beging removed, in seconds
+  # @option opts [nil,Integer] :max_backlog_age the longest amount of time a message may live in a backlog before being removed, in seconds
   # @option opts [nil,Integer] :max_backlog_size the largest permitted size (number of messages) for the channel backlog; beyond this capacity, old messages will be dropped
   #
   # @return [Integer] the channel-specific ID the message was given
@@ -527,7 +527,7 @@ module MessageBus::Implementation
   end
 
   # Stops listening for publications and stops executing scheduled tasks.
-  # Mostly used in tests to detroy entire bus.
+  # Mostly used in tests to destroy entire bus.
   # @return [void]
   def destroy
     return if @destroyed

@@ -220,7 +220,7 @@ class MessageBus::Client
 
   private
 
-  # heavily optimised to avoid all uneeded allocations
+  # heavily optimised to avoid all unneeded allocations
   NEWLINE = "\r\n".freeze
   COLON_SPACE = ": ".freeze
   HTTP_11 = "HTTP/1.1 200 OK\r\n".freeze
@@ -261,7 +261,7 @@ class MessageBus::Client
       @wrote_headers = true
     end
 
-    # chunked encoding may be "re-chunked" by proxies, so add a seperator
+    # chunked encoding may be "re-chunked" by proxies, so add a separator
     postfix = NEWLINE + "|" + NEWLINE
     data = data.gsub(postfix, NEWLINE + "||" + NEWLINE)
     chunk_length = data.bytesize + postfix.bytesize

@@ -62,7 +62,7 @@ module MessageBus
         @max_backlog_age = 604800
       end
 
-      # Reconnects to Redis; used after a process fork, typically triggerd by a forking webserver
+      # Reconnects to Redis; used after a process fork, typically triggered by a forking webserver
       # @see Base#after_fork
       def after_fork
         pub_redis.disconnect!

@@ -68,19 +68,19 @@ id = MessageBus.last_id("/channel")
 MessageBus.backlog "/channel", id
 ```
 
-### Targetted messages
+### Targeted messages
 
-Messages can be targetted to particular clients by supplying the `client_ids` option when publishing a message.
+Messages can be targeted to particular clients by supplying the `client_ids` option when publishing a message.
 
 ```ruby
 MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"] # (using MessageBus.clientId)
 ```
 
-By configuring the `user_id_lookup` and `group_ids_lookup` options with a Proc or Lambda which will be called with a [Rack specification environment](https://github.com/rack/rack/blob/master/SPEC.rdoc#the-environment-), messages can be targetted to particular clients users or groups by supplying either the `user_ids` or `group_ids` options when publishing a message.
+By configuring the `user_id_lookup` and `group_ids_lookup` options with a Proc or Lambda which will be called with a [Rack specification environment](https://github.com/rack/rack/blob/master/SPEC.rdoc#the-environment-), messages can be targeted to particular clients users or groups by supplying either the `user_ids` or `group_ids` options when publishing a message.
 
 ```ruby
 MessageBus.configure(user_id_lookup: proc do |env|
-  # this lookup occurs on JS-client poolings, so that server can retrieve backlog
+  # this lookup occurs on JS-client polling, so that server can retrieve backlog
   # for the client considering/matching/filtering user_ids set on published messages
   # if user_id is not set on publish time, any user_id returned here will receive the message
   # return the user id here
@@ -98,7 +98,7 @@ end)
 MessageBus.publish "/channel", "hello", group_ids: [1, 2, 3]
 
 # example of MessageBus to set user_ids from an initializer in Rails and Devise:
-# config/inializers/message_bus.rb
+# config/initializers/message_bus.rb
 MessageBus.user_id_lookup do |env|
   req = Rack::Request.new(env)
 
@@ -109,13 +109,13 @@ MessageBus.user_id_lookup do |env|
 end
 ```
 
-If both `user_ids` and `group_ids` options are supplied when publishing a message, the message will be targetted at clients with lookup return values that  matches on either the `user_ids` **or** the `group_ids` options.
+If both `user_ids` and `group_ids` options are supplied when publishing a message, the message will be targeted at clients with lookup return values that  matches on either the `user_ids` **or** the `group_ids` options.
 
 ```ruby
 MessageBus.publish "/channel", "hello", user_ids: [1, 2, 3], group_ids: [1, 2, 3]
 ```
 
-If the `client_ids` option is supplied with either the `user_ids` or `group_ids` options when publising a message, the `client_ids` option will be applied unconditionally and messages will be filtered further using `user_id` or `group_id` clauses.
+If the `client_ids` option is supplied with either the `user_ids` or `group_ids` options when publishing a message, the `client_ids` option will be applied unconditionally and messages will be filtered further using `user_id` or `group_id` clauses.
 
 ```ruby
 MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"], user_ids: [1, 2, 3], group_ids: [1, 2, 3]
@@ -245,7 +245,7 @@ end)
 MessageBus.publish "/channel", "some message"
 
 # you can also choose to pass the `:site_id`.
-# This takes precendence over whatever `site_id_lookup`
+# This takes precedence over whatever `site_id_lookup`
 # returns
 MessageBus.publish "/channel", "some message", site_id: "site-id"
 
@@ -454,7 +454,7 @@ using a packed string encoder.
 
 Keep in mind, much of MessageBus internals and supporting tools expect data to be converted to JSON and back, if you use a naive (and fast) `Marshal` based codec you may need to limit the features you use. Specifically the Postgresql backend expects the codec never to return a string with `\u0000`, additionally some classes like DistributedCache expect keys to be converted to Strings.
 
-Another example may be very large and complicated messages where Oj in compatability mode outperforms JSON. To opt for the Oj codec use:
+Another example may be very large and complicated messages where Oj in compatibility mode outperforms JSON. To opt for the Oj codec use:
 
 ```
 MessageBus.configure(transport_codec: MessageBus::Codec::Oj.new)
