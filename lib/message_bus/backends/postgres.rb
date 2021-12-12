@@ -44,6 +44,7 @@ module MessageBus
           @listening_on = {}
           @available = []
           @allocated = {}
+          @subscribe_connection = nil
           @mutex = Mutex.new
           @pid = Process.pid
         end
@@ -131,11 +132,11 @@ module MessageBus
           listener = Listener.new
           yield listener
 
-          conn = raw_pg_connection
-          conn.exec "LISTEN #{channel}"
+          @subscribe_connection = raw_pg_connection
+          @subscribe_connection.exec "LISTEN #{channel}"
           listener.do_sub.call
           while listening_on?(channel, obj)
-            conn.wait_for_notify(10) do |_, _, payload|
+            @subscribe_connection.wait_for_notify(10) do |_, _, payload|
               break unless listening_on?(channel, obj)
 
               listener.do_message.call(nil, payload)
@@ -143,10 +144,11 @@ module MessageBus
           end
           listener.do_unsub.call
 
-          conn.exec "UNLISTEN #{channel}"
+          @subscribe_connection.exec "UNLISTEN #{channel}"
           nil
         ensure
-          conn&.close
+          @subscribe_connection&.close
+          @subscribe_connection = nil
         end
 
         def unsubscribe

@@ -315,7 +315,7 @@ describe MessageBus do
     end
 
     @bus.publish("/hello", "pre-fork")
-    wait_for(2000) { data.length > 0 }
+    wait_for(2000) { data.length == 1 }
 
     if child = Process.fork
       # The child was forked and we received its PID
@@ -327,6 +327,7 @@ describe MessageBus do
     else
       begin
         @bus.after_fork
+        GC.start
         @bus.publish("/hello", "from-fork")
       ensure
         exit!(0)
@@ -335,7 +336,11 @@ describe MessageBus do
 
     wait_for(2000) { data.length == 3 }
 
-    data.must_equal(["pre-fork", "from-fork", "continuation"])
+    @bus.publish("/hello", "after-fork")
+
+    wait_for(2000) { data.length == 4 }
+
+    data.must_equal(["pre-fork", "from-fork", "continuation", "after-fork"])
   end
 
   describe '#register_client_message_filter' do
