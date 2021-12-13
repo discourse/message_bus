@@ -44,6 +44,7 @@ module MessageBus
           @listening_on = {}
           @available = []
           @allocated = {}
+          @subscribe_connection = nil
           @mutex = Mutex.new
           @pid = Process.pid
         end
@@ -131,7 +132,7 @@ module MessageBus
           listener = Listener.new
           yield listener
 
-          conn = raw_pg_connection
+          conn = @subscribe_connection = raw_pg_connection
           conn.exec "LISTEN #{channel}"
           listener.do_sub.call
           while listening_on?(channel, obj)
@@ -145,6 +146,9 @@ module MessageBus
 
           conn.exec "UNLISTEN #{channel}"
           nil
+        ensure
+          @subscribe_connection&.close
+          @subscribe_connection = nil
         end
 
         def unsubscribe
