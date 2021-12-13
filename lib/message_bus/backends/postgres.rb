@@ -132,11 +132,11 @@ module MessageBus
           listener = Listener.new
           yield listener
 
-          @subscribe_connection = raw_pg_connection
-          @subscribe_connection.exec "LISTEN #{channel}"
+          conn = @subscribe_connection = raw_pg_connection
+          conn.exec "LISTEN #{channel}"
           listener.do_sub.call
           while listening_on?(channel, obj)
-            @subscribe_connection.wait_for_notify(10) do |_, _, payload|
+            conn.wait_for_notify(10) do |_, _, payload|
               break unless listening_on?(channel, obj)
 
               listener.do_message.call(nil, payload)
@@ -144,7 +144,7 @@ module MessageBus
           end
           listener.do_unsub.call
 
-          @subscribe_connection.exec "UNLISTEN #{channel}"
+          conn.exec "UNLISTEN #{channel}"
           nil
         ensure
           @subscribe_connection&.close
