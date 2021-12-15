@@ -41,7 +41,6 @@ class MessageBus::Rack::Diagnostics
     asset = route.split('/assets/')[1]
     if asset && !asset !~ /\//
       content = asset_contents(asset)
-      split = asset.split('.')
       return [200, { 'Content-Type' => 'application/javascript;charset=UTF-8' }, [content]]
     end
 
