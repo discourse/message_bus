@@ -1,6 +1,7 @@
 Unreleased
 
   - FIX: Prevent simple polling from clobbering the session
+  - SECURITY: Fix path traversal on diagnostics route.
 
 31-05-2021
 

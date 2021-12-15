@@ -13,6 +13,15 @@ class MessageBus::Rack::Diagnostics
     @bus = config[:message_bus] || MessageBus
   end
 
+  JS_ASSETS = %w{
+    jquery-1.8.2.js
+    react.js
+    react-dom.js
+    babel.min.js
+    message-bus.js
+    application.jsx
+  }
+
   # Process an HTTP request from a subscriber client
   # @param [Rack::Request::Env] env the request environment
   def call(env)
@@ -39,7 +48,8 @@ class MessageBus::Rack::Diagnostics
     end
 
     asset = route.split('/assets/')[1]
-    if asset && !asset !~ /\//
+
+    if asset && JS_ASSETS.include?(asset)
       content = asset_contents(asset)
       return [200, { 'Content-Type' => 'application/javascript;charset=UTF-8' }, [content]]
     end
@@ -74,6 +84,23 @@ class MessageBus::Rack::Diagnostics
     File.expand_path("../../../../assets/#{asset}", __FILE__)
   end
 
+  def script_tags
+    tags = []
+
+    JS_ASSETS.each do |asset|
+      type =
+        if asset.end_with?('.js')
+          'text/javascript'
+        elsif asset.end_with?('.jsx')
+          'text/jsx'
+        end
+
+      tags << js_asset(asset, type)
+    end
+
+    tags.join("\n")
+  end
+
   def index
     html = <<~HTML
       <!DOCTYPE html>
@@ -82,12 +109,8 @@ class MessageBus::Rack::Diagnostics
         </head>
         <body>
           <div id="app"></div>
-          #{js_asset "jquery-1.8.2.js"}
-          #{js_asset "react.js"}
-          #{js_asset "react-dom.js"}
-          #{js_asset "babel.min.js"}
-          #{js_asset "message-bus.js"}
-          #{js_asset "application.jsx", "text/jsx"}
+
+          #{script_tags}
         </body>
       </html>
     HTML

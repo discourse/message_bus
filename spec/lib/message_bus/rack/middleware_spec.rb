@@ -142,13 +142,12 @@ describe MessageBus::Rack::Middleware do
   end
 
   describe "diagnostics" do
-    it "should return a 403 if a user attempts to get at the _diagnostics path" do
+    it "should return a 403 if an unauthorized user attempts to get at the _diagnostics path" do
       get "/message-bus/_diagnostics"
       last_response.status.must_equal 403
     end
 
     it "should get a 200 with html for an authorized user" do
-
       def @bus.is_admin_lookup
         proc { |_| true }
       end
@@ -171,7 +170,6 @@ describe MessageBus::Rack::Middleware do
     end
 
     it "should get the script it asks for" do
-
       def @bus.is_admin_lookup
         proc { |_| true }
       end
@@ -179,6 +177,15 @@ describe MessageBus::Rack::Middleware do
       get "/message-bus/_diagnostics/assets/message-bus.js"
       last_response.status.must_equal 200
       last_response.content_type.must_equal "application/javascript;charset=UTF-8"
+    end
+
+    it "should return 404 for invalid assets path" do
+      def @bus.is_admin_lookup
+        proc { |_| true }
+      end
+
+      get "/message-bus/_diagnostics/assets/../Gemfile"
+      last_response.status.must_equal 404
     end
   end
 
