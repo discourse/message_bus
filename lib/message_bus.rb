@@ -7,9 +7,7 @@ require_relative "message_bus/version"
 require_relative "message_bus/message"
 require_relative "message_bus/client"
 require_relative "message_bus/connection_manager"
-require_relative "message_bus/diagnostics"
 require_relative "message_bus/rack/middleware"
-require_relative "message_bus/rack/diagnostics"
 require_relative "message_bus/timer_thread"
 require_relative "message_bus/codec/base"
 require_relative "message_bus/backends"
@@ -45,21 +43,6 @@ module MessageBus::Implementation
     @destroyed = false
     @timer_thread = nil
     @subscriber_thread = nil
-  end
-
-  # @param [Boolean] val whether or not to cache static assets for the diagnostics pages
-  # @return [void]
-  def cache_assets=(val)
-    configure(cache_assets: val)
-  end
-
-  # @return [Boolean] whether or not to cache static assets for the diagnostics pages
-  def cache_assets
-    if defined? @config[:cache_assets]
-      @config[:cache_assets]
-    else
-      true
-    end
   end
 
   # @param [Logger] logger a logger object to be used by the bus
@@ -324,12 +307,6 @@ module MessageBus::Implementation
   # @return [Symbol] the name of the backend implementation configured
   def backend
     @config[:backend] || :redis
-  end
-
-  # Enables diagnostics tracking
-  # @return [void]
-  def enable_diagnostics
-    MessageBus::Diagnostics.enable(self)
   end
 
   # Publishes a message to a channel
