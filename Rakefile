@@ -5,18 +5,19 @@ require 'bundler'
 require 'bundler/gem_tasks'
 require 'bundler/setup'
 require 'rubocop/rake_task'
+require 'yard'
+
+Bundler.require(:default, :test)
 
 RuboCop::RakeTask.new
-
-require 'yard'
 YARD::Rake::YardocTask.new
+
+backends = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
 
 desc "Generate documentation for Yard, and fail if there are any warnings"
 task :test_doc do
   sh "yard --fail-on-warning #{'--no-progress' if ENV['CI']}"
 end
-
-Bundler.require(:default, :test)
 
 namespace :jasmine do
   desc "Run Jasmine tests in headless mode"
@@ -26,8 +27,6 @@ namespace :jasmine do
     end
   end
 end
-
-backends = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
 
 namespace :spec do
   spec_files = Dir['spec/**/*_spec.rb']

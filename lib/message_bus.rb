@@ -490,9 +490,7 @@ module MessageBus::Implementation
   #
   # @return [Integer] the channel-specific ID of the last message published to the given channel
   def last_id(channel, site_id = nil)
-    puts "last_id, #{channel} #{site_id}"
     encoded = encode_channel_name(channel, site_id)
-    puts encoded.inspect
     reliable_pub_sub.last_id(encoded)
   end
 

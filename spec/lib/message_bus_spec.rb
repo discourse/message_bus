@@ -5,20 +5,16 @@ require 'message_bus'
 
 describe MessageBus do
   before do
-    puts "b-before1"
     @bus = MessageBus::Instance.new
     @bus.site_id_lookup do
       "magic"
     end
     @bus.configure(test_config_for_backend(CURRENT_BACKEND))
-    puts "b-before2"
   end
 
   after do
-    puts "after1"
     @bus.reset!
     @bus.destroy
-    puts "after2"
   end
 
   it "can be turned off" do
@@ -241,12 +237,10 @@ describe MessageBus do
 
   describe "global subscriptions" do
     before do
-      puts "before1"
       seq = 0
       @bus.site_id_lookup do
         (seq += 1).to_s
       end
-      puts "before2"
     end
 
     it "can get last_message" do
@@ -254,7 +248,7 @@ describe MessageBus do
       @bus.last_message("/global/test").data.must_equal "test"
     end
 
-    it "can subscribe globally xyz" do
+    it "can subscribe globally" do
       data = nil
       @bus.subscribe do |message|
         data = message.data

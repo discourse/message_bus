@@ -88,7 +88,6 @@ module MessageBus
         end
 
         def reconnect
-          puts "<< reconnect 🧨"
           sync do
             @listening_on.clear
             @available.each(&:close)
@@ -98,7 +97,6 @@ module MessageBus
 
         # Dangerous, drops the message_bus table containing the backlog if it exists.
         def reset!
-          puts "reset!"
           result = nil
           hold do |conn|
             conn.exec 'DROP TABLE IF EXISTS message_bus'
@@ -107,9 +105,7 @@ module MessageBus
           end
 
           sync do
-            puts "<< 🩳 clearing connections (#{result&.getvalue(0, 0)}) #{INHERITED_CONNECTIONS.length}, #{@available.length}"
-            INHERITED_CONNECTIONS.each(&:close)
-            INHERITED_CONNECTIONS.clear
+            puts "<< 🩳 clearing connections (#{result&.getvalue(0, 0)}) #{@available.length}"
             @available.each(&:close)
             @available.clear
           end
@@ -122,7 +118,6 @@ module MessageBus
 
         def max_id(channel = nil)
           block = proc do |r|
-            puts "in block"
             if r.ntuples > 0
               r.getvalue(0, 0).to_i
             else
@@ -131,11 +126,9 @@ module MessageBus
           end
 
           if channel
-            puts "channel"
-            hold { |conn| puts 'inside'; exec_prepared(conn, 'max_channel_id', [channel], &block) }
+            hold { |conn| exec_prepared(conn, 'max_channel_id', [channel], &block) }
           else
-            puts "not"
-            hold { |conn| puts 'inside'; exec_prepared(conn, 'max_id', &block) }
+            hold { |conn| exec_prepared(conn, 'max_id', &block) }
           end
         end
 
@@ -189,7 +182,6 @@ module MessageBus
         end
 
         def hold
-          puts "hold {}: #{caller[0]}"
           current_pid = Process.pid
           if current_pid != @pid
             @pid = current_pid
@@ -200,14 +192,12 @@ module MessageBus
           end
 
           if conn = sync { @allocated[Thread.current] }
-            puts "conn = sync { @allocated[Thread.current] }"
             return yield(conn)
           end
 
           begin
             conn = sync { @available.first }
 
-            puts "reusing connection" if conn
             conn ||= new_pg_connection
             sync { @allocated[Thread.current] = conn }
             yield conn
@@ -220,10 +210,8 @@ module MessageBus
             sync do
               @allocated.delete(Thread.current)
               if Process.pid != current_pid
-                puts "saving inherited connection"
                 INHERITED_CONNECTIONS << conn
               elsif conn && !@available.include?(conn) && !e
-                puts "saving available connection"
                 @available << conn
               end
             end
@@ -231,7 +219,7 @@ module MessageBus
         end
 
         def raw_pg_connection
-          puts ">> raw_pg_connection connect 🚀"
+          puts "new conn!"
           PG::Connection.connect(@config[:backend_options] || {})
         end
 

@@ -70,11 +70,9 @@ module MessageBus
 
       # (see Base#reset!)
       def reset!
-        puts "redis reset!"
         pub_redis.keys("__mb_*").each do |k|
           pub_redis.del k
         end
-        puts "redis reset! done"
       end
 
       # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.
@@ -251,27 +249,20 @@ LUA
 
       # (see Base#global_unsubscribe)
       def global_unsubscribe
-        puts "global_unsubscribe"
         begin
           new_redis = new_redis_connection
-          puts "has new connection"
           new_redis.publish(redis_channel_name, UNSUB_MESSAGE)
-          puts "after publish"
         ensure
-          puts "disconnecting"
           new_redis&.disconnect!
-          puts "disconnected"
         end
       end
 
       # (see Base#global_subscribe)
       def global_subscribe(last_id = nil, &blk)
-        puts "global_subscribe"
         raise ArgumentError unless block_given?
 
         highest_id = last_id
 
-        puts "after last_id"
         clear_backlog = lambda do
           retries = 4
           begin
@@ -285,17 +276,13 @@ LUA
         end
 
         begin
-          puts "before new global_redis"
           global_redis = new_redis_connection
-          puts "after new global_redis"
 
           if highest_id
             clear_backlog.call(&blk)
           end
 
-          puts "before global_redis subsc"
           global_redis.subscribe(redis_channel_name) do |on|
-            puts "in global_redis.subscribe block"
             on.subscribe do
               if highest_id
                 clear_backlog.call(&blk)
