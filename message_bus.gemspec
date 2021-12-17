@@ -9,8 +9,7 @@ Gem::Specification.new do |gem|
   gem.summary       = %q{}
   gem.homepage      = "https://github.com/discourse/message_bus"
   gem.license       = "MIT"
-  gem.files         = `git ls-files`.split($\) +
-                      ["vendor/assets/javascripts/message-bus.js", "vendor/assets/javascripts/message-bus-ajax.js"]
+  gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "message_bus"
