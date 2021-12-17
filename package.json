@@ -1,6 +1,6 @@
 {
   "name": "message-bus-client",
-  "version": "3.3.5",
+  "version": "0.0.0-version-placeholder",
   "description": "A message bus client in Javascript",
   "main": "assets/message-bus.js",
   "keywords": [

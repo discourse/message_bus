@@ -74,13 +74,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Update package version
+        run: |
+          VERSION=$(ruby -r './lib/message_bus/version' -e 'puts MessageBus::VERSION')
+          sed -i "s/0.0.0-version-placeholder/$VERSION/" package.json
+
       - name: Release gem
         uses: discourse/publish-rubygems-action@v2
+        id: publish-gem
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
           GIT_EMAIL: team@discourse.org
           GIT_NAME: discoursebot
 
-      - uses: JS-DevTools/npm-publish@v1
+      - name: Publish package
+        uses: JS-DevTools/npm-publish@v1
+        if: steps.publish-gem.outputs.new_version == 'true'
         with:
           token: ${{ secrets.NPM_TOKEN }}
