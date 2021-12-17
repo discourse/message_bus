@@ -6,6 +6,10 @@ require 'message_bus'
 class FakeAsync
   attr_accessor :cleanup_timer
 
+  def initialize
+    @sent = nil
+  end
+
   def <<(val)
     sleep 0.01 # simulate IO
     @sent ||= +""

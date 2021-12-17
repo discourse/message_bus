@@ -46,6 +46,9 @@ class MessageBus::Client
     @bus = opts[:message_bus] || MessageBus
     @subscriptions = {}
     @chunks_sent = 0
+    @async_response = nil
+    @io = nil
+    @wrote_headers = false
   end
 
   # @yield executed with a lock on the Client instance

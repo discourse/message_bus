@@ -9,6 +9,7 @@ module Thin
 
       def initialize
         @queue = []
+        @body_callback = nil
       end
 
       def call(body)
