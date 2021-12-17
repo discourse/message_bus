@@ -22,6 +22,7 @@ jobs:
       postgres:
         image: postgres:14.0
         env:
+          POSTGRES_DB: ${{ format('message_bus_test_{0}_{1}', matrix.ruby, matrix.redis) }}
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
@@ -41,6 +42,9 @@ jobs:
       matrix:
         ruby: ["3.0", "2.7", "2.6"]
         redis: ["5", "6"]
+
+    env:
+      PGDATABASE: ${{ format('message_bus_test_{0}_{1}', matrix.ruby, matrix.redis) }}
 
     steps:
       - uses: actions/checkout@v2
