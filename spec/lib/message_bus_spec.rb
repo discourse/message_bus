@@ -6,7 +6,6 @@ require 'message_bus'
 describe MessageBus do
   before do
     @bus = MessageBus::Instance.new
-    @bus.reset!
     @bus.site_id_lookup do
       "magic"
     end

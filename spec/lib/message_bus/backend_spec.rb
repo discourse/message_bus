@@ -6,7 +6,6 @@ require 'message_bus'
 describe PUB_SUB_CLASS do
   before do
     @bus = PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
-    @bus.reset!
   end
 
   after do
