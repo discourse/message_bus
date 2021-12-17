@@ -513,7 +513,10 @@ module MessageBus::Implementation
   #
   # @return [Integer] the channel-specific ID of the last message published to the given channel
   def last_id(channel, site_id = nil)
-    reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
+    puts "last_id, #{channel} #{site_id}"
+    encoded = encode_channel_name(channel, site_id)
+    puts encoded.inspect
+    reliable_pub_sub.last_id(encoded)
   end
 
   # Get the last message published on a channel
@@ -545,7 +548,7 @@ module MessageBus::Implementation
       @destroyed = true
     end
 
-    @subscriber_thread.join if @subscriber_thread&.alive?
+    @subscriber_thread.join if @subscriber_thread
     timer.stop
   end
 

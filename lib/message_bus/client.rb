@@ -175,12 +175,14 @@ class MessageBus::Client
   #   requested a message newer than the newest on the channel, or when there
   #   are messages available that the client doesn't have permission for.
   def backlog
+    puts "backlog, #{@subscriptions.length}"
     r = []
     new_message_ids = nil
 
     @subscriptions.each do |k, v|
       id = v.to_i
 
+      puts "1"
       if id < -1
         last_id = @bus.last_id(k, site_id)
         id = last_id + id + 1
@@ -189,12 +191,16 @@ class MessageBus::Client
 
       next if id < 0
 
+      puts "2"
       messages = @bus.backlog(k, id, site_id)
 
       if messages.length == 0
+        puts "3"
         if id > @bus.last_id(k, site_id)
+          puts "3a"
           @subscriptions[k] = -1
         end
+        puts "3b"
       else
         messages.each do |msg|
           if allowed?(msg)
@@ -207,6 +213,7 @@ class MessageBus::Client
       end
     end
 
+    puts "4"
     # stats message for all newly subscribed
     status_message = nil
     @subscriptions.each do |k, v|
@@ -216,6 +223,7 @@ class MessageBus::Client
       end
     end
 
+    puts "5"
     r << MessageBus::Message.new(-1, -1, '/__status', status_message) if status_message
 
     r || []

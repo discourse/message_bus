@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'set'
 require 'pg'
 
 module MessageBus
@@ -21,7 +22,7 @@ module MessageBus
     # @see Base general information about message_bus backends
     class Postgres < Base
       class Client
-        INHERITED_CONNECTIONS = []
+        INHERITED_CONNECTIONS = Set.new
 
         class Listener
           attr_reader :do_sub, :do_unsub, :do_message
@@ -42,7 +43,7 @@ module MessageBus
         def initialize(config)
           @config = config
           @listening_on = {}
-          @available = []
+          @available = Set.new
           @allocated = {}
           @subscribe_connection = nil
           @mutex = Mutex.new
@@ -87,20 +88,26 @@ module MessageBus
         end
 
         def reconnect
+          puts "<< reconnect 🧨"
           sync do
             @listening_on.clear
+            @available.each(&:close)
             @available.clear
           end
         end
 
         # Dangerous, drops the message_bus table containing the backlog if it exists.
         def reset!
+          puts "reset!"
+          result = nil
           hold do |conn|
             conn.exec 'DROP TABLE IF EXISTS message_bus'
+            result = conn.exec "SELECT COUNT(*) FROM pg_stat_activity" #  WHERE state = 'active'
             create_table(conn)
           end
 
           sync do
+            puts "<< 🩳 clearing connections (#{result&.getvalue(0, 0)}) #{INHERITED_CONNECTIONS.length}, #{@available.length}"
             INHERITED_CONNECTIONS.each(&:close)
             INHERITED_CONNECTIONS.clear
             @available.each(&:close)
@@ -115,6 +122,7 @@ module MessageBus
 
         def max_id(channel = nil)
           block = proc do |r|
+            puts "in block"
             if r.ntuples > 0
               r.getvalue(0, 0).to_i
             else
@@ -123,9 +131,11 @@ module MessageBus
           end
 
           if channel
-            hold { |conn| exec_prepared(conn, 'max_channel_id', [channel], &block) }
+            puts "channel"
+            hold { |conn| puts 'inside'; exec_prepared(conn, 'max_channel_id', [channel], &block) }
           else
-            hold { |conn| exec_prepared(conn, 'max_id', &block) }
+            puts "not"
+            hold { |conn| puts 'inside'; exec_prepared(conn, 'max_id', &block) }
           end
         end
 
@@ -179,6 +189,7 @@ module MessageBus
         end
 
         def hold
+          puts "hold {}: #{caller[0]}"
           current_pid = Process.pid
           if current_pid != @pid
             @pid = current_pid
@@ -189,26 +200,38 @@ module MessageBus
           end
 
           if conn = sync { @allocated[Thread.current] }
+            puts "conn = sync { @allocated[Thread.current] }"
             return yield(conn)
           end
 
           begin
-            conn = sync { @available.shift } || new_pg_connection
+            conn = sync { @available.first }
+
+            puts "reusing connection" if conn
+            conn ||= new_pg_connection
             sync { @allocated[Thread.current] = conn }
             yield conn
           rescue PG::ConnectionBad, PG::UnableToSend => e
+            puts "error"
+            puts e.inspect
             # don't add this connection back to the pool
           ensure
-            sync { @allocated.delete(Thread.current) }
-            if Process.pid != current_pid
-              sync { INHERITED_CONNECTIONS << conn }
-            elsif conn && !e
-              sync { @available << conn }
+            "ensure #{e.inspect}" if e
+            sync do
+              @allocated.delete(Thread.current)
+              if Process.pid != current_pid
+                puts "saving inherited connection"
+                INHERITED_CONNECTIONS << conn
+              elsif conn && !@available.include?(conn) && !e
+                puts "saving available connection"
+                @available << conn
+              end
             end
           end
         end
 
         def raw_pg_connection
+          puts ">> raw_pg_connection connect 🚀"
           PG::Connection.connect(@config[:backend_options] || {})
         end
 
@@ -399,6 +422,7 @@ module MessageBus
             end
           end
         rescue => error
+          puts "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
           @config[:logger].warn "#{error} subscribe failed, reconnecting in 1 second. Call stack\n#{error.backtrace.join("\n")}"
           sleep 1
           retry
