@@ -7,6 +7,7 @@ class FakeAsyncMiddleware
     @simulate_thin_async = false
     @simulate_hijack = false
     @in_async = false
+    @allow_chunked = false
   end
 
   def app

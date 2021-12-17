@@ -41,6 +41,10 @@ module MessageBus::Implementation
   def initialize
     @config = {}
     @mutex = Synchronizer.new
+    @off = false
+    @destroyed = false
+    @timer_thread = nil
+    @subscriber_thread = nil
   end
 
   # @param [Boolean] val whether or not to cache static assets for the diagnostics pages
