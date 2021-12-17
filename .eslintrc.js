@@ -11,7 +11,6 @@ module.exports = {
   },
   rules: {},
   ignorePatterns: [
-    '/vendor',
     '/doc',
     '/assets/babel.min.js',
     '/assets/jquery-1.8.2.js',
