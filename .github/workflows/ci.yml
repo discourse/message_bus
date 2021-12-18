@@ -22,7 +22,6 @@ jobs:
       postgres:
         image: postgres:14.0
         env:
-          POSTGRES_DB: ${{ format('message_bus_test_{0}_{1}', matrix.ruby, matrix.redis) }}
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
@@ -40,11 +39,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.0", "2.7", "2.6"]
-        redis: ["5", "6"]
-
-    env:
-      PGDATABASE: ${{ format('message_bus_test_{0}_{1}', matrix.ruby, matrix.redis) }}
+        ruby: ['3.0', '2.7', '2.6']
+        redis: ['5', '6']
 
     steps:
       - uses: actions/checkout@v2
@@ -63,11 +59,12 @@ jobs:
       - name: Setup npm
         run: npm install
 
+      - name: Create Database
+        run: |
+          createdb message_bus_test
+
       - name: Tests
-        run: bundle exec rake test
-        env:
-          TESTOPTS: --verbose
-          MESSAGE_BUS_BACKEND: postgres
+        run: bundle exec rake
         timeout-minutes: 3
 
       - name: Linting
