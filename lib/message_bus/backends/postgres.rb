@@ -93,7 +93,7 @@ module MessageBus
 
         def after_fork
           sync do
-            puts "(pid: #{Process.pid}) after_fork #{@available.length} #{INHERITED_CONNECTIONS.length}"
+            # puts "(pid: #{Process.pid}) after_fork #{@available.length} #{INHERITED_CONNECTIONS.length}"
             @pid = Process.pid
             INHERITED_CONNECTIONS.concat(@available)
             @available.clear
@@ -173,7 +173,7 @@ module MessageBus
           nil
         ensure
           DEBUG_BAG[:count] -= 1
-          puts "🩲 closing 1, now #{DEBUG_BAG[:count]}"
+          # puts "🩲 closing 1, now #{DEBUG_BAG[:count]}"
           @subscribe_connection&.close
           @subscribe_connection = nil
         end
@@ -185,15 +185,15 @@ module MessageBus
         private
 
         def exec_prepared(conn, *a)
-          sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec prep (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
+          # sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec prep (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
           r = conn.exec_prepared(*a)
           ret = yield r if block_given?
-          sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec done!(pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
+          # sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec done!(pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
           ret || r
         rescue => e
           sync {
-            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}🔥 exec prep error (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"
-            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}#{e.inspect}"
+            puts "🔥 exec prep error (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"
+            puts "#{e.inspect}"
           }
         ensure
           r.clear if r.respond_to?(:clear)
@@ -243,7 +243,8 @@ module MessageBus
           # puts caller.each {|a| puts a}
           DEBUG_BAG[:count] += 1
           PG::Connection.connect(@config[:backend_options] || {}).tap do |conn|
-            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}🦋 opening 1, now #{DEBUG_BAG[:count]} (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) (threads #{Thread.list.select {|thread| thread.status == "run"}.count}/#{Thread.list.count})"
+            # result = conn.exec "SELECT COUNT(*) FROM pg_stat_activity" #  WHERE state = 'active'
+            # puts "🦋 opening 1, now #{DEBUG_BAG[:count]} (pg: #{result&.getvalue(0, 0)}) (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) (threads #{Thread.list.select {|thread| thread.status == "run"}.count}/#{Thread.list.count})"
           end
         end
 
@@ -451,7 +452,7 @@ module MessageBus
 
       def client
         @mutex.synchronize do
-          @client ||= Client.new(@config).tap { puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}NEW CLIENT (pid: #{Process.pid}, thread: #{Thread.current.object_id})" }
+          @client ||= Client.new(@config)
         end
       end
 
