@@ -537,6 +537,7 @@ module MessageBus::Implementation
     return if @destroyed
 
     reliable_pub_sub.global_unsubscribe
+    reliable_pub_sub.destroy
 
     @mutex.synchronize do
       return if @destroyed

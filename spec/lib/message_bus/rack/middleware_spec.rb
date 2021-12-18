@@ -83,7 +83,7 @@ describe MessageBus::Rack::Middleware do
         { "FOO" => "BAR" }
       end
 
-      Thread.new do
+      t = Thread.new do
         wait_for(2000) { middleware.in_async? }
         bus.publish "/foo", "םוֹלשָׁ"
       end
@@ -96,6 +96,7 @@ describe MessageBus::Rack::Middleware do
       parsed[0]["data"].must_equal "םוֹלשָׁ"
 
       last_response.headers["FOO"].must_equal "BAR"
+      t.join
     end
 
     it "should timeout within its alloted slot" do

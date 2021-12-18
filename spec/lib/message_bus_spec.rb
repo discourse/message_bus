@@ -23,7 +23,8 @@ describe MessageBus do
     @bus.off?.must_equal true
   end
 
-  it "can call destroy twice" do
+  it "can call destroy multiple times" do
+    @bus.destroy
     @bus.destroy
     @bus.destroy
   end

@@ -16,6 +16,7 @@ describe MessageBus::Client do
     end
 
     after do
+      @client.close
       @bus.reset!
       @bus.destroy
     end
