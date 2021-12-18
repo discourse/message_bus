@@ -412,9 +412,7 @@ module MessageBus
       private
 
       def client
-        @mutex.synchronize do
-          @client ||= Client.new(@config)
-        end
+        @client || @mutex.synchronize { @client ||= Client.new(@config) }
       end
 
       def postgresql_channel_name
