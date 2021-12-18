@@ -39,6 +39,10 @@ module MessageBus::Implementation
   def initialize
     @config = {}
     @mutex = Synchronizer.new
+    @off = false
+    @destroyed = false
+    @timer_thread = nil
+    @subscriber_thread = nil
   end
 
   # @param [Logger] logger a logger object to be used by the bus
@@ -510,6 +514,7 @@ module MessageBus::Implementation
     return if @destroyed
 
     reliable_pub_sub.global_unsubscribe
+    reliable_pub_sub.destroy
 
     @mutex.synchronize do
       return if @destroyed

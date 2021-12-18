@@ -22,6 +22,7 @@ module MessageBus
         @lock = Mutex.new
         @message_bus = message_bus || MessageBus
         @publish_queue_in_memory = publish_queue_in_memory
+        @app_version = nil
       end
 
       def subscribers

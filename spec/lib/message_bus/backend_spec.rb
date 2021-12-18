@@ -10,6 +10,7 @@ describe PUB_SUB_CLASS do
 
   after do
     @bus.reset!
+    @bus.destroy
   end
 
   describe "API parity" do
