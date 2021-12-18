@@ -3,6 +3,10 @@
 require 'set'
 require 'pg'
 
+DEBUG_BAG = {
+  count: 0
+}
+
 module MessageBus
   module Backends
     # The Postgres backend stores published messages in a single Postgres table
@@ -22,7 +26,7 @@ module MessageBus
     # @see Base general information about message_bus backends
     class Postgres < Base
       class Client
-        INHERITED_CONNECTIONS = Set.new
+        INHERITED_CONNECTIONS = []
 
         class Listener
           attr_reader :do_sub, :do_unsub, :do_message
@@ -43,7 +47,7 @@ module MessageBus
         def initialize(config)
           @config = config
           @listening_on = {}
-          @available = Set.new
+          @available = []
           @allocated = {}
           @subscribe_connection = nil
           @mutex = Mutex.new
@@ -87,25 +91,36 @@ module MessageBus
           hold { |conn| exec_prepared(conn, 'get_message', [channel, id]) { |r| r.getvalue(0, 0) } }
         end
 
-        def reconnect
+        def after_fork
           sync do
-            @listening_on.clear
-            @available.each(&:close)
+            puts "(pid: #{Process.pid}) after_fork #{@available.length} #{INHERITED_CONNECTIONS.length}"
+            @pid = Process.pid
+            INHERITED_CONNECTIONS.concat(@available)
             @available.clear
+            @listening_on.clear
+            # DEBUG_BAG[:count] -= @available.length
+            # puts "🐡 closing #{@available.length}, now #{DEBUG_BAG[:count]}"
+            # @available.each(&:close)
+            # @available.clear
           end
         end
 
         # Dangerous, drops the message_bus table containing the backlog if it exists.
         def reset!
-          result = nil
           hold do |conn|
             conn.exec 'DROP TABLE IF EXISTS message_bus'
-            result = conn.exec "SELECT COUNT(*) FROM pg_stat_activity" #  WHERE state = 'active'
             create_table(conn)
           end
+        end
 
+        def destroy
+          result = nil
+          hold do |conn|
+            result = conn.exec "SELECT COUNT(*) FROM pg_stat_activity" #  WHERE state = 'active'
+          end
           sync do
-            puts "<< 🩳 clearing connections (#{result&.getvalue(0, 0)}) #{@available.length}"
+            DEBUG_BAG[:count] -= @available.length
+            puts "🩳 closing #{@available.length}, now #{DEBUG_BAG[:count]} (pg: #{result&.getvalue(0, 0)})"
             @available.each(&:close)
             @available.clear
           end
@@ -157,6 +172,8 @@ module MessageBus
           conn.exec "UNLISTEN #{channel}"
           nil
         ensure
+          DEBUG_BAG[:count] -= 1
+          puts "🩲 closing 1, now #{DEBUG_BAG[:count]}"
           @subscribe_connection&.close
           @subscribe_connection = nil
         end
@@ -168,8 +185,16 @@ module MessageBus
         private
 
         def exec_prepared(conn, *a)
+          sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec prep (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
           r = conn.exec_prepared(*a)
-          yield r if block_given?
+          ret = yield r if block_given?
+          sync {puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}exec done!(pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"}
+          ret || r
+        rescue => e
+          sync {
+            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}🔥 exec prep error (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) #{a[0]}"
+            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}#{e.inspect}"
+          }
         ensure
           r.clear if r.respond_to?(:clear)
         end
@@ -184,19 +209,16 @@ module MessageBus
         def hold
           current_pid = Process.pid
           if current_pid != @pid
-            @pid = current_pid
-            sync do
-              INHERITED_CONNECTIONS.concat(@available)
-              @available.clear
-            end
+            after_fork
           end
 
           if conn = sync { @allocated[Thread.current] }
+            puts "using allocated conn"
             return yield(conn)
           end
 
           begin
-            conn = sync { @available.first }
+            conn = sync { @available.shift }
 
             conn ||= new_pg_connection
             sync { @allocated[Thread.current] = conn }
@@ -206,21 +228,23 @@ module MessageBus
             puts e.inspect
             # don't add this connection back to the pool
           ensure
-            "ensure #{e.inspect}" if e
-            sync do
-              @allocated.delete(Thread.current)
-              if Process.pid != current_pid
-                INHERITED_CONNECTIONS << conn
-              elsif conn && !@available.include?(conn) && !e
-                @available << conn
-              end
+            sync { @allocated.delete(Thread.current) }
+            if Process.pid != current_pid
+              puts "INHERITED_CONNECTION"
+              sync { INHERITED_CONNECTIONS << conn }
+            elsif conn && !e
+              # puts "save available conn #{conn.object_id}"
+              sync { @available << conn }
             end
           end
         end
 
         def raw_pg_connection
-          puts "new conn!"
-          PG::Connection.connect(@config[:backend_options] || {})
+          # puts caller.each {|a| puts a}
+          DEBUG_BAG[:count] += 1
+          PG::Connection.connect(@config[:backend_options] || {}).tap do |conn|
+            puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}🦋 opening 1, now #{DEBUG_BAG[:count]} (pid: #{Process.pid}, thread: #{Thread.current.object_id}, conn: #{conn.object_id}) (threads #{Thread.list.select {|thread| thread.status == "run"}.count}/#{Thread.list.count})"
+          end
         end
 
         def new_pg_connection
@@ -271,17 +295,23 @@ module MessageBus
         # after 7 days inactive backlogs will be removed
         @max_backlog_age = 604800
         @clear_every = config[:clear_every] || 1
+        @mutex = Mutex.new
       end
 
       # Reconnects to Postgres; used after a process fork, typically triggered by a forking webserver
       # @see Base#after_fork
       def after_fork
-        client.reconnect
+        client.after_fork
       end
 
       # (see Base#reset!)
       def reset!
         client.reset!
+      end
+
+      # (see Base#destroy)
+      def destroy
+        client.destroy
       end
 
       # (see Base#expire_all_backlogs!)
@@ -420,11 +450,9 @@ module MessageBus
       private
 
       def client
-        @client ||= new_connection
-      end
-
-      def new_connection
-        Client.new(@config)
+        @mutex.synchronize do
+          @client ||= Client.new(@config).tap { puts "#{" "*(Thread.current.object_id/10%10*12 + Process.pid%10*10)}NEW CLIENT (pid: #{Process.pid}, thread: #{Thread.current.object_id})" }
+        end
       end
 
       def postgresql_channel_name

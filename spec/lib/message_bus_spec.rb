@@ -3,7 +3,7 @@
 require_relative '../spec_helper'
 require 'message_bus'
 
-describe MessageBus do
+describe "MessageBus" do
   before do
     @bus = MessageBus::Instance.new
     @bus.site_id_lookup do
@@ -23,13 +23,14 @@ describe MessageBus do
     @bus.off?.must_equal true
   end
 
-  it "can call destroy twice" do
+  it "can call destroy multiple times" do
+    @bus.destroy
     @bus.destroy
     @bus.destroy
   end
 
   it "can be turned on after destroy" do
-    skip "@bus.after_fork and @bus.destroy in the after block can cause a deadlock"
+    # skip "@bus.after_fork and @bus.destroy in the after block can cause a deadlock"
     @bus.destroy
 
     @bus.on
@@ -55,6 +56,7 @@ describe MessageBus do
   end
 
   it "can subscribe from a point in time" do
+    # skip "bad stuff"
     @bus.publish("/minion", "banana")
 
     data1 = []
@@ -308,41 +310,51 @@ describe MessageBus do
   end
 
   it "should support forking properly" do
+    # skip "not yet"
     test_never :memory
 
     data = []
+    puts "before subs"
     @bus.subscribe do |msg|
       data << msg.data
     end
 
+    puts "before pub"
     @bus.publish("/hello", "pre-fork")
     wait_for(2000) { data.length == 1 }
 
     data.length.must_equal(1)
 
+    puts "(pid: #{Process.pid}) before fork"
     if child = Process.fork
       # The child was forked and we received its PID
 
       # Wait for fork to finish so we're asserting that we can still publish after it has
       Process.wait(child)
 
+      puts "(pid: #{Process.pid}) before parent pub"
       @bus.publish("/hello", "continuation")
     else
       begin
+        puts "(pid: #{Process.pid}) before child after_fork"
         @bus.after_fork
         GC.start
+        puts "(pid: #{Process.pid}) before child pub"
         @bus.publish("/hello", "from-fork")
       ensure
+        puts "(pid: #{Process.pid}) child exit"
         exit!(0)
       end
     end
 
+    puts "(pid: #{Process.pid}) wait for 2000"
     wait_for(2000) { data.length == 3 }
 
     @bus.publish("/hello", "after-fork")
 
     wait_for(2000) { data.length == 4 }
 
+    puts "must eq"
     data.must_equal(["pre-fork", "from-fork", "continuation", "after-fork"])
   end
 

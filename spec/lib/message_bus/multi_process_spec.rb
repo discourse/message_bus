@@ -41,6 +41,7 @@ describe PUB_SUB_CLASS do
   n = 1 if n < 1
   n.times do
     it 'gets every response from child processes' do
+      # skip "does not work"
       test_never :memory
       skip("previous error") if self.class.error?
       GC.start

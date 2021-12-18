@@ -84,6 +84,11 @@ module MessageBus
         raise ConcreteClassMustImplementError
       end
 
+      # Closes all open connections to the storage.
+      def destroy
+        raise ConcreteClassMustImplementError
+      end
+
       # Deletes all backlogs and their data. Does not delete non-backlog data that message_bus may persist, depending on the concrete backend implementation. Use with extreme caution.
       # @abstract
       def expire_all_backlogs!

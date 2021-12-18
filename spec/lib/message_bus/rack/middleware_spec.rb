@@ -11,12 +11,16 @@ describe MessageBus::Rack::Middleware do
   let(:base_route) { nil }
 
   before do
+    puts "[before] instance"
     bus = @bus = MessageBus::Instance.new
+    puts "[before] configure"
     @bus.configure(test_config_for_backend(CURRENT_BACKEND))
     @bus.long_polling_enabled = false
     @bus.base_route = base_route if base_route
 
+    puts "[before] em"
     e_m = extra_middleware
+    puts "[before] builder"
     builder = Rack::Builder.new {
       use FakeAsyncMiddleware, message_bus: bus
       use e_m if e_m
@@ -24,13 +28,17 @@ describe MessageBus::Rack::Middleware do
       run lambda { |_env| [500, { 'Content-Type' => 'text/html' }, 'should not be called'] }
     }
 
+    puts "[before] to_app"
     @async_middleware = builder.to_app
     @message_bus_middleware = @async_middleware.app
   end
 
   after do
+    puts "[after] @message_bus_middleware.stop_listener"
     @message_bus_middleware.stop_listener
+    puts "[after] @bus.reset!"
     @bus.reset!
+    puts "[after] @bus.destroy"
     @bus.destroy
   end
 
@@ -75,28 +83,38 @@ describe MessageBus::Rack::Middleware do
       parsed[0]["data"]["/foo"].must_equal @bus.last_id("/foo")
     end
 
-    it "should respond to long polls when data is available woop" do
-      skip "something ain't right"
+    it "should respond to long polls when data is available" do
+      # skip "something ain't right"
       middleware = @async_middleware
       bus = @bus
 
+      puts "lookup"
       @bus.extra_response_headers_lookup do |_env|
         { "FOO" => "BAR" }
       end
+      puts "lookup done"
 
-      Thread.new do
+      t = Thread.new do
+        puts "[thread] wait"
         wait_for(2000) { middleware.in_async? }
+        puts "[thread] pub"
         bus.publish "/foo", "םוֹלשָׁ"
+        puts "[thread] done"
       end
 
+      puts "post"
       post "/message-bus/ABC", '/foo' => nil
 
+      puts "post done"
       last_response.ok?.must_equal true
       parsed = JSON.parse(last_response.body)
       parsed.length.must_equal 1
       parsed[0]["data"].must_equal "םוֹלשָׁ"
 
       last_response.headers["FOO"].must_equal "BAR"
+      puts "t.join"
+      t.join
+      puts "test done"
     end
 
     it "should timeout within its alloted slot" do
