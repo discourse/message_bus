@@ -5,18 +5,21 @@ require 'bundler'
 require 'bundler/gem_tasks'
 require 'bundler/setup'
 require 'rubocop/rake_task'
+require 'yard'
+
+Bundler.require(:default, :test)
 
 RuboCop::RakeTask.new
-
-require 'yard'
 YARD::Rake::YardocTask.new
+
+BACKENDS = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
+SPEC_FILES = Dir['spec/**/*_spec.rb']
+INTEGRATION_FILES = Dir['spec/integration/**/*_spec.rb']
 
 desc "Generate documentation for Yard, and fail if there are any warnings"
 task :test_doc do
   sh "yard --fail-on-warning #{'--no-progress' if ENV['CI']}"
 end
-
-Bundler.require(:default, :test)
 
 namespace :jasmine do
   desc "Run Jasmine tests in headless mode"
@@ -27,18 +30,16 @@ namespace :jasmine do
   end
 end
 
-backends = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
-
 namespace :spec do
-  spec_files = Dir['spec/**/*_spec.rb']
-  integration_files = Dir['spec/integration/**/*_spec.rb']
-
-  backends.each do |backend|
+  BACKENDS.each do |backend|
     desc "Run tests on the #{backend} backend"
     task backend do
       begin
         ENV['MESSAGE_BUS_BACKEND'] = backend
-        sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{(spec_files - integration_files).to_a.join(' ')}"
+        Rake::TestTask.new(backend) do |t|
+          t.test_files = SPEC_FILES - INTEGRATION_FILES
+        end
+        Rake::Task[backend].invoke
       ensure
         ENV.delete('MESSAGE_BUS_BACKEND')
       end
@@ -61,7 +62,10 @@ namespace :spec do
       ENV['MESSAGE_BUS_BACKEND'] = 'memory'
       pid = spawn("bundle exec puma -p 9292 spec/fixtures/test/config.ru")
       sleep 1 while port_available?(9292)
-      sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{integration_files.to_a.join(' ')}"
+      Rake::TestTask.new(:integration) do |t|
+        t.test_files = INTEGRATION_FILES
+      end
+      Rake::Task[:integration].invoke
     ensure
       ENV.delete('MESSAGE_BUS_BACKEND')
       Process.kill('TERM', pid) if pid
@@ -70,12 +74,12 @@ namespace :spec do
 end
 
 desc "Run tests on all backends, plus client JS tests"
-task spec: backends.map { |backend| "spec:#{backend}" } + ["jasmine:ci", "spec:integration"]
+task spec: BACKENDS.map { |backend| "spec:#{backend}" } + ["jasmine:ci", "spec:integration"]
 
 desc "Run performance benchmarks on all backends"
 task :performance do
   begin
-    ENV['MESSAGE_BUS_BACKENDS'] = backends.join(",")
+    ENV['MESSAGE_BUS_BACKENDS'] = BACKENDS.join(",")
     sh "#{FileUtils::RUBY} -e \"ARGV.each{|f| load f}\" #{Dir['spec/performance/*.rb'].to_a.join(' ')}"
   ensure
     ENV.delete('MESSAGE_BUS_BACKENDS')
