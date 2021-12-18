@@ -36,7 +36,7 @@ services:
   example:
     build:
       context: .
-    command: bash -c "cd examples/chat && bundle install && bundle exec rackup --server puma --host 0.0.0.0"
+    command: bash -c "cd examples/diagnostics && bundle install && bundle exec rackup --server puma --host 0.0.0.0"
     environment:
       BUNDLE_TO: /usr/local/bundle
       REDISURL: redis://redis:6379
