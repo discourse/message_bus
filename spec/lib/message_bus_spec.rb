@@ -30,9 +30,7 @@ describe "MessageBus" do
   end
 
   it "can be turned on after destroy" do
-    # skip "@bus.after_fork and @bus.destroy in the after block can cause a deadlock"
     @bus.destroy
-
     @bus.on
 
     @bus.after_fork
@@ -56,7 +54,6 @@ describe "MessageBus" do
   end
 
   it "can subscribe from a point in time" do
-    # skip "bad stuff"
     @bus.publish("/minion", "banana")
 
     data1 = []
@@ -310,7 +307,6 @@ describe "MessageBus" do
   end
 
   it "should support forking properly" do
-    # skip "not yet"
     test_never :memory
 
     data = []
