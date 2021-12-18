@@ -65,7 +65,7 @@ module MessageBus
       # Reconnects to Redis; used after a process fork, typically triggered by a forking webserver
       # @see Base#after_fork
       def after_fork
-        pub_redis.disconnect!
+        @pub_redis&.disconnect!
       end
 
       # (see Base#reset!)
@@ -73,6 +73,11 @@ module MessageBus
         pub_redis.keys("__mb_*").each do |k|
           pub_redis.del k
         end
+      end
+
+      # (see Base#destroy)
+      def destroy
+        @pub_redis&.disconnect!
       end
 
       # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.

@@ -18,13 +18,15 @@ describe PUB_SUB_CLASS do
 
   def work_it
     bus = new_bus
-    $stdout.reopen("/dev/null", "w")
-    $stderr.reopen("/dev/null", "w")
-    # subscribe blocks, so we need a new bus to transmit
-    new_bus.subscribe("/echo", 0) do |msg|
-      bus.publish("/response", "#{msg.data}-#{Process.pid.to_s}")
+    bus.subscribe("/echo", 0) do |msg|
+      if msg.data == "done"
+        bus.global_unsubscribe
+      else
+        bus.publish("/response", "#{msg.data}-#{Process.pid.to_s}")
+      end
     end
   ensure
+    bus.destroy
     exit!(0)
   end
 
@@ -44,12 +46,14 @@ describe PUB_SUB_CLASS do
       test_never :memory
       skip("previous error") if self.class.error?
       GC.start
-      new_bus.reset!
+      bus = new_bus
+      bus.reset!
+
       begin
         pids = (1..10).map { spawn_child }
         expected_responses = pids.map { |x| (0...10).map { |i| "0#{i}-#{x}" } }.flatten
         unexpected_responses = []
-        bus = new_bus
+
         t = Thread.new do
           bus.subscribe("/response", 0) do |msg|
             if expected_responses.include?(msg.data)
@@ -59,10 +63,14 @@ describe PUB_SUB_CLASS do
             end
           end
         end
+
         10.times { |i| bus.publish("/echo", "0#{i}") }
-        wait_for 4000 do
+
+        wait_for(2000) do
           expected_responses.empty?
         end
+
+        bus.publish("/echo", "done")
         bus.global_unsubscribe
         t.join
 
@@ -81,7 +89,9 @@ describe PUB_SUB_CLASS do
             Process.wait(pid)
           end
         end
+
         bus.global_unsubscribe
+        bus.destroy
       end
     end
   end

@@ -86,10 +86,12 @@ module MessageBus
           hold { |conn| exec_prepared(conn, 'get_message', [channel, id]) { |r| r.getvalue(0, 0) } }
         end
 
-        def reconnect
+        def after_fork
           sync do
-            @listening_on.clear
+            @pid = Process.pid
+            INHERITED_CONNECTIONS.concat(@available)
             @available.clear
+            @listening_on.clear
           end
         end
 
@@ -98,6 +100,13 @@ module MessageBus
           hold do |conn|
             conn.exec 'DROP TABLE IF EXISTS message_bus'
             create_table(conn)
+          end
+        end
+
+        def destroy
+          sync do
+            @available.each(&:close)
+            @available.clear
           end
         end
 
@@ -174,11 +183,7 @@ module MessageBus
         def hold
           current_pid = Process.pid
           if current_pid != @pid
-            @pid = current_pid
-            sync do
-              INHERITED_CONNECTIONS.concat(@available)
-              @available.clear
-            end
+            after_fork
           end
 
           if conn = sync { @allocated[Thread.current] }
@@ -253,17 +258,23 @@ module MessageBus
         # after 7 days inactive backlogs will be removed
         @max_backlog_age = 604800
         @clear_every = config[:clear_every] || 1
+        @mutex = Mutex.new
       end
 
       # Reconnects to Postgres; used after a process fork, typically triggered by a forking webserver
       # @see Base#after_fork
       def after_fork
-        client.reconnect
+        client.after_fork
       end
 
       # (see Base#reset!)
       def reset!
         client.reset!
+      end
+
+      # (see Base#destroy)
+      def destroy
+        client.destroy
       end
 
       # (see Base#expire_all_backlogs!)
@@ -401,11 +412,7 @@ module MessageBus
       private
 
       def client
-        @client ||= new_connection
-      end
-
-      def new_connection
-        Client.new(@config)
+        @client || @mutex.synchronize { @client ||= Client.new(@config) }
       end
 
       def postgresql_channel_name

@@ -212,6 +212,12 @@ module MessageBus
         client.reset!
       end
 
+      # No-op; this backend doesn't maintain any storage connections.
+      # (see Base#destroy)
+      def destroy
+        nil
+      end
+
       # (see Base#expire_all_backlogs!)
       def expire_all_backlogs!
         client.expire_all_backlogs!
