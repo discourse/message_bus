@@ -297,15 +297,20 @@ module MessageBus::Implementation
     @config[:transport_codec] ||= MessageBus::Codec::Json.new
   end
 
-  # @param [MessageBus::Backend::Base] pub_sub a configured backend
+  # @param [MessageBus::Backend::Base] backend_instance A configured backend
   # @return [void]
+  def backend_instance=(backend_instance)
+    configure(backend_instance: backend_instance)
+  end
+
   def reliable_pub_sub=(pub_sub)
-    configure(reliable_pub_sub: pub_sub)
+    logger.warn "MessageBus.reliable_pub_sub= is deprecated, use MessageBus.backend_instance= instead."
+    self.backend_instance = pub_sub
   end
 
   # @return [MessageBus::Backend::Base] the configured backend. If not
   #   explicitly set, will be loaded based on the configuration provided.
-  def reliable_pub_sub
+  def backend_instance
     @mutex.synchronize do
       return nil if @destroyed
 
@@ -313,12 +318,17 @@ module MessageBus::Implementation
       # passed to backend.
       logger
 
-      @config[:reliable_pub_sub] ||= begin
+      @config[:backend_instance] ||= begin
         @config[:backend_options] ||= {}
         require "message_bus/backends/#{backend}"
         MessageBus::BACKENDS[backend].new @config
       end
     end
+  end
+
+  def reliable_pub_sub
+    logger.warn "MessageBus.reliable_pub_sub is deprecated, use MessageBus.backend_instance instead."
+    backend_instance
   end
 
   # @return [Symbol] the name of the backend implementation configured
@@ -398,7 +408,7 @@ module MessageBus::Implementation
     end
 
     encoded_channel_name = encode_channel_name(channel, site_id)
-    reliable_pub_sub.publish(encoded_channel_name, encoded_data, channel_opts)
+    backend_instance.publish(encoded_channel_name, encoded_data, channel_opts)
   end
 
   # Subscribe to messages. Each message will be delivered by yielding to the
@@ -414,9 +424,9 @@ module MessageBus::Implementation
   # @return [void]
   def blocking_subscribe(channel = nil, &blk)
     if channel
-      reliable_pub_sub.subscribe(encode_channel_name(channel), &blk)
+      backend_instance.subscribe(encode_channel_name(channel), &blk)
     else
-      reliable_pub_sub.global_subscribe(&blk)
+      backend_instance.global_subscribe(&blk)
     end
   end
 
@@ -495,9 +505,9 @@ module MessageBus::Implementation
   def backlog(channel = nil, last_id = nil, site_id = nil)
     old =
       if channel
-        reliable_pub_sub.backlog(encode_channel_name(channel, site_id), last_id)
+        backend_instance.backlog(encode_channel_name(channel, site_id), last_id)
       else
-        reliable_pub_sub.global_backlog(last_id)
+        backend_instance.global_backlog(last_id)
       end
 
     old.each do |m|
@@ -513,7 +523,7 @@ module MessageBus::Implementation
   #
   # @return [Integer] the channel-specific ID of the last message published to the given channel
   def last_id(channel, site_id = nil)
-    reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
+    backend_instance.last_id(encode_channel_name(channel, site_id))
   end
 
   # Get the last message published on a channel
@@ -536,8 +546,8 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
-    reliable_pub_sub.global_unsubscribe
-    reliable_pub_sub.destroy
+    backend_instance.global_unsubscribe
+    backend_instance.destroy
 
     @mutex.synchronize do
       return if @destroyed
@@ -555,7 +565,7 @@ module MessageBus::Implementation
   #   scheduled tasks.
   # @return [void]
   def after_fork
-    reliable_pub_sub.after_fork
+    backend_instance.after_fork
     ensure_subscriber_thread
     # will ensure timer is running
     timer.queue {}
@@ -569,7 +579,7 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
-    reliable_pub_sub.reset! if reliable_pub_sub
+    backend_instance.reset! if backend_instance
   end
 
   # @return [MessageBus::TimerThread] the timer thread used for triggering
@@ -698,7 +708,7 @@ module MessageBus::Implementation
     ensure_subscriber_thread
 
     attempts = 100
-    while attempts > 0 && !reliable_pub_sub.subscribed
+    while attempts > 0 && !backend_instance.subscribed
       sleep 0.001
       attempts -= 1
     end
@@ -783,7 +793,7 @@ module MessageBus::Implementation
   def global_subscribe_thread
     # pretend we just got a message
     @last_message = Time.now
-    reliable_pub_sub.global_subscribe do |msg|
+    backend_instance.global_subscribe do |msg|
       begin
         @last_message = Time.now
         decode_message!(msg)
