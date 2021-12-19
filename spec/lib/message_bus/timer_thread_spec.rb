@@ -52,10 +52,6 @@ describe MessageBus::TimerThread do
   it "should call the error callback if something goes wrong" do
     error = nil
 
-    @timer.queue do
-      boom
-    end
-
     @timer.on_error do |e|
       error = e
     end
@@ -64,7 +60,7 @@ describe MessageBus::TimerThread do
       boom
     end
 
-    wait_for(10) do
+    wait_for(100) do
       error
     end
 
