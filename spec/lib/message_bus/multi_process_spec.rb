@@ -91,6 +91,7 @@ describe PUB_SUB_CLASS do
         end
 
         bus.global_unsubscribe
+        bus.reset!
         bus.destroy
       end
     end
