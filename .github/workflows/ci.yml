@@ -1,16 +1,10 @@
-name: Message Bus Tests
+name: CI
 
 on:
-  pull_request:
   push:
     branches:
       - main
-
-env:
-  PGHOST: localhost
-  PGPORT: 5432
-  PGPASSWORD: postgres
-  PGUSER: postgres
+  pull_request:
 
 jobs:
   build:
@@ -18,10 +12,22 @@ jobs:
     name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
     timeout-minutes: 10
 
+    env:
+      PGHOST: localhost
+      PGPASSWORD: postgres
+      PGUSER: postgres
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [2.6, 2.7, 3.0]
+        redis: [5, 6]
+
     services:
       postgres:
-        image: postgres:14.0
+        image: postgres:14
         env:
+          POSTGRES_DB: message_bus_test
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
@@ -36,19 +42,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    strategy:
-      fail-fast: false
-      matrix:
-        ruby: ["3.0", "2.7", "2.6"]
-        redis: ["5", "6"]
-
     steps:
       - uses: actions/checkout@v2
 
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true # 'bundle install' and cache
+          bundler-cache: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -59,13 +59,36 @@ jobs:
       - name: Setup npm
         run: npm install
 
-      - name: Create Database
-        run: |
-          createdb message_bus_test
-
       - name: Tests
         run: bundle exec rake
         timeout-minutes: 3
 
       - name: Linting
         run: npx eslint .
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Update package version
+        run: |
+          VERSION=$(ruby -r './lib/message_bus/version' -e 'puts MessageBus::VERSION')
+          sed -i "s/0.0.0-version-placeholder/$VERSION/" package.json
+
+      - name: Release gem
+        uses: discourse/publish-rubygems-action@v2
+        id: publish-gem
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+          GIT_EMAIL: team@discourse.org
+          GIT_NAME: discoursebot
+
+      - name: Publish package
+        uses: JS-DevTools/npm-publish@v1
+        if: steps.publish-gem.outputs.new_version == 'true'
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
