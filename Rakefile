@@ -16,6 +16,19 @@ BACKENDS = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backe
 SPEC_FILES = Dir['spec/**/*_spec.rb']
 INTEGRATION_FILES = Dir['spec/integration/**/*_spec.rb']
 
+module CustomBuild
+  def build_gem
+    `cp assets/message-bus* vendor/assets/javascripts`
+    super
+  end
+end
+
+module Bundler
+  class GemHelper
+    prepend CustomBuild
+  end
+end
+
 desc "Generate documentation for Yard, and fail if there are any warnings"
 task :test_doc do
   sh "yard --fail-on-warning #{'--no-progress' if ENV['CI']}"
