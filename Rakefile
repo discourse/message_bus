@@ -18,6 +18,19 @@ end
 
 Bundler.require(:default, :test)
 
+module CustomBuild
+  def build_gem
+    `cp assets/message-bus* vendor/assets/javascripts`
+    super
+  end
+end
+
+module Bundler
+  class GemHelper
+    prepend CustomBuild
+  end
+end
+
 namespace :jasmine do
   desc "Run Jasmine tests in headless mode"
   task 'ci' do
