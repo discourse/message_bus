@@ -25,7 +25,12 @@ def test_config_for_backend(backend)
   when :redis
     config[:url] = ENV['REDISURL']
   when :postgres
-    config[:backend_options] = { host: ENV['PGHOST'], user: ENV['PGUSER'] || ENV['USER'], password: ENV['PGPASSWORD'], dbname: ENV['PGDATABASE'] || 'message_bus_test' }
+    config[:backend_options] = {
+      host: ENV['PGHOST'],
+      user: ENV['PGUSER'] || ENV['USER'],
+      password: ENV['PGPASSWORD'],
+      dbname: ENV['PGDATABASE'] || 'message_bus_test'
+    }
   end
   config
 end
