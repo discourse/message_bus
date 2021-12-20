@@ -78,6 +78,8 @@ jobs:
         run: |
           VERSION=$(ruby -r './lib/message_bus/version' -e 'puts MessageBus::VERSION')
           sed -i "s/0.0.0-version-placeholder/$VERSION/" package.json
+          git config --global user.email "ci@ci.invalid"
+          git config --global user.name "Discourse CI"
           git add package.json
           git commit -m 'bump'
 
