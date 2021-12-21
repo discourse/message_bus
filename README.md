@@ -26,15 +26,21 @@ MessageBus only support officially supported versions of Ruby; as of [2021-03-31
 
 Add this line to your application's Gemfile:
 
-    gem 'message_bus'
+```ruby
+gem 'message_bus'
+```
 
 And then execute:
 
-    $ bundle
+```shell
+$ bundle
+```
 
 Or install it yourself as:
 
-    $ gem install message_bus
+```shell
+$ gem install message_bus
+```
 
 ## Usage
 
@@ -109,7 +115,7 @@ MessageBus.user_id_lookup do |env|
 end
 ```
 
-If both `user_ids` and `group_ids` options are supplied when publishing a message, the message will be targeted at clients with lookup return values that  matches on either the `user_ids` **or** the `group_ids` options.
+If both `user_ids` and `group_ids` options are supplied when publishing a message, the message will be targeted at clients with lookup return values that matches on either the `user_ids` **or** the `group_ids` options.
 
 ```ruby
 MessageBus.publish "/channel", "hello", user_ids: [1, 2, 3], group_ids: [1, 2, 3]
@@ -129,7 +135,7 @@ Custom client message filters can be registered via `MessageBus#register_client_
 
 For example, ensuring that only messages seen by the server in the last 20 seconds are published to the client:
 
-```
+```ruby
 MessageBus.register_client_message_filter('/test') do |message|
   (Time.now.to_i - message.data[:published_at]) <= 20
 end
@@ -280,7 +286,7 @@ MessageBus.start(); // call once at startup
 MessageBus.callbackInterval = 500;
 
 // you will get all new messages sent to channel
-MessageBus.subscribe("/channel", function(data){
+MessageBus.subscribe("/channel", function (data) {
   // data shipped from server
 });
 
@@ -435,7 +441,6 @@ MessageBus.configure(backend: :memory)
 
 The `:clear_every` option supported by the PostgreSQL backend is also supported by the in-memory backend.
 
-
 ### Transport codecs
 
 By default MessageBus serializes messages to the backend using JSON. Under most situation this performs extremely well.
@@ -456,7 +461,7 @@ Keep in mind, much of MessageBus internals and supporting tools expect data to b
 
 Another example may be very large and complicated messages where Oj in compatibility mode outperforms JSON. To opt for the Oj codec use:
 
-```
+```ruby
 MessageBus.configure(transport_codec: MessageBus::Codec::Oj.new)
 ```
 
@@ -503,7 +508,6 @@ For more information see the [Passenger documentation](https://www.phusionpassen
 
 ```ruby
 # path/to/your/config/puma.rb
-require 'message_bus' # omit this line for Rails 5
 on_worker_boot do
   MessageBus.after_fork
 end
@@ -513,7 +517,6 @@ end
 
 ```ruby
 # path/to/your/config/unicorn.rb
-require 'message_bus'
 after_fork do |server, worker|
   MessageBus.after_fork
 end
@@ -554,26 +557,21 @@ MessageBus ships with an optional `DistributedCache` API which provides a simple
 require 'message_bus/distributed_cache'
 
 # process 1
-
 cache = MessageBus::DistributedCache.new("animals")
 
 # process 2
-
 cache = MessageBus::DistributedCache.new("animals")
 
 # process 1
-
 cache["frogs"] = 5
 
 # process 2
-
 puts cache["frogs"]
 # => 5
 
 cache["frogs"] = nil
 
 # process 1
-
 puts cache["frogs"]
 # => nil
 ```
@@ -631,7 +629,7 @@ In e.g. `config/initializers/message_bus.rb`:
 ```ruby
 MessageBus.extra_response_headers_lookup do |env|
   [
-      ["Access-Control-Allow-Origin", "http://example.com:3000"],
+    ["Access-Control-Allow-Origin", "http://example.com:3000"],
   ]
 end
 ```
@@ -692,8 +690,8 @@ In certain conditions, a status message will be delivered and look like this:
   "message_id": -1,
   "channel": "/__status",
   "data": {
-    "/some/channel":5,
-    "/other/channel":9
+    "/some/channel": 5,
+    "/other/channel": 9
   }
 }
 ```
@@ -727,7 +725,7 @@ When submitting a PR, please be sure to include notes on it in the `Unreleased` 
 
 To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
 
-```
+```shell
 PGUSER=some_user PGDATABASE=some_db bundle exec rake
 ```
 
