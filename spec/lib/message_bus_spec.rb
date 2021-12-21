@@ -5,6 +5,7 @@ require 'message_bus'
 
 describe MessageBus do
   before do
+    puts "before"
     @bus = MessageBus::Instance.new
     @bus.site_id_lookup do
       "magic"
@@ -13,6 +14,7 @@ describe MessageBus do
   end
 
   after do
+    puts "after"
     @bus.reset!
     @bus.destroy
   end

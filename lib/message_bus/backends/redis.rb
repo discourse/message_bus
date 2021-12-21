@@ -170,7 +170,7 @@ LUA
             @in_memory_backlog << [channel, data]
             if @in_memory_backlog.length > @max_in_memory_publish_backlog
               @in_memory_backlog.delete_at(0)
-              @logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
+              puts("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
             end
           end
 
@@ -274,6 +274,7 @@ LUA
           begin
             highest_id = process_global_backlog(highest_id, retries > 0, &blk)
           rescue BackLogOutOfOrder => e
+            puts "BackLogOutOfOrder"
             highest_id = e.highest_id
             retries -= 1
             sleep(rand(50) / 1000.0)
@@ -322,7 +323,7 @@ LUA
             end
           end
         rescue => error
-          @logger.warn "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace.join("\n")}"
+          puts "#{error} subscribe failed, reconnecting in 1 second. Call stack #{error.backtrace.join("\n")}"
           sleep 1
           global_redis&.disconnect!
           retry
@@ -407,12 +408,13 @@ LUA
               publish(*@in_memory_backlog[0], queue_in_memory: false)
             rescue ::Redis::CommandError => e
               if e.message =~ /^READONLY/
+                puts "try again"
                 try_again = true
               else
-                @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+                puts("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
               end
             rescue => e
-              @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
+              puts("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
             end
 
             @in_memory_backlog.delete_at(0) unless try_again
