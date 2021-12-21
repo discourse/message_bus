@@ -259,6 +259,7 @@ module MessageBus
         @max_backlog_age = 604800
         @clear_every = config[:clear_every] || 1
         @mutex = Mutex.new
+        @client = nil
       end
 
       # Reconnects to Postgres; used after a process fork, typically triggered by a forking webserver
