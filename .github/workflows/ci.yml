@@ -62,7 +62,7 @@ jobs:
       - name: Tests
         env:
           TESTOPTS: --verbose --seed=47652
-        run: bundle exec rake
+        run: bundle exec rake spec:redis
         timeout-minutes: 3
 
       - name: Linting

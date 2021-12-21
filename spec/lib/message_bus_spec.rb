@@ -16,7 +16,9 @@ describe MessageBus do
   after do
     puts "after"
     @bus.reset!
+    puts "after2"
     @bus.destroy
+    puts "after3"
   end
 
   it "can be turned off" do
