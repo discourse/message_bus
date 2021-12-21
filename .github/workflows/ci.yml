@@ -60,6 +60,8 @@ jobs:
         run: npm install
 
       - name: Tests
+        env:
+          TESTOPTS: --verbose
         run: bundle exec rake
         timeout-minutes: 3
 
