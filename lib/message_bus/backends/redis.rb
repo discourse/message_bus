@@ -58,6 +58,7 @@ module MessageBus
         @in_memory_backlog = []
         @lock = Mutex.new
         @flush_backlog_thread = nil
+        @pub_redis = nil
         # after 7 days inactive backlogs will be removed
         @max_backlog_age = 604800
       end
