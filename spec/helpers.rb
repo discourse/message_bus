@@ -18,7 +18,7 @@ end
 def test_config_for_backend(backend)
   config = {
     backend: backend,
-    logger: Logger.new(IO::NULL),
+    # logger: Logger.new(IO::NULL),
   }
 
   case backend

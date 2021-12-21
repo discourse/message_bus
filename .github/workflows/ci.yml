@@ -61,7 +61,7 @@ jobs:
 
       - name: Tests
         env:
-          TESTOPTS: --verbose
+          TESTOPTS: --verbose --seed=63906
         run: bundle exec rake spec:redis
         timeout-minutes: 3
 
