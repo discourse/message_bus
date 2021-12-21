@@ -1,3 +1,11 @@
+20-12-2021
+
+- Version 3.3.8
+
+  - FIX: Restore dist js files to fix a regression in 3.3.7
+  - FIX: Stop various thread/pg connection leaks
+  - DEV: Fix ruby warnings
+
 15-12-2021
 
 - Version 3.3.7
@@ -63,14 +71,14 @@
 
 - Version 3.3.0
 
-   - FEATURE: `MessageBus.base_route=` to alter the route that message bus will listen on.
+  - FEATURE: `MessageBus.base_route=` to alter the route that message bus will listen on.
 
 07-05-2020
 
 - Version 3.2.0
 
-   - FIX: compatibility with Rails 6.0.3, note: apps without ActionDispatch::Flash may stop working after this upgrade
-   to correct this disable middleware injection with `config.skip_message_bus_middleware = true` and configure middleware by hand with `app.middleware.use(MessageBus::Rack::Middleware)`
+  - FIX: compatibility with Rails 6.0.3, note: apps without ActionDispatch::Flash may stop working after this upgrade
+    to correct this disable middleware injection with `config.skip_message_bus_middleware = true` and configure middleware by hand with `app.middleware.use(MessageBus::Rack::Middleware)`
 
 28-04-2020
 
@@ -105,7 +113,6 @@
 
   - FIX: In the redis backend make the `is_readonly?` method compatible with the redis gem both pre and post v4.0 when the `client` attribute was removed
 
-
 30-04-2019
 
 - Version 2.2.1
@@ -136,7 +143,7 @@
 - Version 2.2.0.pre
 
 - FIX: In redis backend we now expire the key used to track channel id this can cause a redis key leak
-    with large amounts of subscriptions that go away
+  with large amounts of subscriptions that go away
 - FEATURE: Much extra implementation documentation, and some improvements to usage documentation.
 - FEATURE: Improvements to development workflow:
   - Fully docker-based development and testing, with no other dependencies.
@@ -153,44 +160,47 @@
   - Supports setting backlog size on publication for memory/postgres
 - FEATURE: `MessageBus.off` now prevents the server subscription from starting up.
 - FEATURE: Trims unused parts of the public API:
+
   - Methods removed:
-    * ConnectionManager#stats (never used and the ConnectionManager is not exposed to application code)
-    * Client#cancel (effectively duplicate of Client#close and the Client is only available via the ConnectionManager, thus not available to application code)
+
+    - ConnectionManager#stats (never used and the ConnectionManager is not exposed to application code)
+    - Client#cancel (effectively duplicate of Client#close and the Client is only available via the ConnectionManager, thus not available to application code)
 
   - Methods made private:
-    * MessageBus::Implementation#encode_channel_name
-    * MessageBus::Implementation#decode_channel_name
-    * Client#in_async?
-    * Client#ensure_closed!
-    * ConnectionManager#subscribe_client
-    * Diagnostics.full_process_path
-    * Diagnostics.hostname
-    * MessageBus::Rack::Diagnostics#js_asset
-    * MessageBus::Rack::Diagnostics#generate_script_tag
-    * MessageBus::Rack::Diagnostics#file_hash
-    * MessageBus::Rack::Diagnostics#asset_contents
-    * MessageBus::Rack::Diagnostics#asset_path
-    * MessageBus::Rack::Diagnostics#index
-    * MessageBus::Rack::Diagnostics#translate_handlebars
-    * MessageBus::Rack::Diagnostics#indent
-    * MessageBus::Rack::Middleware#start_listener
-    * MessageBus::Rack::Middleware#close_db_connection!
-    * MessageBus::Rack::Middleware#add_client_with_timeout
+
+    - MessageBus::Implementation#encode_channel_name
+    - MessageBus::Implementation#decode_channel_name
+    - Client#in_async?
+    - Client#ensure_closed!
+    - ConnectionManager#subscribe_client
+    - Diagnostics.full_process_path
+    - Diagnostics.hostname
+    - MessageBus::Rack::Diagnostics#js_asset
+    - MessageBus::Rack::Diagnostics#generate_script_tag
+    - MessageBus::Rack::Diagnostics#file_hash
+    - MessageBus::Rack::Diagnostics#asset_contents
+    - MessageBus::Rack::Diagnostics#asset_path
+    - MessageBus::Rack::Diagnostics#index
+    - MessageBus::Rack::Diagnostics#translate_handlebars
+    - MessageBus::Rack::Diagnostics#indent
+    - MessageBus::Rack::Middleware#start_listener
+    - MessageBus::Rack::Middleware#close_db_connection!
+    - MessageBus::Rack::Middleware#add_client_with_timeout
 
   - Methods switched from protected to private:
-    * MessageBus::Implementation#global?
-    * MessageBus::Implementation#decode_message!
-    * MessageBus::Implementation#replay_backlog
-    * MessageBus::Implementation#subscribe_impl
-    * MessageBus::Implementation#unsubscribe_impl
-    * MessageBus::Implementation#ensure_subscriber_thread
-    * MessageBus::Implementation#new_subscriber_thread
-    * MessageBus::Implementation#global_subscribe_thread
-    * MessageBus::Implementation#multi_each
-    * Client#write_headers
-    * Client#write_chunk
-    * Client#write_and_close
-    * Client#messages_to_json
+    - MessageBus::Implementation#global?
+    - MessageBus::Implementation#decode_message!
+    - MessageBus::Implementation#replay_backlog
+    - MessageBus::Implementation#subscribe_impl
+    - MessageBus::Implementation#unsubscribe_impl
+    - MessageBus::Implementation#ensure_subscriber_thread
+    - MessageBus::Implementation#new_subscriber_thread
+    - MessageBus::Implementation#global_subscribe_thread
+    - MessageBus::Implementation#multi_each
+    - Client#write_headers
+    - Client#write_chunk
+    - Client#write_and_close
+    - Client#messages_to_json
 
 15-10-2018
 
@@ -219,7 +229,7 @@
 - Version 2.1.2
 
 - FEATURE: minHiddenPollInterval set to 1500ms out of the box, ensures we never do hidden tab
-   polls at a high rate if tons of tabs are open
+  polls at a high rate if tons of tabs are open
 - FEATURE: added random 500ms to delayed polls to increase tab entropy
 
 18-12-2017
@@ -233,7 +243,7 @@
 - Version 2.1.0
 
 - FEATURE: you can now lookup last N messages on channel on subscribe from JavaScript
-   Subscribe at position (-1 - numberOfMessages) from the client
+  Subscribe at position (-1 - numberOfMessages) from the client
 
 24-11-2017
 
@@ -253,8 +263,7 @@
 - Version 2.0.7
 
 - Fix/Feature: use LUA script for publishing to bus, this eliminates a race condition
-   and ensures that we are never stuck in a multi transaction by mistake
-
+  and ensures that we are never stuck in a multi transaction by mistake
 
 29-09-2017
 
@@ -282,11 +291,9 @@
 - Version 2.0.2
 - Feature: Add on_middleware_error callback for remapping middleware errors to HTTP results
 
-
 25-07-2016
 
 - Feature: Add JavaScript MessageBus.status() function
-
 
 21-06-2016
 
@@ -368,8 +375,8 @@
 
 - Version 1.1.1
 - Fix: In multisite config there was no way to specify site for last_id or backlog
-   to resolve overrides were added to #last_id and #backlog, MessageBus::Client now
-   uses the new overrides
+  to resolve overrides were added to #last_id and #backlog, MessageBus::Client now
+  uses the new overrides
 
 07-12-2015
 
@@ -379,86 +386,105 @@
 - Feature: remove most jQuery dependency from message-bus.js
 
 09-07-2015
+
 - Version 1.0.16
 - Fix: correct edge cases around keepalive checks on bus
 
 09-07-2015
+
 - Version 1.0.15
 - Feature: MessageBus.reliable_pub_sub.max_backlog_age (in secs) configurable (default to 7 days)
 - Fix: API for MessageBus.backlog("/bla") was returning global backlog by mistake
 - Change: Max global backlog size reduced to 2000 elements
 
 08-06-2015
+
 - Version 1.0.14
 - Fix: we can not use Thread#kill best keepalive can do is terminate process cleanly
 - Feature: you can opt-out of keepalive with MessageBus.keepalive_timeout = 0
 
 08-06-2015
+
 - Version 1.0.13
 - Fix: on global subscribe reconnect replay missed messages
 - Feature: keepalive tests for global subscribe, catches hung redis connections
 
 28-05-2015
+
 - Version 1.0.12
 - Feature: Support client_id targeted message
 
 06-05-2015
+
 - Version 1.0.11
 - Fix: race condition in TimerThread
 
 01-05-2015
+
 - Version: 1.0.10
 - Feature: no longer depends on EventMachine (only used for Thin backend)
 - Feature: reliable pub sub will queue messages in memory if redis is readonly, configurable
 - Fix: if redis is flushed we will continue to deliver messages
 
 23-03-2015
+
 - Version 1.0.9
 - Fix: inherit off StandardError not Exception for all exceptions raised
 
 20-03-2015
+
 - Version 1.0.8
 - Fix: aggressive short polling in background
 
 16-03-2015
+
 - Version 1.0.7
 - Feature: added pause and resume methods
 
 03-02-2015
+
 - Version 1.0.6
 - Fix: global backlog not truncating correctly
 
 23-09-2014
+
 - Version 1.0.5
 - Fix: missing custom headers from long polls
 
 23-09-2014
+
 - Version 1.0.4
 - Change: MessageBus.access_control_allow_origin_lookup to extra_response_headers_lookup
 
 23-09-2014
+
 - Version 1.0.3
 - Change: MessageBus.access_control_allow_origin to MessageBus.access_control_allow_origin_lookup
 
 23-09-2014
+
 - Version 1.0.2
 - Feature: MessageBus.access_control_allow_origin to control origin header
 
 23-09-2014
+
 - Version 1.0.1
 - Feature: $.ajax dependency can be passed in.
 - Feature: unsubscribe accepts a second param for the function to unsubscribe.
 
 22-09-2014
+
 - Version 1.0.0
 - Feature: add backgroundCallbackInterval - interval to send polls when page is in the background
 - Feature: issue a long poll as soon as page moves into the foreground
 
 11-08-2014
+
 - Version 0.9.5
 - Fix: release db connection a lot earlier for long polling (rails defer closes)
 
 13-01-2014
+
 - Version 0.9.4
 - Added support for /global/ channel to publish messages across a multisite
 - Cleaned up test harness so it uses local bus as opposed to global
@@ -467,19 +493,23 @@
 - ensure_reactor could say the reactor is running, but it was not, on first call
 
 06-12-2013
+
 - Version 0.9.3.2
 - Fix permissions in gem
 
 05-12-2013
+
 - Version 0.9.3.1
 - Add MessageBus.diagnostics() for diagnosing bus issues client side
 - Add more robustness to JavaScript, if callbacks used to fail they would halt the chain
 
 03-12-2013
+
 - Version 0.9.3
 - Remove thin dependency
 - Improve robustness under failure conditions
 
 30-09-2013
+
 - Fix failures in Ruby 1.9
 - Set up rack hijack by default in light of passengers new setting
