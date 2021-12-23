@@ -37,6 +37,14 @@ describe MessageBus do
     @bus.after_fork
   end
 
+  it "destroying immediately after `after_fork` does not lock" do
+    10.times do
+      @bus.on
+      @bus.after_fork
+      @bus.destroy
+    end
+  end
+
   describe "#base_route=" do
     it "adds leading and trailing slashes" do
       @bus.base_route = "my/base/route"
