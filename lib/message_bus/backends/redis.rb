@@ -294,6 +294,7 @@ LUA
 
           global_redis.subscribe(redis_channel_name) do |on|
             on.subscribe do
+              puts "global_redis on.subscribe #{Thread.current}"
               if highest_id
                 clear_backlog.call(&blk)
               end
@@ -301,11 +302,14 @@ LUA
             end
 
             on.unsubscribe do
+              puts "global_redis on.unsubscribe #{Thread.current}"
               @subscribed = false
             end
 
             on.message do |_c, m|
+              puts "global_redis on.message #{Thread.current}"
               if m == UNSUB_MESSAGE
+                puts "global_redis UNSUB_MESSAGE #{Thread.current}"
                 global_redis.unsubscribe
                 return
               end
@@ -331,6 +335,7 @@ LUA
           global_redis&.disconnect!
           retry
         ensure
+          puts "global_redis ensure #{Thread.current}"
           global_redis&.disconnect!
         end
       end
