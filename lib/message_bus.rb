@@ -536,21 +536,21 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
-    puts "reliable_pub_sub.global_unsubscribe"
+    puts "reliable_pub_sub.global_unsubscribe #{Thread.current}"
     reliable_pub_sub.global_unsubscribe
-    puts "reliable_pub_sub.destroy"
+    puts "reliable_pub_sub.destroy #{Thread.current}"
     reliable_pub_sub.destroy
 
-    puts "@mutex.synchronize"
+    puts "@mutex.synchronize #{Thread.current}"
     @mutex.synchronize do
       return if @destroyed
 
       @subscriptions ||= {}
       @destroyed = true
     end
-    puts "@subscriber_thread.join"
+    puts "@subscriber_thread.join #{Thread.current}"
     @subscriber_thread.join if @subscriber_thread
-    puts "timer.stop"
+    puts "timer.stop #{Thread.current}"
     timer.stop
   end
 
@@ -786,9 +786,11 @@ module MessageBus::Implementation
   end
 
   def global_subscribe_thread
+    puts "global_subscribe_thread #{Thread.current}"
     # pretend we just got a message
     @last_message = Time.now
     reliable_pub_sub.global_subscribe do |msg|
+      puts "global_subscribe_thread block #{Thread.current}"
       begin
         @last_message = Time.now
         decode_message!(msg)

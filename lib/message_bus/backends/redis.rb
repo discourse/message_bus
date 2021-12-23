@@ -256,23 +256,25 @@ LUA
       # (see Base#global_unsubscribe)
       def global_unsubscribe
         begin
-          puts "new_redis = new_redis_connection"
+          puts "new_redis = new_redis_connection #{Thread.current}"
           new_redis = new_redis_connection
-          puts "new_redis.publish"
+          puts "new_redis.publish #{Thread.current}"
           new_redis.publish(redis_channel_name, UNSUB_MESSAGE)
         ensure
-          puts "new_redis&.disconnect!"
+          puts "new_redis&.disconnect! #{Thread.current}"
           new_redis&.disconnect!
         end
       end
 
       # (see Base#global_subscribe)
       def global_subscribe(last_id = nil, &blk)
+        puts "global_subscribe #{Thread.current}"
         raise ArgumentError unless block_given?
 
         highest_id = last_id
 
         clear_backlog = lambda do
+          puts "clear_backlog #{Thread.current}"
           retries = 4
           begin
             highest_id = process_global_backlog(highest_id, retries > 0, &blk)
@@ -292,6 +294,7 @@ LUA
             clear_backlog.call(&blk)
           end
 
+          puts "global_redis.subscribe #{Thread.current}"
           global_redis.subscribe(redis_channel_name) do |on|
             on.subscribe do
               puts "global_redis on.subscribe #{Thread.current}"
