@@ -560,6 +560,7 @@ module MessageBus::Implementation
   #   scheduled tasks.
   # @return [void]
   def after_fork
+    puts "after_fork"
     reliable_pub_sub.after_fork
     ensure_subscriber_thread
     # will ensure timer is running
@@ -670,6 +671,7 @@ module MessageBus::Implementation
   end
 
   def subscribe_impl(channel, site_id, last_id, &blk)
+    puts "subscribe_impl"
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
@@ -724,6 +726,7 @@ module MessageBus::Implementation
   end
 
   def ensure_subscriber_thread
+    puts "ensure_subscriber_thread"
     @mutex.synchronize do
       return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
 
@@ -734,6 +737,7 @@ module MessageBus::Implementation
   MIN_KEEPALIVE = 20
 
   def new_subscriber_thread
+    puts "new_subscriber_thread"
     thread = Thread.new do
       begin
         global_subscribe_thread unless @destroyed
