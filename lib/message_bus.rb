@@ -536,16 +536,21 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
+    puts "reliable_pub_sub.global_unsubscribe"
     reliable_pub_sub.global_unsubscribe
+    puts "reliable_pub_sub.destroy"
     reliable_pub_sub.destroy
 
+    puts "@mutex.synchronize"
     @mutex.synchronize do
       return if @destroyed
 
       @subscriptions ||= {}
       @destroyed = true
     end
+    puts "@subscriber_thread.join"
     @subscriber_thread.join if @subscriber_thread
+    puts "timer.stop"
     timer.stop
   end
 
