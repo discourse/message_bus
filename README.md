@@ -392,6 +392,16 @@ headers|{}|Extra headers to be include with requests. Properties and values of o
 
 message_bus can be configured to use one of several available storage backends, and each has its own configuration options.
 
+### Keepalive
+
+To ensure correct operation of message_bus, every 60 seconds a message is broadcast to itself. If for any reason the message is not consumed by the same process within 3 keepalive intervals a warning log message is raised.
+
+To control keepalive interval use
+
+```ruby
+MessageBus.configure(keepalive_interval: 60)
+```
+
 ### Redis
 
 message_bus supports using Redis as a storage backend, and you can configure message_bus to use redis in `config/initializers/message_bus.rb`, like so:
