@@ -744,34 +744,11 @@ module MessageBus::Implementation
       if !@destroyed && thread.alive? && keepalive_interval > MIN_KEEPALIVE
 
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
-        # going for x3 keepalives missed for a restart, need to ensure this only very rarely happens
-        # note: after_fork will sort out a bad @last_message date, but thread will be dead anyway
         if (Time.now - (@last_message || Time.now)) > keepalive_interval * 3
-          logger.warn "Global messages on #{Process.pid} timed out, restarting process"
-          # No other clean way to remove this thread, its listening on a socket
-          #   no data is arriving
-          #
-          # In production we see this kind of situation ... sometimes ... when there is
-          # a VRRP failover, or weird networking condition
-          pid = Process.pid
-
-          # do the best we can to terminate self cleanly
-          fork do
-            Process.kill('TERM', pid)
-            sleep 10
-            begin
-              Process.kill('KILL', pid)
-            rescue Errno::ESRCH
-              logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
-            end
-          end
-
-          sleep 10
-          Process.kill('KILL', pid)
-
-        else
-          timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
+          logger.warn "Global messages on #{Process.pid} timed out, message bus is no longer functioning correctly"
         end
+
+        timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
       end
     end
 
