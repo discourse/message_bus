@@ -1,8 +1,16 @@
+11-01-2022
+
+- Version 4.0.0
+
+  - DEV: Remove backend diagnostics
+  - DEV: Rename reliable_pub_sub to backend_instance
+  - FIX: `destroy` following `after_fork` could thread lock
+
 31-12-2021
 
 - Version 3.4.0
 
-   - FEATURE: remove "suicide" feature from message_bus - (message_bus used to terminate process when keepalive exceeded)
+  - FEATURE: Remove process auto-termination on missed keepalives
 
 20-12-2021
 
