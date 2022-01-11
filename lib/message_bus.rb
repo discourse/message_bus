@@ -7,9 +7,7 @@ require_relative "message_bus/version"
 require_relative "message_bus/message"
 require_relative "message_bus/client"
 require_relative "message_bus/connection_manager"
-require_relative "message_bus/diagnostics"
 require_relative "message_bus/rack/middleware"
-require_relative "message_bus/rack/diagnostics"
 require_relative "message_bus/timer_thread"
 require_relative "message_bus/codec/base"
 require_relative "message_bus/backends"
@@ -45,21 +43,6 @@ module MessageBus::Implementation
     @destroyed = false
     @timer_thread = nil
     @subscriber_thread = nil
-  end
-
-  # @param [Boolean] val whether or not to cache static assets for the diagnostics pages
-  # @return [void]
-  def cache_assets=(val)
-    configure(cache_assets: val)
-  end
-
-  # @return [Boolean] whether or not to cache static assets for the diagnostics pages
-  def cache_assets
-    if defined? @config[:cache_assets]
-      @config[:cache_assets]
-    else
-      true
-    end
   end
 
   # @param [Logger] logger a logger object to be used by the bus
@@ -297,15 +280,20 @@ module MessageBus::Implementation
     @config[:transport_codec] ||= MessageBus::Codec::Json.new
   end
 
-  # @param [MessageBus::Backend::Base] pub_sub a configured backend
+  # @param [MessageBus::Backend::Base] backend_instance A configured backend
   # @return [void]
+  def backend_instance=(backend_instance)
+    configure(backend_instance: backend_instance)
+  end
+
   def reliable_pub_sub=(pub_sub)
-    configure(reliable_pub_sub: pub_sub)
+    logger.warn "MessageBus.reliable_pub_sub= is deprecated, use MessageBus.backend_instance= instead."
+    self.backend_instance = pub_sub
   end
 
   # @return [MessageBus::Backend::Base] the configured backend. If not
   #   explicitly set, will be loaded based on the configuration provided.
-  def reliable_pub_sub
+  def backend_instance
     @mutex.synchronize do
       return nil if @destroyed
 
@@ -313,7 +301,7 @@ module MessageBus::Implementation
       # passed to backend.
       logger
 
-      @config[:reliable_pub_sub] ||= begin
+      @config[:backend_instance] ||= begin
         @config[:backend_options] ||= {}
         require "message_bus/backends/#{backend}"
         MessageBus::BACKENDS[backend].new @config
@@ -321,15 +309,14 @@ module MessageBus::Implementation
     end
   end
 
+  def reliable_pub_sub
+    logger.warn "MessageBus.reliable_pub_sub is deprecated, use MessageBus.backend_instance instead."
+    backend_instance
+  end
+
   # @return [Symbol] the name of the backend implementation configured
   def backend
     @config[:backend] || :redis
-  end
-
-  # Enables diagnostics tracking
-  # @return [void]
-  def enable_diagnostics
-    MessageBus::Diagnostics.enable(self)
   end
 
   # Publishes a message to a channel
@@ -398,7 +385,7 @@ module MessageBus::Implementation
     end
 
     encoded_channel_name = encode_channel_name(channel, site_id)
-    reliable_pub_sub.publish(encoded_channel_name, encoded_data, channel_opts)
+    backend_instance.publish(encoded_channel_name, encoded_data, channel_opts)
   end
 
   # Subscribe to messages. Each message will be delivered by yielding to the
@@ -414,9 +401,9 @@ module MessageBus::Implementation
   # @return [void]
   def blocking_subscribe(channel = nil, &blk)
     if channel
-      reliable_pub_sub.subscribe(encode_channel_name(channel), &blk)
+      backend_instance.subscribe(encode_channel_name(channel), &blk)
     else
-      reliable_pub_sub.global_subscribe(&blk)
+      backend_instance.global_subscribe(&blk)
     end
   end
 
@@ -495,9 +482,9 @@ module MessageBus::Implementation
   def backlog(channel = nil, last_id = nil, site_id = nil)
     old =
       if channel
-        reliable_pub_sub.backlog(encode_channel_name(channel, site_id), last_id)
+        backend_instance.backlog(encode_channel_name(channel, site_id), last_id)
       else
-        reliable_pub_sub.global_backlog(last_id)
+        backend_instance.global_backlog(last_id)
       end
 
     old.each do |m|
@@ -513,7 +500,7 @@ module MessageBus::Implementation
   #
   # @return [Integer] the channel-specific ID of the last message published to the given channel
   def last_id(channel, site_id = nil)
-    reliable_pub_sub.last_id(encode_channel_name(channel, site_id))
+    backend_instance.last_id(encode_channel_name(channel, site_id))
   end
 
   # Get the last message published on a channel
@@ -536,8 +523,8 @@ module MessageBus::Implementation
   def destroy
     return if @destroyed
 
-    reliable_pub_sub.global_unsubscribe
-    reliable_pub_sub.destroy
+    backend_instance.global_unsubscribe
+    backend_instance.destroy
 
     @mutex.synchronize do
       return if @destroyed
@@ -555,7 +542,7 @@ module MessageBus::Implementation
   #   scheduled tasks.
   # @return [void]
   def after_fork
-    reliable_pub_sub.after_fork
+    backend_instance.after_fork
     ensure_subscriber_thread
     # will ensure timer is running
     timer.queue {}
@@ -569,7 +556,7 @@ module MessageBus::Implementation
 
   # (see MessageBus::Backend::Base#reset!)
   def reset!
-    reliable_pub_sub.reset! if reliable_pub_sub
+    backend_instance.reset! if backend_instance
   end
 
   # @return [MessageBus::TimerThread] the timer thread used for triggering
@@ -721,7 +708,7 @@ module MessageBus::Implementation
     end
 
     attempts = 100
-    while attempts > 0 && !reliable_pub_sub.subscribed
+    while attempts > 0 && !backend_instance.subscribed
       sleep 0.001
       attempts -= 1
     end
@@ -745,34 +732,11 @@ module MessageBus::Implementation
       if !@destroyed && thread.alive? && keepalive_interval > MIN_KEEPALIVE
 
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
-        # going for x3 keepalives missed for a restart, need to ensure this only very rarely happens
-        # note: after_fork will sort out a bad @last_message date, but thread will be dead anyway
         if (Time.now - (@last_message || Time.now)) > keepalive_interval * 3
-          logger.warn "Global messages on #{Process.pid} timed out, restarting process"
-          # No other clean way to remove this thread, its listening on a socket
-          #   no data is arriving
-          #
-          # In production we see this kind of situation ... sometimes ... when there is
-          # a VRRP failover, or weird networking condition
-          pid = Process.pid
-
-          # do the best we can to terminate self cleanly
-          fork do
-            Process.kill('TERM', pid)
-            sleep 10
-            begin
-              Process.kill('KILL', pid)
-            rescue Errno::ESRCH
-              logger.warn "#{Process.pid} successfully terminated by `TERM` signal."
-            end
-          end
-
-          sleep 10
-          Process.kill('KILL', pid)
-
-        else
-          timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
+          logger.warn "Global messages on #{Process.pid} timed out, message bus is no longer functioning correctly"
         end
+
+        timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
       end
     end
 
@@ -784,7 +748,7 @@ module MessageBus::Implementation
   def global_subscribe_thread
     # pretend we just got a message
     @last_message = Time.now
-    reliable_pub_sub.global_subscribe do |msg|
+    backend_instance.global_subscribe do |msg|
       begin
         @last_message = Time.now
         decode_message!(msg)

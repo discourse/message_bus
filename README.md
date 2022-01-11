@@ -169,32 +169,6 @@ curl -H "Content-Type: application/x-www-form-urlencoded" -X POST --data "/messa
 
 You should see a reply with the messages of that channel you requested (in this case `/message`) starting at the message ID you requested (`0`). The URL parameter `dlp=t` disables long-polling: we do not want this request to stay open.
 
-### Diagnostics
-
-MessageBus comes with a diagnostics interface, which you can access at `/message-bus/_diagnostics`. This interface allows you visibility into the runtime behaviour of message_bus.
-
-In order to use the diagnostics UI in your application, it is necessary to:
-
-* Enable it
-* Define a user ID for requests
-* Define a check for admin role
-
-as an example, you can do something like this:
-
-```ruby
-MessageBus.enable_diagnostics # Must be called after `MessageBus.after_fork` if using a forking webserver
-
-MessageBus.user_id_lookup do |_env|
-  1
-end
-
-MessageBus.is_admin_lookup do |_env|
-  true
-end
-```
-
-Of course, in your real-world application, you would define these values according to your authentication/authorization logic.
-
 ### Transport
 
 MessageBus ships with 3 transport mechanisms.
@@ -392,6 +366,16 @@ headers|{}|Extra headers to be include with requests. Properties and values of o
 
 message_bus can be configured to use one of several available storage backends, and each has its own configuration options.
 
+### Keepalive
+
+To ensure correct operation of message_bus, every 60 seconds a message is broadcast to itself. If for any reason the message is not consumed by the same process within 3 keepalive intervals a warning log message is raised.
+
+To control keepalive interval use
+
+```ruby
+MessageBus.configure(keepalive_interval: 60)
+```
+
 ### Redis
 
 message_bus supports using Redis as a storage backend, and you can configure message_bus to use redis in `config/initializers/message_bus.rb`, like so:
@@ -406,17 +390,17 @@ The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-r
 
 Out of the box Redis keeps track of 2000 messages in the global backlog and 1000 messages in a per-channel backlog. Per-channel backlogs get cleared automatically after 7 days of inactivity.
 
-This is configurable via accessors on the ReliablePubSub instance.
+This is configurable via accessors on the Backend instance.
 
 ```ruby
 # only store 100 messages per channel
-MessageBus.reliable_pub_sub.max_backlog_size = 100
+MessageBus.backend_instance.max_backlog_size = 100
 
 # only store 100 global messages
-MessageBus.reliable_pub_sub.max_global_backlog_size = 100
+MessageBus.backend_instance.max_global_backlog_size = 100
 
 # flush per-channel backlog after 100 seconds of inactivity
-MessageBus.reliable_pub_sub.max_backlog_age = 100
+MessageBus.backend_instance.max_backlog_age = 100
 ```
 
 ### PostgreSQL
@@ -740,7 +724,3 @@ While working on documentation, it is useful to automatically re-build it as you
 ### Benchmarks
 
 Some simple benchmarks are implemented in `spec/performance` and can be executed using `rake performance` (or `docker-compose run tests rake performance`). You should run these before and after your changes to avoid introducing performance regressions.
-
-### Diagnostics Interface
-
-It is possible to manually test the diagnostics interface by executing `docker-compose up example` and then `open http://localhost:9292`.
