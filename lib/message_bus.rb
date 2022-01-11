@@ -551,7 +551,7 @@ module MessageBus::Implementation
   # @return [Boolean] whether or not the server is actively listening for
   #   publications on the bus
   def listening?
-    @subscriber_thread && @subscriber_thread.alive?
+    @subscriber_thread&.alive?
   end
 
   # (see MessageBus::Backend::Base#reset!)
@@ -684,12 +684,6 @@ module MessageBus::Implementation
     @subscriptions[site_id][channel] << blk
     ensure_subscriber_thread
 
-    attempts = 100
-    while attempts > 0 && !backend_instance.subscribed
-      sleep 0.001
-      attempts -= 1
-    end
-
     raise MessageBus::BusDestroyed if @destroyed
 
     blk
@@ -707,9 +701,16 @@ module MessageBus::Implementation
 
   def ensure_subscriber_thread
     @mutex.synchronize do
-      return if (@subscriber_thread && @subscriber_thread.alive?) || @destroyed
+      return if @destroyed
+      next if @subscriber_thread&.alive?
 
       @subscriber_thread = new_subscriber_thread
+    end
+
+    attempts = 100
+    while attempts > 0 && !backend_instance.subscribed
+      sleep 0.001
+      attempts -= 1
     end
   end
 

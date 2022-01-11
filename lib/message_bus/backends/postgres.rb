@@ -45,6 +45,7 @@ module MessageBus
           @available = []
           @allocated = {}
           @subscribe_connection = nil
+          @subscribed = false
           @mutex = Mutex.new
           @pid = Process.pid
         end

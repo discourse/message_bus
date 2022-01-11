@@ -59,6 +59,7 @@ module MessageBus
         @lock = Mutex.new
         @flush_backlog_thread = nil
         @pub_redis = nil
+        @subscribed = false
         # after 7 days inactive backlogs will be removed
         @max_backlog_age = 604800
       end
@@ -260,6 +261,7 @@ LUA
           new_redis.publish(redis_channel_name, UNSUB_MESSAGE)
         ensure
           new_redis&.disconnect!
+          @subscribed = false
         end
       end
 
@@ -302,6 +304,7 @@ LUA
 
             on.message do |_c, m|
               if m == UNSUB_MESSAGE
+                @subscribed = false
                 global_redis.unsubscribe
                 return
               end
