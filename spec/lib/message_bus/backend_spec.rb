@@ -3,9 +3,9 @@
 require_relative '../../spec_helper'
 require 'message_bus'
 
-describe PUB_SUB_CLASS do
+describe BACKEND_CLASS do
   before do
-    @bus = PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
+    @bus = BACKEND_CLASS.new(test_config_for_backend(CURRENT_BACKEND))
   end
 
   after do
@@ -30,7 +30,7 @@ describe PUB_SUB_CLASS do
   end
 
   it "should initialize with max_backlog_size" do
-    PUB_SUB_CLASS.new({}, 2000).max_backlog_size.must_equal 2000
+    BACKEND_CLASS.new({}, 2000).max_backlog_size.must_equal 2000
   end
 
   it "should truncate channels correctly" do

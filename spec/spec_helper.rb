@@ -14,7 +14,7 @@ require_relative "helpers"
 CURRENT_BACKEND = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
 
 require "message_bus/backends/#{CURRENT_BACKEND}"
-PUB_SUB_CLASS = MessageBus::BACKENDS.fetch(CURRENT_BACKEND)
+BACKEND_CLASS = MessageBus::BACKENDS.fetch(CURRENT_BACKEND)
 
 puts "Running with backend: #{CURRENT_BACKEND}"
 

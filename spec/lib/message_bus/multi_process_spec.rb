@@ -3,7 +3,7 @@
 require_relative '../../spec_helper'
 require 'message_bus'
 
-describe PUB_SUB_CLASS do
+describe BACKEND_CLASS do
   def self.error!
     @error = true
   end
@@ -13,7 +13,7 @@ describe PUB_SUB_CLASS do
   end
 
   def new_bus
-    PUB_SUB_CLASS.new(test_config_for_backend(CURRENT_BACKEND).merge(db: 10))
+    BACKEND_CLASS.new(test_config_for_backend(CURRENT_BACKEND).merge(db: 10))
   end
 
   def work_it

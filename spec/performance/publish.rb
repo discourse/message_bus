@@ -32,8 +32,8 @@ benchmark_subscription_no_trimming = lambda do |bm, backend|
   bus = MessageBus::Instance.new
   bus.configure(test_config_for_backend(backend))
 
-  bus.reliable_pub_sub.max_backlog_size = iterations
-  bus.reliable_pub_sub.max_global_backlog_size = iterations
+  bus.backend_instance.max_backlog_size = iterations
+  bus.backend_instance.max_global_backlog_size = iterations
 
   messages_received = 0
   bus.after_fork
@@ -58,8 +58,8 @@ benchmark_subscription_with_trimming = lambda do |bm, backend|
   bus = MessageBus::Instance.new
   bus.configure(test_config_for_backend(backend))
 
-  bus.reliable_pub_sub.max_backlog_size = (iterations / 10)
-  bus.reliable_pub_sub.max_global_backlog_size = (iterations / 10)
+  bus.backend_instance.max_backlog_size = (iterations / 10)
+  bus.backend_instance.max_global_backlog_size = (iterations / 10)
 
   messages_received = 0
   bus.after_fork

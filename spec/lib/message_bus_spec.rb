@@ -107,7 +107,7 @@ describe MessageBus do
     @bus.publish("/chuck", norris: true)
     @bus.publish("/chuck", norris: true)
 
-    @bus.reliable_pub_sub.reset!
+    @bus.backend_instance.reset!
 
     @bus.publish("/chuck", yeager: true)
 
@@ -125,7 +125,7 @@ describe MessageBus do
     @bus.publish("/chuck", norris: true)
     @bus.publish("/chuck", norris: true)
 
-    @bus.reliable_pub_sub.expire_all_backlogs!
+    @bus.backend_instance.expire_all_backlogs!
 
     @bus.publish("/chuck", yeager: true)
 

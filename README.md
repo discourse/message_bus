@@ -390,17 +390,17 @@ The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-r
 
 Out of the box Redis keeps track of 2000 messages in the global backlog and 1000 messages in a per-channel backlog. Per-channel backlogs get cleared automatically after 7 days of inactivity.
 
-This is configurable via accessors on the ReliablePubSub instance.
+This is configurable via accessors on the Backend instance.
 
 ```ruby
 # only store 100 messages per channel
-MessageBus.reliable_pub_sub.max_backlog_size = 100
+MessageBus.backend_instance.max_backlog_size = 100
 
 # only store 100 global messages
-MessageBus.reliable_pub_sub.max_global_backlog_size = 100
+MessageBus.backend_instance.max_global_backlog_size = 100
 
 # flush per-channel backlog after 100 seconds of inactivity
-MessageBus.reliable_pub_sub.max_backlog_age = 100
+MessageBus.backend_instance.max_backlog_age = 100
 ```
 
 ### PostgreSQL
