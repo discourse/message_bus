@@ -175,9 +175,16 @@ module MessageBus
         end
 
         def create_table(conn)
-          conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
-          conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
-          conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
+          sync do
+            begin
+              conn.exec("SELECT 'message_bus'::regclass")
+            rescue PG::UndefinedTable
+              conn.exec 'CREATE TABLE message_bus (id bigserial PRIMARY KEY, channel text NOT NULL, value text NOT NULL CHECK (octet_length(value) >= 2), added_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+              conn.exec 'CREATE INDEX table_channel_id_index ON message_bus (channel, id)'
+              conn.exec 'CREATE INDEX table_added_at_index ON message_bus (added_at)'
+            end
+          end
+
           nil
         end
 
@@ -214,11 +221,7 @@ module MessageBus
         def new_pg_connection
           conn = raw_pg_connection
 
-          begin
-            conn.exec("SELECT 'message_bus'::regclass")
-          rescue PG::UndefinedTable
-            create_table(conn)
-          end
+          create_table(conn)
 
           conn.exec 'PREPARE insert_message AS INSERT INTO message_bus (channel, value) VALUES ($1, $2) RETURNING id'
           conn.exec 'PREPARE clear_global_backlog AS DELETE FROM message_bus WHERE (id <= $1)'
