@@ -94,7 +94,7 @@ class MessageBus::Rack::Middleware
     end
 
     if env["REQUEST_METHOD"] == "OPTIONS"
-      return [200, headers, ["OK"]]
+      return [200, { "Content-Type" => "text/html" }, ["OK"]]
     end
 
     user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
