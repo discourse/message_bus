@@ -503,6 +503,18 @@ module MessageBus::Implementation
     backend_instance.last_id(encode_channel_name(channel, site_id))
   end
 
+  # Get the ID of the last message published on multiple channels
+  #
+  # @param [Array<String>] channels - array of channels to fetch
+  # @param [String] site_id - the ID of the site by which to filter
+  #
+  # @return [Array<Integer>] the channel-specific IDs of the last message published to each requested channel
+  def last_ids(*channels, site_id: nil)
+    encoded_channel_names = channels.map { |c| encode_channel_name(c, site_id) }
+    ids = backend_instance.last_ids(*encoded_channel_names)
+    channels.zip(ids).to_h
+  end
+
   # Get the last message published on a channel
   #
   # @param [String] channel the name of the channel in question

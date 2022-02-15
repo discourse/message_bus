@@ -244,6 +244,13 @@ module MessageBus
         client.max_id(channel)
       end
 
+      # (see Base#last_ids)
+      def last_ids(*channels)
+        channels.map do |c|
+          last_id(c)
+        end
+      end
+
       # (see Base#backlog)
       def backlog(channel, last_id = 0)
         items = client.backlog channel, last_id.to_i

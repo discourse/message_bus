@@ -91,6 +91,22 @@ describe BACKEND_CLASS do
     @bus.last_id("/foo").must_equal 1
   end
 
+  it "should allow us to get multiple last_ids" do
+    @bus.last_ids("/foo", "/bar", "/foobar").must_equal [0, 0, 0]
+
+    @bus.publish("/foo", "one")
+    @bus.publish("/foo", "two")
+    @bus.publish("/foobar", "three")
+
+    @bus.last_ids("/foo", "/bar", "/foobar").must_equal(
+      [
+        @bus.last_id("/foo"),
+        @bus.last_id("/bar"),
+        @bus.last_id("/foobar")
+      ]
+    )
+  end
+
   it "can set backlog age" do
     @bus.max_backlog_age = 1
 

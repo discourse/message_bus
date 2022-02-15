@@ -132,6 +132,21 @@ module MessageBus
           end
         end
 
+        def max_ids(*channels)
+          block = proc do |pg_result|
+            ids = Array.new(channels.size, 0)
+            pg_result.ntuples.times do |i|
+              channel = pg_result.getvalue(i, 0)
+              max_id = pg_result.getvalue(i, 1)
+              channel_index = channels.index(channel)
+              ids[channel_index] = max_id.to_i
+            end
+            ids
+          end
+
+          hold { |conn| exec_prepared(conn, 'max_channel_ids', [PG::TextEncoder::Array.new.encode(channels)], &block) }
+        end
+
         def publish(channel, data)
           hold { |conn| exec_prepared(conn, 'publish', [channel, data]) }
         end
@@ -228,6 +243,7 @@ module MessageBus
           conn.exec "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - ($1::text || ' seconds')::interval"
           conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
           conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
+          conn.exec 'PREPARE max_channel_ids AS SELECT channel, max(id) FROM message_bus WHERE (channel = ANY($1)) GROUP BY channel'
           conn.exec 'PREPARE max_id AS SELECT max(id) FROM message_bus'
           conn.exec 'PREPARE publish AS SELECT pg_notify($1, $2)'
 
@@ -310,7 +326,12 @@ module MessageBus
         client.max_id(channel)
       end
 
-      # (see Base#last_id)
+      # (see Base#last_ids)
+      def last_ids(*channels)
+        client.max_ids(*channels)
+      end
+
+      # (see Base#backlog)
       def backlog(channel, last_id = 0)
         items = client.backlog channel, last_id.to_i
 

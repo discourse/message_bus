@@ -118,6 +118,15 @@ module MessageBus
         raise ConcreteClassMustImplementError
       end
 
+      # Get the ID of the last message published on multiple channels
+      #
+      # @param [Array<String>] channels - array of channels to fetch
+      #
+      # @return [Array<Integer>] the channel-specific IDs of the last message published to each requested channel
+      def last_ids(*channels)
+        raise ConcreteClassMustImplementError
+      end
+
       # Get messages from a channel backlog
       #
       # @param [String] channel the name of the channel in question

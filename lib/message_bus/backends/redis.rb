@@ -194,6 +194,13 @@ LUA
         pub_redis.get(backlog_id_key).to_i
       end
 
+      # (see Base#last_ids)
+      def last_ids(*channels)
+        return [] if channels.size == 0
+        backlog_id_keys = channels.map { |c| backlog_id_key(c) }
+        pub_redis.mget(*backlog_id_keys).map(&:to_i)
+      end
+
       # (see Base#backlog)
       def backlog(channel, last_id = 0)
         redis = pub_redis
