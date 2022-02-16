@@ -512,7 +512,12 @@ module MessageBus::Implementation
   def last_ids(*channels, site_id: nil)
     encoded_channel_names = channels.map { |c| encode_channel_name(c, site_id) }
     ids = backend_instance.last_ids(*encoded_channel_names)
-    channels.zip(ids).to_h
+
+    result = {}
+    channels.each_with_index do |channel, index|
+      result[channel] = ids[index]
+    end
+    result
   end
 
   # Get the last message published on a channel
