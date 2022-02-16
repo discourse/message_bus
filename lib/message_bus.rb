@@ -508,7 +508,7 @@ module MessageBus::Implementation
   # @param [Array<String>] channels - array of channels to fetch
   # @param [String] site_id - the ID of the site by which to filter
   #
-  # @return [Array<Integer>] the channel-specific IDs of the last message published to each requested channel
+  # @return [Hash] the channel-specific IDs of the last message published to each requested channel
   def last_ids(*channels, site_id: nil)
     encoded_channel_names = channels.map { |c| encode_channel_name(c, site_id) }
     ids = backend_instance.last_ids(*encoded_channel_names)
