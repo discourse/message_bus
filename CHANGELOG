@@ -1,3 +1,12 @@
+16-02-2022
+
+- Version 4.1.0
+
+  - PERF: Optimize Client#backlog for up-to-date clients
+
+    Also introduces a new MessageBus#last_ids(*channels) api for fetching the last_ids of
+    multiple channels simultaneously
+
 11-01-2022
 
 - Version 4.0.0

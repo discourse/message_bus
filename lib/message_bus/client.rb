@@ -178,31 +178,32 @@ class MessageBus::Client
     r = []
     new_message_ids = nil
 
-    @subscriptions.each do |k, v|
-      id = v.to_i
+    last_bus_ids = @bus.last_ids(*@subscriptions.keys, site_id: site_id)
 
-      if id < -1
-        last_id = @bus.last_id(k, site_id)
-        id = last_id + id + 1
-        id = 0 if id < 0
+    @subscriptions.each do |k, v|
+      last_client_id = v.to_i
+      last_bus_id = last_bus_ids[k]
+
+      if last_client_id < -1 # Client requesting backlog relative to bus position
+        last_client_id = last_bus_id + last_client_id + 1
+        last_client_id = 0 if last_client_id < 0
+      elsif last_client_id == -1 # Client not requesting backlog
+        next
+      elsif last_client_id == last_bus_id # Client already up-to-date
+        next
+      elsif last_client_id > last_bus_id # Client ahead of the bus
+        @subscriptions[k] = -1
+        next
       end
 
-      next if id < 0
+      messages = @bus.backlog(k, last_client_id, site_id)
 
-      messages = @bus.backlog(k, id, site_id)
-
-      if messages.length == 0
-        if id > @bus.last_id(k, site_id)
-          @subscriptions[k] = -1
-        end
-      else
-        messages.each do |msg|
-          if allowed?(msg)
-            r << msg
-          else
-            new_message_ids ||= {}
-            new_message_ids[k] = msg.message_id
-          end
+      messages.each do |msg|
+        if allowed?(msg)
+          r << msg
+        else
+          new_message_ids ||= {}
+          new_message_ids[k] = msg.message_id
         end
       end
     end
@@ -212,7 +213,7 @@ class MessageBus::Client
     @subscriptions.each do |k, v|
       if v.to_i == -1 || (new_message_ids && new_message_ids[k])
         status_message ||= {}
-        @subscriptions[k] = status_message[k] = @bus.last_id(k, site_id)
+        @subscriptions[k] = status_message[k] = last_bus_ids[k]
       end
     end
 
