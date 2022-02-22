@@ -1,3 +1,11 @@
+22-02-2022
+
+- Version 4.2.0
+
+  - FEATURE: Add support for `clear_every` parameter in Redis backend
+
+    This allows the clearing of the backlog to take place once every N messages. In high-load scenarios, this can provide significant performance benefit.
+
 16-02-2022
 
 - Version 4.1.0

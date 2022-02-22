@@ -30,8 +30,6 @@ module MessageBus
     #     messages are removed (when no publication happens during this
     #     time-frame).
     #
-    #   * `clear_every` is not a supported option for this backend.
-    #
     # @see Base general information about message_bus backends
     class Redis < Base
       class BackLogOutOfOrder < StandardError
@@ -45,9 +43,11 @@ module MessageBus
       # @param [Hash] redis_config in addition to the options listed, see https://github.com/redis/redis-rb for other available options
       # @option redis_config [Logger] :logger a logger to which logs will be output
       # @option redis_config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying Redis library
+      # @option redis_config [Integer] :clear_every (1) the interval of publications between which the backlog will not be cleared
       # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
       def initialize(redis_config = {}, max_backlog_size = 1000)
         @redis_config = redis_config.dup
+        @clear_every = redis_config.delete(:clear_every) || 1
         @logger = @redis_config[:logger]
         unless @redis_config[:enable_redis_logger]
           @redis_config[:logger] = nil
@@ -100,6 +100,7 @@ module MessageBus
       local max_backlog_size = tonumber(ARGV[3])
       local max_global_backlog_size = tonumber(ARGV[4])
       local channel = ARGV[5]
+      local clear_every = ARGV[6]
 
       local global_id_key = KEYS[1]
       local backlog_id_key = KEYS[2]
@@ -120,11 +121,11 @@ module MessageBus
 
       redis.call("EXPIRE", backlog_id_key, max_backlog_age)
 
-      if backlog_id > max_backlog_size then
+      if backlog_id > max_backlog_size and backlog_id % clear_every == 0 then
         redis.call("ZREMRANGEBYSCORE", backlog_key, 1, backlog_id - max_backlog_size)
       end
 
-      if global_id > max_global_backlog_size then
+      if global_id > max_global_backlog_size and global_id % clear_every == 0 then
         redis.call("ZREMRANGEBYSCORE", global_backlog_key, 1, global_id - max_global_backlog_size)
       end
 
@@ -155,7 +156,8 @@ LUA
             max_backlog_age,
             max_backlog_size,
             max_global_backlog_size,
-            channel
+            channel,
+            clear_every
           ],
           keys: [
             global_id_key,

@@ -310,8 +310,6 @@ describe BACKEND_CLASS do
   end
 
   it "should support clear_every setting" do
-    test_never :redis
-
     @bus.clear_every = 5
     @bus.max_global_backlog_size = 2
     @bus.publish "/foo", "11"
