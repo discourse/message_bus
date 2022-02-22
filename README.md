@@ -423,7 +423,7 @@ message_bus also supports an in-memory backend. This can be used for testing or 
 MessageBus.configure(backend: :memory)
 ```
 
-The `:clear_every` option supported by the PostgreSQL backend is also supported by the in-memory backend.
+The `:clear_every` option is also supported by the in-memory backend.
 
 ### Transport codecs
 
