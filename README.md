@@ -388,7 +388,9 @@ The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-r
 
 #### Data Retention
 
-Out of the box Redis keeps track of 2000 messages in the global backlog and 1000 messages in a per-channel backlog. Per-channel backlogs get cleared automatically after 7 days of inactivity.
+Out of the box Redis keeps track of 2000 messages in the global backlog and 1000 messages in a per-channel backlog. Per-channel backlogs get
+cleared automatically after 7 days of inactivity. By default, the backlog will be pruned on every message publication. If exact backlog
+length limiting is not required, the `clear_every` parameter can be set higher to improve performance.
 
 This is configurable via accessors on the Backend instance.
 
@@ -401,6 +403,9 @@ MessageBus.backend_instance.max_global_backlog_size = 100
 
 # flush per-channel backlog after 100 seconds of inactivity
 MessageBus.backend_instance.max_backlog_age = 100
+
+# clear the backlog every 50 messages
+MessageBus.backend_instance.clear_every = 50
 ```
 
 ### PostgreSQL
@@ -423,7 +428,7 @@ message_bus also supports an in-memory backend. This can be used for testing or 
 MessageBus.configure(backend: :memory)
 ```
 
-The `:clear_every` option is also supported by the in-memory backend.
+The `:clear_every` option is supported in the same way as the PostgreSQL backend.
 
 ### Transport codecs
 
