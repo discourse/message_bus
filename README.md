@@ -127,7 +127,8 @@ If the `client_ids` option is supplied with either the `user_ids` or `group_ids`
 MessageBus.publish "/channel", "hello", client_ids: ["XXX", "YYY"], user_ids: [1, 2, 3], group_ids: [1, 2, 3]
 ```
 
-Passing `nil` or `[]` to either `client_ids`, `user_ids` or `group_ids` is equivalent to allowing all values on each option.
+Passing `nil` or `[]` to `client_ids` is equivalent to allowing all clients. Passing `nil` or `[]` to both `user_ids` **and** `group_ids`
+options is equivalent to allowing any client to view the message.
 
 ### Filtering Client Messages
 
