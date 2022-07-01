@@ -376,6 +376,7 @@
 
 - Version 2.0.0.beta.5
 
+- Feature: Memory backend @jeremyevans
 - Fix: JavaScript unsubscribe was not updating publicly visible MessageBus.callbacks @sam
 - Fix: When MessageBus is talking to a readonly redis buffering may cause a infinite loop @tgxworld
 
