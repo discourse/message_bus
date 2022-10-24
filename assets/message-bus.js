@@ -114,14 +114,12 @@
           try {
             callback.func(message.data, message.global_id, message.message_id);
           } catch (e) {
-            if (console.log) {
-              console.log(
-                "MESSAGE BUS FAIL: callback " +
-                  callback.channel +
-                  " caused exception " +
-                  e.stack
-              );
-            }
+            console.error(
+              "MESSAGE BUS FAIL: callback " +
+                callback.channel +
+                " caused exception " +
+                e.stack
+            );
           }
         }
         if (message.channel === "/__status") {
@@ -196,10 +194,7 @@
       try {
         reqSuccess(JSON.parse(chunk));
       } catch (e) {
-        if (console.log) {
-          console.log("FAILED TO PARSE CHUNKED REPLY");
-          console.log(data);
-        }
+        console.error("FAILED TO PARSE CHUNKED REPLY", data);
       }
 
       return handle_progress(payload, endChunk + separator.length);
@@ -314,8 +309,8 @@
             }
           }
         } catch (e) {
-          if (console.log && e.message) {
-            console.log("MESSAGE BUS FAIL: " + e.message);
+          if (e.message) {
+            console.error("MESSAGE BUS FAIL: " + e.message);
           }
         }
 
