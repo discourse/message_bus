@@ -88,11 +88,6 @@
     return false;
   };
 
-  var hasonprogress = new XMLHttpRequest().onprogress === null;
-  var allowChunked = function () {
-    return me.enableChunkedEncoding && hasonprogress;
-  };
-
   var shouldLongPoll = function () {
     return (
       me.alwaysLongPoll ||
@@ -165,7 +160,7 @@
     data.__seq = totalAjaxCalls;
 
     var longPoll = shouldLongPoll() && me.enableLongPolling;
-    var chunked = longPoll && allowChunked();
+    var chunked = longPoll && me.enableChunkedEncoding;
     if (chunkedBackoff > 0) {
       chunkedBackoff--;
       chunked = false;
@@ -470,11 +465,11 @@
     },
 
     // Subscribe to a channel
-    // if lastId is 0 or larger, it will recieve messages AFTER that id
+    // if lastId is 0 or larger, it will receive messages AFTER that id
     // if lastId is negative it will perform lookbehind
     // -1 will subscribe to all new messages
-    // -2 will recieve last message + all new messages
-    // -3 will recieve last 2 messages + all new messages
+    // -2 will receive last message + all new messages
+    // -3 will receive last 2 messages + all new messages
     // if undefined will default to -1
     subscribe: function (channel, func, lastId) {
       if (!started && !stopped) {
