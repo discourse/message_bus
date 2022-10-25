@@ -19,7 +19,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'rack', '>= 1.1.3'
 
   # Optional runtime dependencies
-  gem.add_development_dependency 'redis'
+  gem.add_development_dependency 'redis', '< 5.0'
   gem.add_development_dependency 'pg'
   gem.add_development_dependency 'concurrent-ruby' # for distributed-cache
 
