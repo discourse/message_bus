@@ -40,6 +40,7 @@ module MessageBus::Implementation
     @config = {}
     @mutex = Synchronizer.new
     @off = false
+    @off_disable_publish = false
     @destroyed = false
     @timer_thread = nil
     @subscriber_thread = nil
@@ -160,15 +161,17 @@ module MessageBus::Implementation
   end
 
   # Disables publication to the bus
+  # @param [Boolean] disable_publish Whether or not to disable publishing
   # @return [void]
-  def off
+  def off(disable_publish: true)
     @off = true
+    @off_disable_publish = disable_publish
   end
 
   # Enables publication to the bus
   # @return [void]
   def on
-    @destroyed = @off = false
+    @destroyed = @off = @off_disable_publish = false
   end
 
   # Overrides existing configuration
@@ -338,7 +341,7 @@ module MessageBus::Implementation
   # @raise [MessageBus::InvalidMessage] if attempting to put permission restrictions on a globally-published message
   # @raise [MessageBus::InvalidMessageTarget] if attempting to publish to a empty group of users
   def publish(channel, data, opts = nil)
-    return if @off
+    return if @off_disable_publish
 
     @mutex.synchronize do
       raise ::MessageBus::BusDestroyed if @destroyed
