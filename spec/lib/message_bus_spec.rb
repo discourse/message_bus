@@ -17,26 +17,6 @@ describe MessageBus do
     @bus.destroy
   end
 
-  it "can be turned off" do
-    @bus.off
-
-    @bus.off?.must_equal true
-  end
-
-  it "can call destroy multiple times" do
-    @bus.destroy
-    @bus.destroy
-    @bus.destroy
-  end
-
-  it "can be turned on after destroy" do
-    @bus.destroy
-
-    @bus.on
-
-    @bus.after_fork
-  end
-
   it "destroying immediately after `after_fork` does not lock" do
     10.times do
       @bus.on
@@ -214,6 +194,40 @@ describe MessageBus do
     @bus.publish("/chuck", "foo", max_backlog_size: 1)
 
     @bus.backlog("/chuck").map { |i| i.data }.to_a.must_equal ['foo']
+  end
+
+  it "can be turned off" do
+    @bus.off
+
+    @bus.off?.must_equal true
+
+    @bus.publish("/chuck", "norris")
+
+    @bus.backlog("/chuck").to_a.must_equal []
+  end
+
+  it "can be turned off only for subscriptions" do
+    @bus.off(disable_publish: false)
+
+    @bus.off?.must_equal true
+
+    @bus.publish("/chuck", "norris")
+
+    @bus.backlog("/chuck").map(&:data).to_a.must_equal ["norris"]
+  end
+
+  it "can call destroy multiple times" do
+    @bus.destroy
+    @bus.destroy
+    @bus.destroy
+  end
+
+  it "can be turned on after destroy" do
+    @bus.destroy
+
+    @bus.on
+
+    @bus.after_fork
   end
 
   it "allows you to look up last_message" do
