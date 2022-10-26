@@ -1,6 +1,6 @@
 FUTURE
 
-  - FIX: Add redis version 5 support
+  - FIX: Add redis gem version 5 support
 
 22-02-2022
 
