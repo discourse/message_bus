@@ -1,3 +1,7 @@
+FUTURE
+
+  - FIX: Add redis version 5 support
+
 22-02-2022
 
 - Version 4.2.0

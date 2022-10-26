@@ -346,7 +346,29 @@ LUA
       private
 
       def new_redis_connection
-        ::Redis.new(@redis_config.dup)
+        config = @redis_config.filter do |k, v|
+          # This is not ideal, required for Redis gem version 5
+          # redis-client no longer accepts arbitrary params
+          # anything unknown will error out.
+          # https://github.com/redis-rb/redis-client/blob/master/lib/redis_client/config.rb#L21-L39
+          #
+          #
+          # We should be doing the opposite and allowlisting params
+          # or splitting the object up. Starting with the smallest change that is backwards compatible
+          ![
+            :backend,
+            :logger,
+            :long_polling_enabled,
+            :backend_options,
+            :base_route,
+            :client_message_filters,
+            :site_id_lookup,
+            :group_id_lookup,
+            :user_id_lookup,
+            :transport_codec
+          ].include?(k)
+        end
+        ::Redis.new(config)
       end
 
       # redis connection used for publishing messages
