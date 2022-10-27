@@ -350,7 +350,7 @@ LUA
           # This is not ideal, required for Redis gem version 5
           # redis-client no longer accepts arbitrary params
           # anything unknown will error out.
-          # https://github.com/redis-rb/redis-client/blob/master/lib/redis_client/config.rb#L21-L39
+          # https://github.com/redis-rb/redis-client/blob/4c8e05acfb3477c1651138a4924616e79e6116f2/lib/redis_client/config.rb#L21-L39
           #
           #
           # We should be doing the opposite and allowlisting params
