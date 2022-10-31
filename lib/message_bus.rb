@@ -667,6 +667,8 @@ module MessageBus::Implementation
   end
 
   def subscribe_impl(channel, site_id, last_id, &blk)
+    return if @off
+
     raise MessageBus::BusDestroyed if @destroyed
 
     if last_id >= 0
