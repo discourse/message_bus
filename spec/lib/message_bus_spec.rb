@@ -211,9 +211,19 @@ describe MessageBus do
 
     @bus.off?.must_equal true
 
+    data = nil
+
+    @bus.subscribe("/chuck") do |msg|
+      data = msg.data
+    end
+
     @bus.publish("/chuck", "norris")
 
     @bus.backlog("/chuck").map(&:data).to_a.must_equal ["norris"]
+
+    sleep 2
+
+    assert_nil(data)
   end
 
   it "can call destroy multiple times" do
