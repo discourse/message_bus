@@ -1,6 +1,11 @@
 FUTURE
 
+04-11-2022
+
+- Version 4.2.0
+
   - FIX: Add redis gem version 5 support
+  - FEATURE: Allow disabling subscriptions without disabling publication
 
 22-02-2022
 
