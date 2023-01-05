@@ -290,6 +290,7 @@
       complete: function () {
         ajaxInProgress = false;
 
+        var inLongPollingMode = shouldLongPoll();
         var startNextRequestAfter;
         try {
           if (rateLimited) {
@@ -298,7 +299,7 @@
               me.minPollInterval,
               rateLimitedSeconds * 1000
             );
-          } else if (gotData || aborted) {
+          } else if (aborted || (inLongPollingMode && gotData)) {
             // Immediately re-poll for more data
             startNextRequestAfter = me.minPollInterval;
           } else {
@@ -310,7 +311,7 @@
                 me.callbackInterval * failCount,
                 me.maxPollInterval
               );
-            } else if (!shouldLongPoll()) {
+            } else if (!inLongPollingMode) {
               targetRequestInterval = me.backgroundCallbackInterval;
             } else {
               targetRequestInterval = me.callbackInterval;
