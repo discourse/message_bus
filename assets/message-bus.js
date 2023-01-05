@@ -156,7 +156,7 @@
     }
 
     var gotData = false;
-    var aborted = false;
+    var abortedByClient = false;
     var rateLimited = false;
     var rateLimitedSeconds;
 
@@ -281,7 +281,7 @@
           rateLimitedSeconds = tryAfter;
           rateLimited = true;
         } else if (textStatus === "abort") {
-          aborted = true;
+          abortedByClient = true;
         } else {
           failCount += 1;
           totalAjaxFailures += 1;
@@ -299,23 +299,23 @@
               me.minPollInterval,
               rateLimitedSeconds * 1000
             );
-          } else if (aborted || (inLongPollingMode && gotData)) {
-            // Immediately re-poll for more data
+          } else if (abortedByClient) {
+            // Immediately trigger another poll
+            startNextRequestAfter = me.minPollInterval;
+          } else if (failCount > 2) {
+            // Linear backoff up to maxPollInterval
+            startNextRequestAfter = Math.min(
+              me.callbackInterval * failCount,
+              me.maxPollInterval
+            );
+          } else if (inLongPollingMode && gotData) {
+            // Immediately trigger another poll
             startNextRequestAfter = me.minPollInterval;
           } else {
-            var targetRequestInterval;
-
-            if (failCount > 2) {
-              // Linear backoff up to maxPollInterval
-              targetRequestInterval = Math.min(
-                me.callbackInterval * failCount,
-                me.maxPollInterval
-              );
-            } else if (!inLongPollingMode) {
-              targetRequestInterval = me.backgroundCallbackInterval;
-            } else {
-              targetRequestInterval = me.callbackInterval;
-            }
+            // Trigger next poll N seconds after the last one **started**
+            var targetRequestInterval = inLongPollingMode
+              ? me.callbackInterval
+              : me.backgroundCallbackInterval;
 
             var elapsedSinceLastAjaxStarted = new Date() - lastAjaxStartedAt;
 
