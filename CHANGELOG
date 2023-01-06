@@ -1,5 +1,11 @@
 FUTURE
 
+06-01-2023
+
+- Version 4.2.1
+
+  - FIX: Ensure non-long-polling requests are always spaced out
+
 04-11-2022
 
 - Version 4.2.0
