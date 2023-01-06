@@ -1,7 +1,10 @@
 /* global describe, it, spyOn, MessageBus, expect, jasmine, testMB */
 
-describe("Messagebus", function() {
+function approxEqual(valueOne, valueTwo) {
+  return Math.abs(valueOne - valueTwo) < 500;
+}
 
+describe("Messagebus", function () {
   it("submits change requests", function(done){
     spyOn(this.MockedXMLHttpRequest.prototype, 'send').and.callThrough();
     var spec = this;
@@ -97,4 +100,69 @@ describe("Messagebus", function() {
     })
   });
 
+  it("respects Retry-After response header when larger than 15 seconds", async function () {
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(window, "setTimeout").and.callThrough();
+
+    this.responseStatus = 429;
+    this.responseHeaders["Retry-After"] = "23";
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+
+    const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
+    expect(nextPollScheduledIn).toEqual(23000);
+  });
+
+  it("retries after 15s for lower retry-after values", async function () {
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(window, "setTimeout").and.callThrough();
+
+    this.responseStatus = 429;
+    this.responseHeaders["Retry-After"] = "13";
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+
+    const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
+    expect(nextPollScheduledIn).toEqual(15000);
+  });
+
+  it("waits for callbackInterval after receiving data in chunked long-poll mode", async function () {
+    // The callbackInterval is equal to the length of the server response in chunked long-poll mode, so
+    // this ultimately ends up being a continuous stream of requests
+
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(window, "setTimeout").and.callThrough();
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+
+    const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
+    expect(
+      approxEqual(nextPollScheduledIn, MessageBus.callbackInterval)
+    ).toEqual(true);
+  });
+
+  it("waits for backgroundCallbackInterval after receiving data in non-long-poll mode", async function () {
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(window, "setTimeout").and.callThrough();
+    MessageBus.shouldLongPollCallback = () => false;
+    MessageBus.enableChunkedEncoding = false;
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+
+    const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
+    expect(
+      approxEqual(nextPollScheduledIn, MessageBus.backgroundCallbackInterval)
+    ).toEqual(true);
+  });
+
+  it("re-polls immediately after receiving data in non-chunked long-poll mode", async function () {
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(window, "setTimeout").and.callThrough();
+    MessageBus.enableChunkedEncoding = false;
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+
+    const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
+    expect(nextPollScheduledIn).toEqual(MessageBus.minPollInterval);
+  });
 });
