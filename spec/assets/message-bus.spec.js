@@ -1,3 +1,4 @@
+/* eslint-env es2022 */
 /* global describe, it, spyOn, MessageBus, expect, jasmine, testMB */
 
 function approxEqual(valueOne, valueTwo) {
