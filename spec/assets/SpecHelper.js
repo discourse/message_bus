@@ -34,8 +34,23 @@ beforeEach(function () {
     this.readyState = 4
     this.responseText = encodeChunks(this, spec.responseChunks);
     this.status = spec.responseStatus;
-    if (this.onprogress){ this.onprogress(); }
-    this.onreadystatechange()
+
+    spec.requestStarted?.();
+
+    const complete = () => {
+      if(this.statusText === "abort"){
+        return;
+      }
+      this.onprogress?.();
+      this.onreadystatechange();
+    }
+
+    if(spec.delayResponsePromise){
+      spec.delayResponsePromise.then(() => complete())
+      spec.delayResponsePromise = null;
+    }else{
+      complete();
+    }
   }
 
   MockedXMLHttpRequest.prototype.open              = function(){ }
@@ -43,8 +58,8 @@ beforeEach(function () {
   MockedXMLHttpRequest.prototype.abort             = function(){
     this.readyState = 4
     this.responseText = '';
-    this.statusText = '';
-    this.status = 400;
+    this.statusText = 'abort';
+    this.status = 0;
     this.onreadystatechange()
   }
 
@@ -68,6 +83,10 @@ beforeEach(function () {
     "Content-Type": 'text/plain; charset=utf-8',
   };
 
+  MessageBus.enableChunkedEncoding = true;
+  MessageBus.firstChunkTimeout = 3000;
+  MessageBus.retryChunkedAfterRequests = 1;
+
   MessageBus.start();
 });
 
@@ -75,7 +94,6 @@ afterEach(function(){
   MessageBus.stop()
   MessageBus.callbacks.splice(0, MessageBus.callbacks.length)
   MessageBus.shouldLongPollCallback = null;
-  MessageBus.enableChunkedEncoding = true;
 });
 
 window.testMB = function(description, testFn, path, data){

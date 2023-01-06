@@ -205,10 +205,11 @@
       return handle_progress(payload, endChunk + separator.length);
     };
 
+    var chunkedTimeout;
     var disableChunked = function () {
       if (me.longPoll) {
         me.longPoll.abort();
-        chunkedBackoff = 30;
+        chunkedBackoff = me.retryChunkedAfterRequests;
       }
     };
 
@@ -235,9 +236,9 @@
         chunked: chunked,
         onProgressListener: function (xhr) {
           var position = 0;
-          // if it takes longer than 3000 ms to get first chunk, we have some proxy
-          // this is messing with us, so just backoff from using chunked for now
-          var chunkedTimeout = setTimeout(disableChunked, 3000);
+          // if it takes longer than firstChunkTimeout to get first chunk, there may be a proxy
+          // buffering the response. Switch to non-chunked long-polling mode.
+          chunkedTimeout = setTimeout(disableChunked, me.firstChunkTimeout);
           return (xhr.onprogress = function () {
             clearTimeout(chunkedTimeout);
             if (
@@ -269,6 +270,7 @@
         }
       },
       error: function (xhr, textStatus) {
+        clearTimeout(chunkedTimeout);
         if (xhr.status === 429) {
           var tryAfter =
             parseInt(
@@ -364,6 +366,8 @@
     clientId: clientId,
     alwaysLongPoll: false,
     shouldLongPollCallback: undefined,
+    firstChunkTimeout: 3000,
+    retryChunkedAfterRequests: 30,
     baseUrl: baseUrl,
     headers: {},
     ajax: typeof jQuery !== "undefined" && jQuery.ajax,

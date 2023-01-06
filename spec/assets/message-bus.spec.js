@@ -166,4 +166,63 @@ describe("Messagebus", function () {
     const nextPollScheduledIn = window.setTimeout.calls.mostRecent().args[1];
     expect(nextPollScheduledIn).toEqual(MessageBus.minPollInterval);
   });
+
+  it("enters don't-chunk-mode if first chunk times out", async function () {
+    spyOn(this.MockedXMLHttpRequest.prototype, "send").and.callThrough();
+    spyOn(
+      this.MockedXMLHttpRequest.prototype,
+      "setRequestHeader"
+    ).and.callThrough();
+
+    let resolveFirstResponse;
+    this.delayResponsePromise = new Promise(
+      (resolve) => (resolveFirstResponse = resolve)
+    );
+    MessageBus.firstChunkTimeout = 50;
+
+    await new Promise((resolve) => MessageBus.subscribe("/test", resolve));
+    resolveFirstResponse();
+
+    const calls =
+      this.MockedXMLHttpRequest.prototype.setRequestHeader.calls.all();
+
+    const dontChunkCalls = calls.filter((c) => c.args[0] === "Dont-Chunk");
+    expect(dontChunkCalls.length).toEqual(1);
+  });
+
+  it("doesn't enter don't-chunk-mode if aborted before first chunk", async function () {
+    spyOn(
+      this.MockedXMLHttpRequest.prototype,
+      "setRequestHeader"
+    ).and.callThrough();
+
+    this.delayResponsePromise = new Promise(() => {});
+    MessageBus.firstChunkTimeout = 300;
+
+    const requestWasStarted = new Promise(
+      (resolve) => (this.requestStarted = resolve)
+    );
+
+    // Trigger request
+    const subscribedPromise = new Promise((resolve) =>
+      MessageBus.subscribe("/test", resolve)
+    );
+
+    await requestWasStarted;
+
+    // Change subscription (triggers an abort and re-poll)
+    MessageBus.subscribe("/test2", () => {});
+
+    // Wait for stuff to settle
+    await subscribedPromise;
+
+    // Wait 300ms to ensure dontChunk timeout has passed
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const calls =
+      this.MockedXMLHttpRequest.prototype.setRequestHeader.calls.all();
+
+    const dontChunkCalls = calls.filter((c) => c.args[0] === "Dont-Chunk");
+    expect(dontChunkCalls.length).toEqual(0);
+  });
 });
