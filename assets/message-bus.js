@@ -40,7 +40,7 @@
   var pollTimeout = null;
   var totalAjaxFailures = 0;
   var totalAjaxCalls = 0;
-  var lastAjax;
+  var lastAjaxStartedAt;
 
   var isHidden = (function () {
     var prefixes = ["", "webkit", "ms", "moz"];
@@ -156,11 +156,11 @@
     }
 
     var gotData = false;
-    var aborted = false;
+    var abortedByClient = false;
     var rateLimited = false;
     var rateLimitedSeconds;
 
-    lastAjax = new Date();
+    lastAjaxStartedAt = new Date();
     totalAjaxCalls += 1;
     data.__seq = totalAjaxCalls;
 
@@ -281,7 +281,7 @@
           rateLimitedSeconds = tryAfter;
           rateLimited = true;
         } else if (textStatus === "abort") {
-          aborted = true;
+          abortedByClient = true;
         } else {
           failCount += 1;
           totalAjaxFailures += 1;
@@ -290,27 +290,40 @@
       complete: function () {
         ajaxInProgress = false;
 
-        var interval;
+        var inLongPollingMode = shouldLongPoll();
+        var startNextRequestAfter;
         try {
           if (rateLimited) {
-            interval = Math.max(me.minPollInterval, rateLimitedSeconds * 1000);
-          } else if (gotData || aborted) {
-            interval = me.minPollInterval;
+            // Respect `Retry-After` header
+            startNextRequestAfter = Math.max(
+              me.minPollInterval,
+              rateLimitedSeconds * 1000
+            );
+          } else if (abortedByClient) {
+            // Immediately trigger another poll
+            startNextRequestAfter = me.minPollInterval;
+          } else if (failCount > 2) {
+            // Linear backoff up to maxPollInterval
+            startNextRequestAfter = Math.min(
+              me.callbackInterval * failCount,
+              me.maxPollInterval
+            );
+          } else if (inLongPollingMode && gotData) {
+            // Immediately trigger another poll
+            startNextRequestAfter = me.minPollInterval;
           } else {
-            interval = me.callbackInterval;
-            if (failCount > 2) {
-              interval = interval * failCount;
-            } else if (!shouldLongPoll()) {
-              interval = me.backgroundCallbackInterval;
-            }
-            if (interval > me.maxPollInterval) {
-              interval = me.maxPollInterval;
-            }
+            // Trigger next poll N seconds after the last one **started**
+            var targetRequestInterval = inLongPollingMode
+              ? me.callbackInterval
+              : me.backgroundCallbackInterval;
 
-            interval -= new Date() - lastAjax;
+            var elapsedSinceLastAjaxStarted = new Date() - lastAjaxStartedAt;
 
-            if (interval < 100) {
-              interval = 100;
+            startNextRequestAfter =
+              targetRequestInterval - elapsedSinceLastAjaxStarted;
+
+            if (startNextRequestAfter < 100) {
+              startNextRequestAfter = 100;
             }
           }
         } catch (e) {
@@ -328,7 +341,7 @@
           pollTimeout = setTimeout(function () {
             pollTimeout = null;
             poll();
-          }, interval);
+          }, startNextRequestAfter);
         }
 
         me.longPoll = null;
@@ -367,7 +380,9 @@
           totalAjaxFailures
       );
       console.log(
-        "Last ajax call: " + (new Date() - lastAjax) / 1000 + " seconds ago"
+        "Last ajax call: " +
+          (new Date() - lastAjaxStartedAt) / 1000 +
+          " seconds ago"
       );
     },
 

@@ -33,8 +33,7 @@ beforeEach(function () {
   MockedXMLHttpRequest.prototype.send              = function(){
     this.readyState = 4
     this.responseText = encodeChunks(this, spec.responseChunks);
-    this.statusText = 'OK';
-    this.status = 200;
+    this.status = spec.responseStatus;
     if (this.onprogress){ this.onprogress(); }
     this.onreadystatechange()
   }
@@ -53,8 +52,8 @@ beforeEach(function () {
     this.headers[k] = v;
   }
 
-  MockedXMLHttpRequest.prototype.getResponseHeader = function(){
-    return 'text/plain; charset=utf-8';
+  MockedXMLHttpRequest.prototype.getResponseHeader = function(headerName){
+    return spec.responseHeaders[headerName];
   }
 
   MessageBus.xhrImplementation = MockedXMLHttpRequest
@@ -64,12 +63,19 @@ beforeEach(function () {
     {channel: '/test', data: {password: 'MessageBusRocks!'}}
   ];
 
+  this.responseStatus = 200;
+  this.responseHeaders = {
+    "Content-Type": 'text/plain; charset=utf-8',
+  };
+
   MessageBus.start();
 });
 
 afterEach(function(){
   MessageBus.stop()
   MessageBus.callbacks.splice(0, MessageBus.callbacks.length)
+  MessageBus.shouldLongPollCallback = null;
+  MessageBus.enableChunkedEncoding = true;
 });
 
 window.testMB = function(description, testFn, path, data){
