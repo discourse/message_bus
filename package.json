@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/discourse/message_bus#readme",
   "devDependencies": {
-    "eslint": "^7.27.0",
+    "eslint": "^8.31.0",
     "jasmine-browser-runner": "^0.10.0",
     "jasmine-core": "^3.10.1"
   }
