@@ -1,5 +1,12 @@
 FUTURE
 
+
+13-01-2023
+
+- Version 4.2.1
+
+  - FIX: Do not disable chunking on cancel/error
+
 06-01-2023
 
 - Version 4.2.1
