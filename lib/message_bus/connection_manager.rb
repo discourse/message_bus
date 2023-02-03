@@ -62,6 +62,7 @@ class MessageBus::ConnectionManager
         end
 
         @clients[client.client_id] = client
+        @bus.on_connect.call if @bus.on_connect
         @subscriptions[client.site_id] ||= {}
         client.subscriptions.each do |k, _v|
           subscribe_client(client, k)
@@ -76,6 +77,7 @@ class MessageBus::ConnectionManager
   def remove_client(c)
     synchronize do
       @clients.delete c.client_id
+      @bus.on_disconnect.call if @bus.on_disconnect
       @subscriptions[c.site_id].each do |_k, set|
         set.delete c.client_id
       end
