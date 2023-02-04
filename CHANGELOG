@@ -1,5 +1,6 @@
 FUTURE
 
+  - FIX: Use lowercase header names in `MessageBus::Rack::Middleware`
 
 13-01-2023
 
