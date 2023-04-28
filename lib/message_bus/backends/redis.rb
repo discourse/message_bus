@@ -364,7 +364,7 @@ LUA
             :base_route,
             :client_message_filters,
             :site_id_lookup,
-            :group_id_lookup,
+            :group_ids_lookup,
             :user_id_lookup,
             :transport_codec
           ].include?(k)
