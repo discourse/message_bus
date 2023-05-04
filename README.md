@@ -526,16 +526,11 @@ Rails.application.config do |config|
 end
 ```
 
-Specifically, if you use a Rack middleware-based authentication solution (such as Warden) in a Rails application and wish to use it for authenticating message_bus requests, you must ensure that the MessageBus middleware comes after it in the stack. Unfortunately, this can be difficult, but the following solution is known to work:
+Specifically, if you use a Rack middleware-based authentication solution (such as Warden) in a Rails application and wish to use it for authenticating message_bus requests, you must ensure that the MessageBus middleware comes after it in the stack.
 
 ```ruby
 # config/initializers/message_bus.rb
-Rails.application.config do |config|
-  # See https://github.com/rails/rails/issues/26303#issuecomment-442894832
-  MyAppMessageBusMiddleware = Class.new(MessageBus::Rack::Middleware)
-  config.middleware.delete(MessageBus::Rack::Middleware)
-  config.middleware.insert_after(Warden::Manager, MyAppMessageBusMiddleware)
-end
+Rails.application.config.middleware.move_after(Warden::Manager, MessageBus::Rack::Middleware)
 ```
 
 ### A Distributed Cache
