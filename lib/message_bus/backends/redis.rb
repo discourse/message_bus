@@ -359,6 +359,7 @@ LUA
             :backend,
             :logger,
             :long_polling_enabled,
+            :long_polling_interval,
             :backend_options,
             :base_route,
             :client_message_filters,
