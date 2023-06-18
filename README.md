@@ -416,7 +416,7 @@ message_bus also supports PostgreSQL as a backend, and can be configured like so
 MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', dbname: 'message_bus'})
 ```
 
-The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
+The PostgreSQL client message_bus uses is [ruby-pg](https://github.com/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
 
 A `:clear_every` option is also supported, which limits backlog trimming frequency to the specified number of publications. If you set `clear_every: 100`, the backlog will only be cleared every 100 publications. This can improve performance in cases where exact backlog length limiting is not required.
 
