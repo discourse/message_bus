@@ -1,10 +1,13 @@
-FUTURE
+19-06-2023
+
+- Version 4.3.3
 
   - FIX: Use lowercase header names in `MessageBus::Rack::Middleware` for compatibility with Rack 3.x.
+  - FIX: Don't error when trying to write a message to a closed client
 
 13-01-2023
 
-- Version 4.2.1
+- Version 4.3.2
 
   - FIX: Do not disable chunking on cancel/error
 
@@ -35,7 +38,7 @@ FUTURE
 
   - PERF: Optimize Client#backlog for up-to-date clients
 
-    Also introduces a new MessageBus#last_ids(*channels) api for fetching the last_ids of
+    Also introduces a new MessageBus#last_ids(\*channels) api for fetching the last_ids of
     multiple channels simultaneously
 
 11-01-2022
