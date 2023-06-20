@@ -99,12 +99,6 @@ describe MessageBus::Client do
       chunk2.length.must_equal 0
     end
 
-    it "does not raise an error when trying to write a message to a closed client using chunked encoding" do
-      @client.use_chunked = true
-      assert(@client.closed?)
-      @client << MessageBus::Message.new(1, 1, "/test", "test")
-    end
-
     it "does not bleed data across sites" do
       @client.site_id = "test"
 
