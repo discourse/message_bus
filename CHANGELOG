@@ -1,5 +1,10 @@
 20-06-2023
 
+- Version 4.3.5
+
+  - Revert "Make headers all lowercase in rack middleware (#328)".
+    This seems to have broken MessageBus in production so reverting for now.
+
 - Version 4.3.4
 
   - Revert "FIX: Don't error when trying to write a message to a closed client (#336)".

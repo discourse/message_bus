@@ -82,10 +82,10 @@ class MessageBus::Rack::Middleware
     return [404, {}, ["not found"]] unless client_id
 
     headers = {}
-    headers["cache-control"] = "must-revalidate, private, max-age=0"
-    headers["content-type"] = "application/json; charset=utf-8"
-    headers["pragma"] = "no-cache"
-    headers["expires"] = "0"
+    headers["Cache-Control"] = "must-revalidate, private, max-age=0"
+    headers["Content-Type"] = "application/json; charset=utf-8"
+    headers["Pragma"] = "no-cache"
+    headers["Expires"] = "0"
 
     if @bus.extra_response_headers_lookup
       @bus.extra_response_headers_lookup.call(env).each do |k, v|
