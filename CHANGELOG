@@ -1,3 +1,10 @@
+20-06-2023
+
+- Version 4.3.4
+
+  - Revert "FIX: Don't error when trying to write a message to a closed client (#336)".
+    This seems to have broken MessageBus in production so reverting for now.
+
 19-06-2023
 
 - Version 4.3.3
