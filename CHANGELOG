@@ -1,5 +1,9 @@
 28-06-2023
 
+- Version 4.3.7
+
+  - FIX: Allow using `:long_polling_interval` with Redis gem version 5+.
+
 - Version 4.3.6
 
   - Don't error when trying to write a message to a closed client take 2
