@@ -104,8 +104,14 @@ class MessageBus::Rack::Middleware
     # close db connection as early as possible
     close_db_connection!
 
-    client = MessageBus::Client.new(message_bus: @bus, client_id: client_id,
-                                    user_id: user_id, site_id: site_id, group_ids: group_ids)
+    client = MessageBus::Client.new(
+      client_id: client_id,
+      user_id: user_id,
+      site_id: site_id,
+      group_ids: group_ids,
+      message_bus: @bus,
+      client_message_filters: compute_message_filters(env)
+    )
 
     if channels = env['message_bus.channels']
       if seq = env['message_bus.seq']
@@ -240,6 +246,20 @@ class MessageBus::Rack::Middleware
 
         @started_listener = true
       end
+    end
+  end
+
+  # @param query_string [String]
+  # @return [String]
+  def query_params(query_string)
+    Rack::Utils.default_query_parser.parse_nested_query(query_string, '&')
+  end
+
+  # @param env [Hash]
+  # @return [Array<Array<String, Proc>>]
+  def compute_message_filters(env)
+    @bus.client_message_filters.map do |channel_name, filter|
+      [channel_name, filter.curry(2).call(query_params(env['QUERY_STRING']))]
     end
   end
 end

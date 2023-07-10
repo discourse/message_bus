@@ -31,6 +31,41 @@ def test_config_for_backend(backend)
       password: ENV['PGPASSWORD'],
       dbname: ENV['PGDATABASE'] || 'message_bus_test'
     }
+  when :active_record
+    config[:pubsub_redis_url] = ENV['REDISURL']
   end
   config
+end
+
+def setup_ar_db
+  require 'active_record'
+  ActiveRecord::Base.configurations = [
+    ActiveRecord::DatabaseConfigurations::HashConfig.new(
+      'test',
+      'message_bus',
+      {
+        adapter: "postgresql",
+        username: ENV['PGUSER'],
+        password: ENV['PGPASSWORD'],
+        host: ENV['PGHOST'],
+        port: ENV['PGPORT'],
+        pool: 5,
+        timeout: 5000,
+        database: ENV['PGDATABASE']
+      }
+    )
+  ]
+end
+
+def create_message_bus_db
+  require 'active_record/tasks/postgresql_database_tasks'
+  require 'erb'
+  # Re-create the database
+  ActiveRecord::Tasks::PostgreSQLDatabaseTasks.new(ActiveRecord::Base.configurations.configurations.first).purge
+
+  migration = 'lib/message_bus/rails/generators/migrations/templates/message_bus.rb'
+  eval(ERB.new(File.read(migration)).result)
+  migration_class = Object.const_get("Create#{MessageBus::Rails::Message.table_name.camelcase}")
+  migration_class.new.up
+  MessageBus::Rails::Message.establish_connection
 end

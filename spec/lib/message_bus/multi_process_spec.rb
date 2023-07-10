@@ -50,8 +50,7 @@ describe BACKEND_CLASS do
       bus.reset!
 
       begin
-        pids = (1..10).map { spawn_child }
-        expected_responses = pids.map { |x| (0...10).map { |i| "0#{i}-#{x}" } }.flatten
+        expected_responses = []
         unexpected_responses = []
 
         t = Thread.new do
@@ -63,6 +62,9 @@ describe BACKEND_CLASS do
             end
           end
         end
+        sleep 0.5
+        pids = (1..10).map { spawn_child }
+        expected_responses = pids.map { |x| (0...10).map { |i| "0#{i}-#{x}" } }.flatten
 
         10.times { |i| bus.publish("/echo", "0#{i}") }
 

@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$: << File.join(File.dirname(__FILE__), '..', 'lib')
 require 'thin'
-require 'lib/fake_async_middleware'
+require 'dotenv/load'
+require_relative 'lib/fake_async_middleware'
+require 'redis'
+require 'pg'
 require 'message_bus'
 
 require 'minitest/autorun'
@@ -13,7 +14,16 @@ require_relative "helpers"
 
 CURRENT_BACKEND = (ENV['MESSAGE_BUS_BACKEND'] || :redis).to_sym
 
+if CURRENT_BACKEND == :active_record
+  setup_ar_db
+end
+
 require "message_bus/backends/#{CURRENT_BACKEND}"
+
+if CURRENT_BACKEND == :active_record
+  create_message_bus_db
+end
+
 BACKEND_CLASS = MessageBus::BACKENDS.fetch(CURRENT_BACKEND)
 
 puts "Running with backend: #{CURRENT_BACKEND}"
@@ -25,3 +35,16 @@ end
 def test_never(*backends)
   skip "Test doesn't apply to #{CURRENT_BACKEND}" if backends.include?(CURRENT_BACKEND)
 end
+
+module MinitestHooks
+  def before_setup(*, **, &blk)
+    super
+    ::Redis.new(url: ENV['REDISURL']).flushdb
+    begin
+      PG::Connection.connect.exec("TRUNCATE TABLE #{ENV['PGDATABASE']} RESTART IDENTITY")
+    rescue PG::UndefinedTable
+    end
+  end
+end
+
+MiniTest::Test.include(MinitestHooks)

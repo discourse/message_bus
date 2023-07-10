@@ -54,10 +54,7 @@ module MessageBus
         end
         @max_backlog_size = max_backlog_size
         @max_global_backlog_size = 2000
-        @max_in_memory_publish_backlog = 1000
-        @in_memory_backlog = []
         @lock = Mutex.new
-        @flush_backlog_thread = nil
         @pub_redis = nil
         @subscribed = false
         # after 7 days inactive backlogs will be removed
@@ -90,54 +87,8 @@ module MessageBus
         end
       end
 
-      # Note, the script takes care of all expiry of keys, however
-      # we do not expire the global backlog key cause we have no simple way to determine what it should be on publish
-      # we do not provide a mechanism to set a global max backlog age, only a per-channel which we can override on publish
-      LUA_PUBLISH = <<LUA
-
-      local start_payload = ARGV[1]
-      local max_backlog_age = ARGV[2]
-      local max_backlog_size = tonumber(ARGV[3])
-      local max_global_backlog_size = tonumber(ARGV[4])
-      local channel = ARGV[5]
-      local clear_every = ARGV[6]
-
-      local global_id_key = KEYS[1]
-      local backlog_id_key = KEYS[2]
-      local backlog_key = KEYS[3]
-      local global_backlog_key = KEYS[4]
-      local redis_channel_name = KEYS[5]
-
-      local global_id = redis.call("INCR", global_id_key)
-      local backlog_id = redis.call("INCR", backlog_id_key)
-      local payload = table.concat({ global_id, backlog_id, start_payload }, "|")
-      local global_backlog_message = table.concat({ backlog_id, channel }, "|")
-
-      redis.call("ZADD", backlog_key, backlog_id, payload)
-      redis.call("EXPIRE", backlog_key, max_backlog_age)
-      redis.call("ZADD", global_backlog_key, global_id, global_backlog_message)
-      redis.call("EXPIRE", global_backlog_key, max_backlog_age)
-      redis.call("PUBLISH", redis_channel_name, payload)
-
-      redis.call("EXPIRE", backlog_id_key, max_backlog_age)
-
-      if backlog_id > max_backlog_size and backlog_id % clear_every == 0 then
-        redis.call("ZREMRANGEBYSCORE", backlog_key, 1, backlog_id - max_backlog_size)
-      end
-
-      if global_id > max_global_backlog_size and global_id % clear_every == 0 then
-        redis.call("ZREMRANGEBYSCORE", global_backlog_key, 1, global_id - max_global_backlog_size)
-      end
-
-      return backlog_id
-LUA
-
-      LUA_PUBLISH_SHA1 = Digest::SHA1.hexdigest(LUA_PUBLISH)
-
       # (see Base#publish)
       def publish(channel, data, opts = nil)
-        queue_in_memory = (opts && opts[:queue_in_memory]) != false
-
         max_backlog_age = (opts && opts[:max_backlog_age]) || self.max_backlog_age
         max_backlog_size = (opts && opts[:max_backlog_size]) || self.max_backlog_size
 
@@ -145,49 +96,26 @@ LUA
         backlog_id_key = backlog_id_key(channel)
         backlog_key = backlog_key(channel)
 
-        msg = MessageBus::Message.new nil, nil, channel, data
-
-        cached_eval(
-          redis,
-          LUA_PUBLISH,
-          LUA_PUBLISH_SHA1,
-          argv: [
-            msg.encode_without_ids,
-            max_backlog_age,
-            max_backlog_size,
-            max_global_backlog_size,
-            channel,
-            clear_every
-          ],
-          keys: [
-            global_id_key,
-            backlog_id_key,
-            backlog_key,
-            global_backlog_key,
-            redis_channel_name
-          ]
-        )
-      rescue ::Redis::CommandError => e
-        if queue_in_memory && e.message =~ /READONLY/
-          @lock.synchronize do
-            @in_memory_backlog << [channel, data]
-            if @in_memory_backlog.length > @max_in_memory_publish_backlog
-              @in_memory_backlog.delete_at(0)
-              @logger.warn("Dropping old message cause max_in_memory_publish_backlog is full: #{e.message}\n#{e.backtrace.join('\n')}")
-            end
+        backlog_id = nil
+        redis.multi do
+          global_id = redis.incr(global_id_key)
+          backlog_id = redis.incr(backlog_id_key)
+          msg = MessageBus::Message.new global_id, backlog_id, channel, data
+          payload = msg.encode
+          redis.zadd(backlog_key, backlog_id, payload)
+          redis.expire(backlog_key, max_backlog_age)
+          redis.zadd(global_backlog_key, global_id, payload)
+          redis.expire(global_backlog_key, max_backlog_age)
+          redis.publish(redis_channel_name, payload)
+          redis.expire(backlog_id_key, max_backlog_age)
+          if backlog_id > max_backlog_size && backlog_id % clear_every == 0
+            redis.zremrangebyscore(backlog_key, '1', (backlog_id - max_backlog_size).to_s)
           end
-
-          if @flush_backlog_thread == nil
-            @lock.synchronize do
-              if @flush_backlog_thread == nil
-                @flush_backlog_thread = Thread.new { ensure_backlog_flushed }
-              end
-            end
+          if global_id > max_global_backlog_size && global_id % clear_every == 0
+            redis.zremrangebyscore(global_backlog_key, '1', (global_id - max_global_backlog_size).to_s)
           end
-          nil
-        else
-          raise
         end
+        backlog_id
       end
 
       # (see Base#last_id)
@@ -219,11 +147,8 @@ LUA
         items = pub_redis.zrangebyscore global_backlog_key, last_id.to_i + 1, "+inf"
 
         items.map! do |i|
-          pipe = i.index "|"
-          message_id = i[0..pipe].to_i
-          channel = i[pipe + 1..-1]
-          m = get_message(channel, message_id)
-          m
+          message = MessageBus::Message.decode(i)
+          get_message(message.channel, message.message_id)
         end
 
         items.compact!
@@ -418,57 +343,6 @@ LUA
         end
 
         highest_id
-      end
-
-      def ensure_backlog_flushed
-        flushed = false
-
-        while !flushed
-          try_again = false
-
-          if is_readonly?
-            sleep 1
-            next
-          end
-
-          @lock.synchronize do
-            if @in_memory_backlog.length == 0
-              flushed = true
-              break
-            end
-
-            begin
-              # TODO recover special options
-              publish(*@in_memory_backlog[0], queue_in_memory: false)
-            rescue ::Redis::CommandError => e
-              if e.message =~ /^READONLY/
-                try_again = true
-              else
-                @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
-              end
-            rescue => e
-              @logger.warn("Dropping undeliverable message: #{e.message}\n#{e.backtrace.join('\n')}")
-            end
-
-            @in_memory_backlog.delete_at(0) unless try_again
-          end
-        end
-      ensure
-        @lock.synchronize do
-          @flush_backlog_thread = nil
-        end
-      end
-
-      def cached_eval(redis, script, script_sha1, params)
-        begin
-          redis.evalsha script_sha1, params
-        rescue ::Redis::CommandError => e
-          if e.to_s =~ /^NOSCRIPT/
-            redis.eval script, params
-          else
-            raise
-          end
-        end
       end
 
       def is_readonly?

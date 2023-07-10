@@ -10,9 +10,16 @@ MessageBus is implemented as Rack middleware and can be used by any Rails / Sina
 
 Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
 
+## Requirements
+
+Ruby v3+
+ActiveRecord gem v6+ (in case if you use ActiveRecord adapter)
+Redis gem v5+ (in case of ActiveRecord adapter or Redis adapter)
+PostgreSQL v11+ (in case of ActiveRecord adapter or PG adapter)
+
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby; as of [2021-03-31](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 2.6 and up.
+MessageBus only support officially supported versions of Ruby; as of [2023-07-07](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 3.0+.
 
 ## Can you handle concurrent requests?
 
@@ -131,13 +138,13 @@ Passing `nil` or `[]` to either `client_ids`, `user_ids` or `group_ids` is equiv
 
 ### Filtering Client Messages
 
-Custom client message filters can be registered via `MessageBus#register_client_message_filter`. This can be useful for filtering away messages from the client based on the message's payload.
+Custom client message filters can be registered via `MessageBus#register_client_message_filter`. This can be useful for filtering away messages from the client based on the message's payload and query params.
 
-For example, ensuring that only messages seen by the server in the last 20 seconds are published to the client:
+For example, ensuring that only messages seen by the server in the last `params['age']` seconds are published to the client:
 
 ```ruby
-MessageBus.register_client_message_filter('/test') do |message|
-  (Time.now.to_i - message.data[:published_at]) <= 20
+MessageBus.register_client_message_filter('/test') do |params, message|
+  (Time.now.to_i - message.data[:published_at]) <= params['age'].to_i
 end
 
 MessageBus.publish('/test/5', { data: "somedata", published_at: Time.now.to_i })
@@ -419,6 +426,112 @@ MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', 
 The PostgreSQL client message_bus uses is [ruby-pg](https://github.com/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
 
 A `:clear_every` option is also supported, which limits backlog trimming frequency to the specified number of publications. If you set `clear_every: 100`, the backlog will only be cleared every 100 publications. This can improve performance in cases where exact backlog length limiting is not required.
+
+### ActiveRecord
+
+message_bus also supports ActiveRecord as a backend. PostgreSQL database is used a database for ActiveRecord. It can be configured like so:
+
+```ruby
+MessageBus.configure(backend: :active_record, pubsub_redis_url: 'redis://localhost:6379/1')
+```
+
+It requires you to have `activerecord` gem v6+, `redis` gem v5+ and `pg` gem(any more or less fresh version will do).
+Note, that the pub/sub is implemented here via redis. This is because PostgreSQL's `NOTIFY`/`PUBLISH` requires persisted session(connection), and PostgreSQL scales badly in the context of max number of active connections. Besides, such tool as [pg_bouncer](https://www.pgbouncer.org/) can't be used along with `NOTIFY`/`PUBLISH`.
+
+**Do not** adjust `:transport_codec` setting. ActiveRecord already does this job. ActiveRecord adapter uses `MessageBus::Codec::Itself` codec internally.
+
+#### Configuration
+
+Note, that PostgreSQL connection settings should be configured in a `config/database.yml` file of your rails application. ActiveRecord adapter requires you to configure a `:message_bus` cluster role. **This means the adapter does not support legacy rails connections**. Example of the `database.yml`:
+
+```yaml
+default: &default
+  adapter: sqlite3
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  timeout: 5000
+
+message_bus_default: &message_bus_default
+  adapter: 'postgresql'
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+  pool: 2
+  timeout: 5000
+  migrations_paths: db/message_bus
+
+development:
+  primary:
+    <<: *default
+    database: db/development.sqlite3
+  message_bus:
+    <<: *message_bus_default
+    database: message_bus
+
+test:
+  primary:
+    <<: *default
+    database: db/test.sqlite3
+  message_bus:
+    <<: *message_bus_default
+    database: message_bus_test
+
+production:
+  primary:
+    <<: *default
+    database: db/production.sqlite3
+  message_bus:
+    <<: *message_bus_default
+    database: message_bus
+```
+
+If you don't have rails but still want to use ActiveRecord adapter, you can configure it as follows:
+
+```ruby
+require 'message_bus'
+require 'active_record'
+ActiveRecord::Base.configurations = [
+  ActiveRecord::DatabaseConfigurations::HashConfig.new(
+    'test',
+    'message_bus',
+    {
+      adapter: "postgresql",
+      username: ENV['PGUSER'],
+      password: ENV['PGPASSWORD'],
+      host: ENV['PGHOST'],
+      port: ENV['PGPORT'],
+      pool: 5,
+      timeout: 5000,
+      database: ENV['PGDATABASE']
+    }
+  )
+]
+
+MessageBus.configure(backend: :active_record, pubsub_redis_url: 'redis://localhost:6379/1')
+```
+
+**Order is important**. ActiveRecord configuration should be done before you loaded MessageBus ActiveRecord adapter. 
+
+#### Creating a table
+
+There is a rails generator to generate a migration to create necessary table:
+
+```sh
+rails g message_bus:message_bus_migration
+```
+
+If you don't use rails - it is up to you how you create it. A template for the migration can be found here `lib/message_bus/rails/generators/migrations/templates/message_bus.rb`. Example how you can do it with ruby:
+
+```ruby
+# At this point you should have your message_bus gem loaded, adapter should be set to :active_record and its connection should be setup
+require 'erb'
+
+gem_root = Gem::Specification.find_by_name("message_bus").gem_dir
+migration = "#{gem_root}/lib/message_bus/rails/generators/migrations/templates/message_bus.rb"
+eval(ERB.new(File.read(migration)).result) # Render migration template
+migration_class = Object.const_get("Create#{MessageBus::Rails::Message.table_name.camelcase}")
+migration_class.new.up
+```
 
 ### Memory
 
@@ -707,11 +820,7 @@ When submitting a PR, please be sure to include notes on it in the `Unreleased` 
 
 ### Running tests
 
-To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username; if you wish to override this, you can set alternative values:
-
-```shell
-PGUSER=some_user PGDATABASE=some_db bundle exec rake
-```
+To run tests you need both Postgres and Redis installed. By default on Redis the tests connect to `localhost:6379` and on Postgres connect the database `localhost:5432/message_bus_test` with the system username. To override default config - copy `.env.sample` to `.env` and adjust your config there.
 
 We include a Docker Compose configuration to run test suite in isolation, or if you do not have Redis or Postgres installed natively. To execute it, do `docker-compose run tests`.
 

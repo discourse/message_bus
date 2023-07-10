@@ -123,7 +123,7 @@ describe BACKEND_CLASS do
     expected_backlog_size = 0
 
     case CURRENT_BACKEND
-    when :postgres
+    when :postgres, :active_record
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
       @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size
@@ -147,7 +147,7 @@ describe BACKEND_CLASS do
     expected_backlog_size += 1
 
     case CURRENT_BACKEND
-    when :postgres
+    when :postgres, :active_record
       # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
       expected_backlog_size -= 1
     else
@@ -175,7 +175,7 @@ describe BACKEND_CLASS do
     expected_backlog_size = 0
 
     case CURRENT_BACKEND
-    when :postgres
+    when :postgres, :active_record
       # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
       @bus.global_backlog.length.wont_equal expected_backlog_size
       @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size
@@ -189,7 +189,7 @@ describe BACKEND_CLASS do
 
     # for the time being we can give pg a pass here
     # TODO: make the implementation here consistent
-    if CURRENT_BACKEND != :postgres
+    unless %i[postgres active_record].include? CURRENT_BACKEND
       # ids are not opaque we expect them to be reset on our channel if it
       # got cleared due to an expire, the reason for this is cause we will leak entries due to tracking
       # this in turn can bloat storage for the backend
@@ -208,7 +208,7 @@ describe BACKEND_CLASS do
     expected_backlog_size += 1
 
     case CURRENT_BACKEND
-    when :postgres
+    when :postgres, :active_record
       # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
       expected_backlog_size -= 1
     else
