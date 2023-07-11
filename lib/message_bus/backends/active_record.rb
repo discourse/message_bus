@@ -2,7 +2,6 @@
 
 require 'message_bus/backends/postgres'
 require 'message_bus/rails/models/message'
-require 'message_bus/codec/itself'
 require 'message_bus/pub_sub/redis'
 
 module MessageBus
@@ -202,4 +201,3 @@ module MessageBus
 end
 
 MessageBus::BACKENDS[:active_record] = MessageBus::Backends::ActiveRecord
-MessageBus.configure(transport_codec: MessageBus::Codec::Itself.new)

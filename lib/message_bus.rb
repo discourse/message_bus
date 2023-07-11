@@ -275,7 +275,8 @@ module MessageBus::Implementation
 
   # @return [MessageBus::Codec::Base] codec used to encode and decode Message payloads
   def transport_codec
-    @config[:transport_codec] ||= MessageBus::Codec::Json.new
+    @config[:transport_codec] ||=
+      backend == :active_record ? MessageBus::Codec::Itself.new : MessageBus::Codec::Json.new
   end
 
   # @param [MessageBus::Backend::Base] backend_instance A configured backend
