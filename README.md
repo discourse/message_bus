@@ -144,7 +144,7 @@ For example, ensuring that only messages seen by the server in the last `params[
 
 ```ruby
 MessageBus.register_client_message_filter('/test') do |params, message|
-  (Time.now.to_i - message.data[:published_at]) <= params['age'].to_i
+  (Time.now.to_i - message.data['published_at']) <= params['age'].to_i
 end
 
 MessageBus.publish('/test/5', { data: "somedata", published_at: Time.now.to_i })
