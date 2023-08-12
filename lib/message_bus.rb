@@ -13,11 +13,6 @@ require_relative "message_bus/codec/base"
 require_relative "message_bus/backends"
 require_relative "message_bus/backends/base"
 
-# we still need to take care of the logger
-if defined?(::Rails::Engine)
-  require_relative 'message_bus/rails/railtie'
-end
-
 # @see MessageBus::Implementation
 module MessageBus; end
 MessageBus::BACKENDS = {}
@@ -280,7 +275,8 @@ module MessageBus::Implementation
 
   # @return [MessageBus::Codec::Base] codec used to encode and decode Message payloads
   def transport_codec
-    @config[:transport_codec] ||= MessageBus::Codec::Json.new
+    @config[:transport_codec] ||=
+      backend == :active_record ? MessageBus::Codec::Itself.new : MessageBus::Codec::Json.new
   end
 
   # @param [MessageBus::Backend::Base] backend_instance A configured backend
@@ -605,7 +601,7 @@ module MessageBus::Implementation
   #
   # @param [String,Regexp] channel_prefix channel prefix to match against a message's channel
   #
-  # @yieldparam [MessageBus::Message] message published to the channel that matched the prefix provided
+  # @yield [params, message] query params and a message of the channel that matched the prefix provided
   # @yieldreturn [Boolean] whether the message should be published to the client
   # @return [void]
   def register_client_message_filter(channel_prefix, &blk)
@@ -815,4 +811,9 @@ end
 # @see MessageBus::Implementation
 class MessageBus::Instance
   include MessageBus::Implementation
+end
+
+# we still need to take care of the logger
+if defined?(::Rails::Engine)
+  require_relative 'message_bus/rails/railtie'
 end

@@ -6,6 +6,10 @@ module MessageBus; module Rails; end; end
 class MessageBus::Rails::Engine < ::Rails::Engine; end
 
 class MessageBus::Rails::Railtie < ::Rails::Railtie
+  generators do
+    require 'message_bus/rails/generators/migrations/message_bus_migration_generator'
+  end
+
   initializer "message_bus.configure_init" do |app|
     # We want MessageBus to show up after the session middleware, but depending on how
     # the Rails app is configured that might be ActionDispatch::Session::CookieStore, or potentially
@@ -35,5 +39,4 @@ class MessageBus::Rails::Railtie < ::Rails::Railtie
 
     config.api_only
   end
-
 end

@@ -5,8 +5,14 @@ require 'message_bus'
 
 describe MessageBus::Client do
   describe "subscriptions" do
+    def setup_client_message_filters
+      @bus.client_message_filters.map do |channel_name, filter_proc|
+        [channel_name, filter_proc.curry(2).call(@params || {})]
+      end
+    end
+
     def setup_client(client_id)
-      MessageBus::Client.new client_id: client_id, message_bus: @bus
+      MessageBus::Client.new client_id: client_id, message_bus: @bus, client_message_filters: setup_client_message_filters
     end
 
     before do
@@ -359,35 +365,45 @@ describe MessageBus::Client do
       end
 
       describe 'when MessageBus#client_message_filters has been configured' do
-
         it 'filters messages correctly' do
           message = MessageBus::Message.new(1, 2, '/test/5', 'hello')
           @client.allowed?(message).must_equal(true)
 
-          @bus.register_client_message_filter('/test') do |m|
+          @bus.register_client_message_filter('/test') do |_, m|
             m.data != 'hello'
           end
+
+          @client = setup_client('abc')
 
           @client.allowed?(message).must_equal(false)
         end
 
         it 'filters messages correctly when multiple filters have been configured' do
-
           bob_message = MessageBus::Message.new(1, 2, '/test/5', 'bob')
           fred_message = MessageBus::Message.new(1, 2, '/test/5', 'fred')
+          foo_message = MessageBus::Message.new(1, 2, '/footest/5', 'foo')
           random_message = MessageBus::Message.new(1, 2, '/test/77', 'random')
 
-          @bus.register_client_message_filter('/test') do |message|
+          @params = { 't' => 1 }
+
+          @bus.register_client_message_filter('/test') do |_, message|
             message.data == 'bob' || message.data == 'fred'
           end
 
-          @bus.register_client_message_filter('/test') do |message|
+          @bus.register_client_message_filter('/test') do |_, message|
             message.data == 'fred'
           end
+
+          @bus.register_client_message_filter('/footest') do |params, _|
+            params['t'] == 1
+          end
+
+          @client = setup_client('abc')
 
           @client.allowed?(fred_message).must_equal(true)
           @client.allowed?(bob_message).must_equal(false)
           @client.allowed?(random_message).must_equal(false)
+          @client.allowed?(foo_message).must_equal(true)
         end
       end
     end

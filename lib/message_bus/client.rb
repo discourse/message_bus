@@ -26,6 +26,9 @@ class MessageBus::Client
   attr_accessor :seq
   # @return [Boolean] whether or not the client should use chunked encoding
   attr_accessor :use_chunked
+  # @return [Array<Array<String, Proc>>] :client_message_filters a set of channels and procs to determine whether
+  #  a message should be delivered to the client
+  attr_reader :client_message_filters
 
   # @param [Hash] opts
   # @option opts [String] :client_id the unique ID provided by the client
@@ -35,6 +38,8 @@ class MessageBus::Client
   #   applications or instances of an application against a single message_bus
   # @option opts [#to_i] :seq (`0`) the connection sequence number the client provided when connecting
   # @option opts [MessageBus::Instance] :message_bus (`MessageBus`) a specific instance of message_bus
+  # @option opts [Array<Array<String, Proc>>] :client_message_filters a set of channels and procs to determine whether
+  #   a message should be delivered to the client
   def initialize(opts)
     self.client_id = opts[:client_id]
     self.user_id = opts[:user_id]
@@ -49,6 +54,7 @@ class MessageBus::Client
     @async_response = nil
     @io = nil
     @wrote_headers = false
+    @client_message_filters = opts[:client_message_filters]
   end
 
   # @yield executed with a lock on the Client instance
@@ -153,20 +159,11 @@ class MessageBus::Client
 
     return has_permission if !has_permission
 
-    filters_allowed = true
+    client_message_filters.each.with_object(true) do |(channel_prefix, filter_proc), _|
+      next unless msg.channel.start_with?(channel_prefix)
 
-    len = @bus.client_message_filters.length
-    while len > 0
-      len -= 1
-      channel_prefix, blk = @bus.client_message_filters[len]
-
-      if msg.channel.start_with?(channel_prefix)
-        filters_allowed = blk.call(msg)
-        break if !filters_allowed
-      end
+      break false unless filter_proc.call(msg)
     end
-
-    filters_allowed
   end
 
   # @return [Array<MessageBus::Message>] the set of messages the client is due

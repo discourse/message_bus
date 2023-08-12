@@ -37,10 +37,18 @@ class FakeTimer
 end
 
 describe MessageBus::ConnectionManager do
+  def setup_client_message_filters
+    @bus.client_message_filters.map do |channel_name, filter_proc|
+      [channel_name, filter_proc.curry(2).call(@params || {})]
+    end
+  end
+
   before do
     @bus = MessageBus
     @manager = MessageBus::ConnectionManager.new(@bus)
-    @client = MessageBus::Client.new(client_id: "xyz", user_id: 1, site_id: 10)
+    @client = MessageBus::Client.new(
+      client_id: "xyz", user_id: 1, site_id: 10, client_message_filters: setup_client_message_filters
+    )
     @resp = FakeAsync.new
     @client.async_response = @resp
     @client.subscribe('test', -1)
@@ -93,6 +101,12 @@ describe MessageBus::ConnectionManager do
 end
 
 describe MessageBus::ConnectionManager, "notifying and subscribing concurrently" do
+  def setup_client_message_filters
+    @bus.client_message_filters.map do |channel_name, filter_proc|
+      [channel_name, filter_proc.curry(2).call(@params || {})]
+    end
+  end
+
   it "does not subscribe incorrect clients" do
     manager = MessageBus::ConnectionManager.new
 
@@ -111,7 +125,9 @@ describe MessageBus::ConnectionManager, "notifying and subscribing concurrently"
 
     client_threads = 10.times.map do |id|
       Thread.new do
-        @client = MessageBus::Client.new(client_id: "xyz_#{id}", site_id: 10)
+        @client = MessageBus::Client.new(
+          client_id: "xyz_#{id}", site_id: 10, client_message_filters: setup_client_message_filters
+        )
         @resp = FakeAsync.new
         @client.async_response = @resp
         @client.subscribe("test", -1)

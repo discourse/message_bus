@@ -50,10 +50,14 @@ services:
     image: redis:5.0
     volumes:
       - redis_data:/data
+    ports:
+      - 6479:6379
   postgres:
     image: postgres:11.0
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5532:5432
     environment:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=message_bus_test

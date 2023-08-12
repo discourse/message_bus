@@ -20,3 +20,7 @@ tmp
 .byebug_history
 node_modules/
 yarn.lock
+.env
+.yarn/
+.pnp.cjs
+.pnp.loader.mjs
