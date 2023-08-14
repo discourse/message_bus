@@ -199,7 +199,9 @@ class MessageBus::Rack::Middleware
     # ConnectionManagement in Rails puts a BodyProxy around stuff
     #  this means connections are not returned until rack.async is
     #  closed
-    if defined? ActiveRecord::Base.clear_active_connections!
+    if defined? ActiveRecord::Base.connection_handler
+      ActiveRecord::Base.connection_handler.clear_active_connections!
+    elsif defined? ActiveRecord::Base.clear_active_connections!
       ActiveRecord::Base.clear_active_connections!
     end
   end

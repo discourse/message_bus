@@ -1,6 +1,7 @@
 FUTURE
 
 - FIX: Typo in `group_ids_lookup` option name in Redis params exclusion list that was preventing the use of the redis backend along with this option.
+- FIX: Removes close_db_connection! deprecation warning.
 
 28-06-2023
 
