@@ -1,4 +1,6 @@
-FUTURE
+14-09-2023
+
+- Version 4.3.8
 
 - FIX: Typo in `group_ids_lookup` option name in Redis params exclusion list that was preventing the use of the redis backend along with this option.
 - FIX: Removes close_db_connection! deprecation warning.
