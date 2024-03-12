@@ -416,7 +416,7 @@ message_bus also supports PostgreSQL as a backend, and can be configured like so
 MessageBus.configure(backend: :postgres, backend_options: {user: 'message_bus', dbname: 'message_bus'})
 ```
 
-The PostgreSQL client message_bus uses is [ruby-pg](https://bitbucket.org/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
+The PostgreSQL client message_bus uses is [ruby-pg](https://github.com/ged/ruby-pg), so you can visit it's repo to see what options you can include in `:backend_options`.
 
 A `:clear_every` option is also supported, which limits backlog trimming frequency to the specified number of publications. If you set `clear_every: 100`, the backlog will only be cleared every 100 publications. This can improve performance in cases where exact backlog length limiting is not required.
 
@@ -526,16 +526,11 @@ Rails.application.config do |config|
 end
 ```
 
-Specifically, if you use a Rack middleware-based authentication solution (such as Warden) in a Rails application and wish to use it for authenticating message_bus requests, you must ensure that the MessageBus middleware comes after it in the stack. Unfortunately, this can be difficult, but the following solution is known to work:
+Specifically, if you use a Rack middleware-based authentication solution (such as Warden) in a Rails application and wish to use it for authenticating message_bus requests, you must ensure that the MessageBus middleware comes after it in the stack.
 
 ```ruby
 # config/initializers/message_bus.rb
-Rails.application.config do |config|
-  # See https://github.com/rails/rails/issues/26303#issuecomment-442894832
-  MyAppMessageBusMiddleware = Class.new(MessageBus::Rack::Middleware)
-  config.middleware.delete(MessageBus::Rack::Middleware)
-  config.middleware.insert_after(Warden::Manager, MyAppMessageBusMiddleware)
-end
+Rails.application.config.middleware.move_after(Warden::Manager, MessageBus::Rack::Middleware)
 ```
 
 ### A Distributed Cache

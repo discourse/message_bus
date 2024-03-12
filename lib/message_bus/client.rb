@@ -278,7 +278,7 @@ class MessageBus::Client
       @async_response << data
       @async_response << postfix
       @async_response << NEWLINE
-    else
+    elsif @io
       @io.write(chunk_length.to_s(16) << NEWLINE << data << postfix << NEWLINE)
     end
   end
