@@ -99,5 +99,5 @@ task :performance do
   end
 end
 
-desc "Run all tests, link checks and confirms documentation compiles without error"
-task default: [:spec, :rubocop, :test_doc]
+desc "Run all tests and confirm the documentation compiles without error"
+task default: [:spec, :test_doc]
