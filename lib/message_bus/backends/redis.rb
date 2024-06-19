@@ -300,7 +300,7 @@ LUA
               if m == UNSUB_MESSAGE
                 @subscribed = false
                 global_redis.unsubscribe
-                return
+                return # rubocop:disable Lint/NonLocalExitFromIterator
               end
               m = MessageBus::Message.decode m
 

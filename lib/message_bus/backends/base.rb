@@ -48,7 +48,6 @@ module MessageBus
     #
     # @abstract
     class Base
-      # rubocop:disable Lint/UnusedMethodArgument
 
       # Raised to indicate that the concrete backend implementation does not implement part of the API
       ConcreteClassMustImplementError = Class.new(StandardError)

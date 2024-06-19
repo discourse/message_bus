@@ -7,7 +7,34 @@ on:
   pull_request:
 
 jobs:
-  build:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup npm
+        run: npm install
+
+      - name: Rubocop
+        run: bundle exec rubocop
+
+      - name: ESLint
+        run: npx eslint .
+
+  test:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
     timeout-minutes: 10
@@ -20,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [2.6, 2.7, '3.0', 3.1]
+        ruby: [2.6, 2.7, "3.0", 3.1]
         redis: [5, 6]
 
     services:
@@ -50,27 +77,14 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: npm
-
-      - name: Setup npm
-        run: npm install
-
       - name: Tests
         env:
           TESTOPTS: --verbose
         run: bundle exec rake
-        timeout-minutes: 3
-
-      - name: Linting
-        run: npx eslint .
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [lint, test]
     runs-on: ubuntu-latest
 
     steps:
