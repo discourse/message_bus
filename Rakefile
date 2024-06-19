@@ -4,12 +4,10 @@ require 'rake/testtask'
 require 'bundler'
 require 'bundler/gem_tasks'
 require 'bundler/setup'
-require 'rubocop/rake_task'
 require 'yard'
 
 Bundler.require(:default, :test)
 
-RuboCop::RakeTask.new
 YARD::Rake::YardocTask.new
 
 BACKENDS = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
