@@ -3,9 +3,13 @@ inherit_gem:
 inherit_mode:
   merge:
     - Exclude
+
 AllCops:
   Exclude:
-    - 'examples/**/*'
+    - "examples/**/*"
+
+Discourse/Plugins:
+  Enabled: false
 
 RSpec:
   Enabled: false
