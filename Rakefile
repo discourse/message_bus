@@ -4,12 +4,10 @@ require 'rake/testtask'
 require 'bundler'
 require 'bundler/gem_tasks'
 require 'bundler/setup'
-require 'rubocop/rake_task'
 require 'yard'
 
 Bundler.require(:default, :test)
 
-RuboCop::RakeTask.new
 YARD::Rake::YardocTask.new
 
 BACKENDS = Dir["lib/message_bus/backends/*.rb"].map { |file| file.match(%r{backends/(?<backend>.*).rb})[:backend] } - ["base"]
@@ -99,5 +97,5 @@ task :performance do
   end
 end
 
-desc "Run all tests, link checks and confirms documentation compiles without error"
-task default: [:spec, :rubocop, :test_doc]
+desc "Run all tests and confirm the documentation compiles without error"
+task default: [:spec, :test_doc]

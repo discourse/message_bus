@@ -48,13 +48,13 @@
 
 06-01-2023
 
-- Version 4.2.1
+- Version 4.3.1
 
   - FIX: Ensure non-long-polling requests are always spaced out
 
 04-11-2022
 
-- Version 4.2.0
+- Version 4.3.0
 
   - FIX: Add redis gem version 5 support
   - FEATURE: Allow disabling subscriptions without disabling publication

@@ -35,6 +35,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'byebug'
   gem.add_development_dependency 'oj'
   gem.add_development_dependency 'yard'
-  gem.add_development_dependency 'rubocop-discourse'
-  gem.add_development_dependency 'rubocop-rspec'
+
+  if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.7.0')
+    gem.add_development_dependency 'rubocop-discourse', '3.8.1'
+  end
 end
