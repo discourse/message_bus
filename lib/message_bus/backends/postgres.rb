@@ -406,7 +406,7 @@ module MessageBus
             on.message do |_c, m|
               if m == UNSUB_MESSAGE
                 @subscribed = false
-                return
+                return # rubocop:disable Lint/NonLocalExitFromIterator
               end
               m = MessageBus::Message.decode m
 

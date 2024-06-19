@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "monitor"
-require "set"
 
 require_relative "message_bus/version"
 require_relative "message_bus/message"
@@ -772,7 +771,7 @@ module MessageBus::Implementation
         globals, locals, local_globals, global_globals = nil
 
         @mutex.synchronize do
-          return if @destroyed
+          return if @destroyed # rubocop:disable Lint/NonLocalExitFromIterator
           next unless @subscriptions
 
           globals = @subscriptions[nil]

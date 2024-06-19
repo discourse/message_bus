@@ -35,6 +35,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'byebug'
   gem.add_development_dependency 'oj'
   gem.add_development_dependency 'yard'
-  gem.add_development_dependency 'rubocop-discourse'
+  gem.add_development_dependency 'rubocop-discourse', '3.8.1'
   gem.add_development_dependency 'rubocop-rspec'
 end

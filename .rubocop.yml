@@ -1,5 +1,5 @@
 inherit_gem:
-  rubocop-discourse: .rubocop.yml
+  rubocop-discourse: stree-compat.yml
 inherit_mode:
   merge:
     - Exclude
