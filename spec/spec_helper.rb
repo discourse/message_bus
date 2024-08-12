@@ -47,4 +47,4 @@ module MinitestHooks
   end
 end
 
-MiniTest::Test.include(MinitestHooks)
+Minitest::Test.include(MinitestHooks)

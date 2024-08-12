@@ -60,6 +60,8 @@ module MessageBus
         # @param num_to_keep [Integer]
         # @return [void]
         def clear_channel_backlog(channel, backlog_id, num_to_keep)
+          return if Rails::Message.where(channel: channel).count < num_to_keep
+
           messages_to_keep_after =
             Rails::Message.
               select(:id).
@@ -188,6 +190,23 @@ module MessageBus
         def sync
           @mutex.synchronize { yield }
         end
+      end
+
+      # @param [Hash] config
+      # @option config [Logger] :logger a logger to which logs will be output
+      # @option config [Integer] :clear_every the interval of publications between which the backlog will not be cleared
+      # @option config [Hash] :backend_options see PG::Connection.connect for details of which options may be provided
+      # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs;
+      #   beyond this capacity, old messages will be dropped.
+      def initialize(config = {}, max_backlog_size = 100)
+        @config = config
+        @max_backlog_size = max_backlog_size
+        @max_global_backlog_size = 10_000
+        # after 7 days inactive backlogs will be removed
+        @max_backlog_age = 604800
+        @clear_every = config[:clear_every] || max_backlog_size / 2
+        @mutex = Mutex.new
+        @client = nil
       end
 
       private
