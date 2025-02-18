@@ -1,3 +1,9 @@
+18-02-2025
+
+- Version 4.3.9
+
+  - Prevent deprecation warning when using Rails 7.1
+
 14-09-2023
 
 - Version 4.3.8
