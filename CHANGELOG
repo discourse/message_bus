@@ -1,3 +1,9 @@
+14-03-2025
+
+- Version 4.4.0
+
+  - Add compatibility with the redis gem version 5+.
+
 18-02-2025
 
 - Version 4.3.9

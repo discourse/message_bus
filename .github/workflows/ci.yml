@@ -36,7 +36,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
+    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }})
     timeout-minutes: 10
 
     env:
@@ -47,8 +47,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["2.6", "2.7", "3.0", "3.1"]
-        redis: [5, 6]
+        ruby: ["3.2", "3.3", "3.4"]
+        redis: ["redis:5", "redis:6", "valkey/valkey"]
 
     services:
       postgres:
@@ -60,7 +60,7 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: ${{ format('redis:{0}', matrix.redis) }}
+        image: ${{ matrix.redis }}
         ports:
           - 6379:6379
         options: >-

@@ -16,14 +16,8 @@ describe MessageBus::HTTPClient do
     assert_equal("200", response.code)
   end
 
-  before do
-    @threads = Thread.list
-  end
-
   after do
-    new_threads = Thread.list - @threads
     client.stop
-    new_threads.each(&:join)
   end
 
   describe '#start and #stop' do
