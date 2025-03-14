@@ -12,7 +12,7 @@ Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
 
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby; as of [2021-03-31](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 2.6 and up.
+MessageBus only support officially supported versions of Ruby; as of [2025-03-14](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 3.2 and up.
 
 ## Can you handle concurrent requests?
 

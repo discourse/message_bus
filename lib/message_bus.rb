@@ -184,10 +184,12 @@ module MessageBus::Implementation
   # @param [Hash<Symbol => Object>] config values to merge into existing config
   # @return [void]
   def redis_config=(config)
-    configure(config.merge(backend: :redis))
+    configure(backend: :redis, redis_config: config)
   end
 
-  alias redis_config config
+  def redis_config
+    @config[:redis_config] || {}
+  end
 
   # @yield [env] a routine to determine the site ID for a subscriber
   # @yieldparam [optional, Rack::Request::Env] env the subscriber request environment
