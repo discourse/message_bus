@@ -163,8 +163,8 @@ LUA
             redis_channel_name,
           ],
         )
-      rescue ::Redis::CommandError => e
-        if queue_in_memory && e.message =~ /READONLY/
+      rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+        if queue_in_memory && readonly_exception?(e)
           @lock.synchronize do
             @in_memory_backlog << [channel, data]
             if @in_memory_backlog.length > @max_in_memory_publish_backlog
@@ -402,8 +402,8 @@ LUA
             begin
               # TODO recover special options
               publish(*@in_memory_backlog[0], queue_in_memory: false)
-            rescue ::Redis::CommandError => e
-              if e.message =~ /^READONLY/
+            rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+              if readonly_exception?(e)
                 try_again = true
               else
                 @logger.warn(
@@ -445,9 +445,13 @@ LUA
           pub_redis.disconnect!
           pub_redis.set(key, "1")
           false
-        rescue ::Redis::CommandError => e
-          true if e.message =~ /^READONLY/
+        rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+          true if readonly_exception?(e)
         end
+      end
+
+      def readonly_exception?(exception)
+        exception.is_a?(::Redis::ReadOnlyError) || (exception.is_a?(::Redis::CommandError) && exception.message =~ /^READONLY/)
       end
 
       MessageBus::BACKENDS[:redis] = self

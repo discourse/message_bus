@@ -1,3 +1,9 @@
+20-03-2025
+
+- Version 4.4.1
+
+  - FIX: Handle Redis readonly errors for v4.x and v5.x.
+
 14-03-2025
 
 - Version 4.4.0
