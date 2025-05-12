@@ -1,3 +1,23 @@
+FUTURE
+
+20-03-2025
+
+- Version 4.4.1
+
+  - FIX: Handle Redis readonly errors for v4.x and v5.x.
+
+14-03-2025
+
+- Version 4.4.0
+
+  - Add compatibility with the redis gem version 5+.
+
+18-02-2025
+
+- Version 4.3.9
+
+  - Prevent deprecation warning when using Rails 7.1
+
 14-09-2023
 
 - Version 4.3.8
@@ -42,13 +62,13 @@
 
 06-01-2023
 
-- Version 4.2.1
+- Version 4.3.1
 
   - FIX: Ensure non-long-polling requests are always spaced out
 
 04-11-2022
 
-- Version 4.2.0
+- Version 4.3.0
 
   - FIX: Add redis gem version 5 support
   - FEATURE: Allow disabling subscriptions without disabling publication

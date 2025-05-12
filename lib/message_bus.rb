@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "monitor"
-require "set"
 
 require_relative "message_bus/version"
 require_relative "message_bus/message"
@@ -185,10 +184,12 @@ module MessageBus::Implementation
   # @param [Hash<Symbol => Object>] config values to merge into existing config
   # @return [void]
   def redis_config=(config)
-    configure(config.merge(backend: :redis))
+    configure(backend: :redis, redis_config: config)
   end
 
-  alias redis_config config
+  def redis_config
+    @config[:redis_config] || {}
+  end
 
   # @yield [env] a routine to determine the site ID for a subscriber
   # @yieldparam [optional, Rack::Request::Env] env the subscriber request environment
@@ -772,7 +773,7 @@ module MessageBus::Implementation
         globals, locals, local_globals, global_globals = nil
 
         @mutex.synchronize do
-          return if @destroyed
+          return if @destroyed # rubocop:disable Lint/NonLocalExitFromIterator
           next unless @subscriptions
 
           globals = @subscriptions[nil]

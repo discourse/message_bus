@@ -7,9 +7,36 @@ on:
   pull_request:
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }} (redis ${{ matrix.redis }})
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup npm
+        run: npm install
+
+      - name: Rubocop
+        run: bundle exec rubocop
+
+      - name: ESLint
+        run: npx eslint .
+
+  test:
+    runs-on: ubuntu-latest
+    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }})
     timeout-minutes: 10
 
     env:
@@ -20,12 +47,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [2.6, 2.7, '3.0', 3.1]
-        redis: [5, 6]
+        ruby: ["3.2", "3.3", "3.4"]
+        redis: ["redis:5", "redis:6", "valkey/valkey"]
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         env:
           POSTGRES_DB: message_bus_test
           POSTGRES_PASSWORD: postgres
@@ -33,7 +60,7 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: ${{ format('redis:{0}', matrix.redis) }}
+        image: ${{ matrix.redis }}
         ports:
           - 6379:6379
         options: >-
@@ -43,41 +70,28 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: npm
-
-      - name: Setup npm
-        run: npm install
-
       - name: Tests
         env:
           TESTOPTS: --verbose
         run: bundle exec rake
-        timeout-minutes: 3
-
-      - name: Linting
-        run: npx eslint .
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [lint, test]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Release gem
-        uses: discourse/publish-rubygems-action@v2
+        uses: discourse/publish-rubygems-action@v3
         id: publish-gem
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
@@ -95,7 +109,7 @@ jobs:
           git commit -m 'bump'
 
       - name: Publish package
-        uses: JS-DevTools/npm-publish@v1
+        uses: JS-DevTools/npm-publish@v3
         if: steps.publish-gem.outputs.new_version == 'true'
         with:
           token: ${{ secrets.NPM_TOKEN }}

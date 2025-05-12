@@ -22,7 +22,7 @@ describe BACKEND_CLASS do
       if msg.data == "done"
         bus.global_unsubscribe
       else
-        bus.publish("/response", "#{msg.data}-#{Process.pid.to_s}")
+        bus.publish("/response", "#{msg.data}-#{Process.pid}")
       end
     end
   ensure

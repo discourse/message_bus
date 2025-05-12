@@ -1,11 +1,15 @@
 inherit_gem:
-  rubocop-discourse: .rubocop.yml
+  rubocop-discourse: stree-compat.yml
 inherit_mode:
   merge:
     - Exclude
+
 AllCops:
   Exclude:
-    - 'examples/**/*'
+    - "examples/**/*"
+
+Discourse/Plugins:
+  Enabled: false
 
 RSpec:
   Enabled: false

@@ -200,7 +200,11 @@ class MessageBus::Rack::Middleware
     #  this means connections are not returned until rack.async is
     #  closed
     if defined? ActiveRecord::Base.connection_handler
-      ActiveRecord::Base.connection_handler.clear_active_connections!
+      if Gem::Version.new(Rails.version) >= "7.1"
+        ActiveRecord::Base.connection_handler.clear_active_connections!(:all)
+      else
+        ActiveRecord::Base.connection_handler.clear_active_connections!
+      end
     elsif defined? ActiveRecord::Base.clear_active_connections!
       ActiveRecord::Base.clear_active_connections!
     end

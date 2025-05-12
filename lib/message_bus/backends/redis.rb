@@ -40,16 +40,18 @@ module MessageBus
         end
       end
 
-      # @param [Hash] redis_config in addition to the options listed, see https://github.com/redis/redis-rb for other available options
-      # @option redis_config [Logger] :logger a logger to which logs will be output
-      # @option redis_config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying Redis library
-      # @option redis_config [Integer] :clear_every (1) the interval of publications between which the backlog will not be cleared
+      # @param [Hash] config
+      # @option config [Hash] :redis_config options for the redis connection (see https://github.com/redis/redis-rb)
+      # @option config [Logger] :logger a logger to which logs will be output
+      # @option config [Boolean] :enable_redis_logger (false) whether or not to enable logging by the underlying Redis library
+      # @option config [Integer] :clear_every (1) the interval of publications between which the backlog will not be cleared
       # @param [Integer] max_backlog_size the largest permitted size (number of messages) for per-channel backlogs; beyond this capacity, old messages will be dropped.
-      def initialize(redis_config = {}, max_backlog_size = 1000)
-        @redis_config = redis_config.dup
-        @clear_every = redis_config.delete(:clear_every) || 1
-        @logger = @redis_config[:logger]
-        @redis_config[:logger] = nil unless @redis_config[:enable_redis_logger]
+      def initialize(config = {}, max_backlog_size = 1000)
+        @config = config.dup
+        @redis_config = config[:redis_config].dup || {}
+        @clear_every = config[:clear_every] || 1
+        @logger = @config[:logger]
+        @config[:logger] = nil unless @config[:enable_redis_logger]
         @max_backlog_size = max_backlog_size
         @max_global_backlog_size = 2000
         @max_in_memory_publish_backlog = 1000
@@ -161,8 +163,8 @@ LUA
             redis_channel_name,
           ],
         )
-      rescue ::Redis::CommandError => e
-        if queue_in_memory && e.message =~ /READONLY/
+      rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+        if queue_in_memory && readonly_exception?(e)
           @lock.synchronize do
             @in_memory_backlog << [channel, data]
             if @in_memory_backlog.length > @max_in_memory_publish_backlog
@@ -300,7 +302,7 @@ LUA
               if m == UNSUB_MESSAGE
                 @subscribed = false
                 global_redis.unsubscribe
-                return
+                return # rubocop:disable Lint/NonLocalExitFromIterator
               end
               m = MessageBus::Message.decode m
 
@@ -331,31 +333,7 @@ LUA
       private
 
       def new_redis_connection
-        config =
-          @redis_config.filter do |k, v|
-            # This is not ideal, required for Redis gem version 5
-            # redis-client no longer accepts arbitrary params
-            # anything unknown will error out.
-            # https://github.com/redis-rb/redis-client/blob/4c8e05acfb3477c1651138a4924616e79e6116f2/lib/redis_client/config.rb#L21-L39
-            #
-            #
-            # We should be doing the opposite and allowlisting params
-            # or splitting the object up. Starting with the smallest change that is backwards compatible
-            !%i[
-              backend
-              logger
-              long_polling_enabled
-              long_polling_interval
-              backend_options
-              base_route
-              client_message_filters
-              site_id_lookup
-              group_ids_lookup
-              user_id_lookup
-              transport_codec
-            ].include?(k)
-          end
-        ::Redis.new(config)
+        ::Redis.new(@redis_config)
       end
 
       # redis connection used for publishing messages
@@ -424,8 +402,8 @@ LUA
             begin
               # TODO recover special options
               publish(*@in_memory_backlog[0], queue_in_memory: false)
-            rescue ::Redis::CommandError => e
-              if e.message =~ /^READONLY/
+            rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+              if readonly_exception?(e)
                 try_again = true
               else
                 @logger.warn(
@@ -467,9 +445,13 @@ LUA
           pub_redis.disconnect!
           pub_redis.set(key, "1")
           false
-        rescue ::Redis::CommandError => e
-          true if e.message =~ /^READONLY/
+        rescue ::Redis::ReadOnlyError, ::Redis::CommandError => e
+          true if readonly_exception?(e)
         end
+      end
+
+      def readonly_exception?(exception)
+        exception.is_a?(::Redis::ReadOnlyError) || (exception.is_a?(::Redis::CommandError) && exception.message =~ /^READONLY/)
       end
 
       MessageBus::BACKENDS[:redis] = self

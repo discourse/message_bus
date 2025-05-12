@@ -12,7 +12,7 @@ Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
 
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby; as of [2021-03-31](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 2.6 and up.
+MessageBus only support officially supported versions of Ruby; as of [2025-03-14](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 3.2 and up.
 
 ## Can you handle concurrent requests?
 
@@ -381,7 +381,9 @@ MessageBus.configure(keepalive_interval: 60)
 message_bus supports using Redis as a storage backend, and you can configure message_bus to use redis in `config/initializers/message_bus.rb`, like so:
 
 ```ruby
-MessageBus.configure(backend: :redis, url: "redis://:p4ssw0rd@10.0.1.1:6380/15")
+MessageBus.configure(backend: :redis, redis_config: { 
+  url: "redis://:p4ssw0rd@10.0.1.1:6380/15"
+})
 ```
 
 The redis client message_bus uses is [redis-rb](https://github.com/redis/redis-rb), so you can visit it's repo to see what other options you can pass besides a `url`.
