@@ -27,7 +27,7 @@ jobs:
           cache: "pnpm"
 
       - name: Pnpm install
-        run: npm install
+        run: pnpm install
 
       - name: Rubocop
         run: bundle exec rubocop
