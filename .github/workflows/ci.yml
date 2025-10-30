@@ -20,9 +20,9 @@ jobs:
           bundler-cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: "24"
           cache: npm
 
       - name: Setup npm
@@ -32,7 +32,8 @@ jobs:
         run: bundle exec rubocop
 
       - name: ESLint
-        run: npx eslint .
+        if: ${{ !cancelled() }}
+        run: npm run lint
 
   test:
     runs-on: ubuntu-latest
@@ -108,8 +109,12 @@ jobs:
           git add package.json
           git commit -m 'bump'
 
-      - name: Publish package
-        uses: JS-DevTools/npm-publish@v3
-        if: steps.publish-gem.outputs.new_version == 'true'
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          token: ${{ secrets.NPM_TOKEN }}
+          node-version: "24"
+          cache: npm
+
+      - name: Publish package
+        if: steps.publish-gem.outputs.new_version == 'true'
+        run: pnpm publish -r
