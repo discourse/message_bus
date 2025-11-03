@@ -19,9 +19,16 @@
     "url": "https://github.com/discourse/message_bus/issues"
   },
   "homepage": "https://github.com/discourse/message_bus#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  },
   "devDependencies": {
     "eslint": "^8.31.0",
     "jasmine-browser-runner": "^0.10.0",
     "jasmine-core": "^3.10.1"
-  }
+  },
+  "packageManager": "pnpm@9.15.5"
 }
