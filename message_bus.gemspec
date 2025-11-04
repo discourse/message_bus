@@ -30,7 +30,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'http_parser.rb'
   gem.add_development_dependency 'thin'
   gem.add_development_dependency 'rack-test'
-  gem.add_development_dependency 'puma', '6.6.1'
+  gem.add_development_dependency 'pitchfork'
   gem.add_development_dependency 'm'
   gem.add_development_dependency 'byebug'
   gem.add_development_dependency 'oj'
