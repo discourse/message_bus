@@ -79,6 +79,16 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Pnpm install
+        run: pnpm install
+
       - name: Tests
         env:
           TESTOPTS: --verbose
