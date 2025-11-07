@@ -35,7 +35,7 @@ end
 namespace :jasmine do
   desc "Run Jasmine tests in headless mode"
   task 'ci' do
-    if !system("npx jasmine-browser-runner runSpecs")
+    if !system("pnpm jasmine-browser-runner runSpecs")
       exit 1
     end
   end
