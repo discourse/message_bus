@@ -65,7 +65,7 @@ describe MessageBus::HTTPClient do
           # that we sleep for the right interval after failure
           sleep 0.5
 
-          assert_match(/Errno::ECONNREFUSED|SocketError/, fake.string)
+          assert_match(/Errno::ECONNREFUSED|SocketError|Socket::ResolutionError/, fake.string)
         ensure
           $stderr = original_stderr
         end

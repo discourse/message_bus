@@ -1,4 +1,4 @@
 # frozen_string_literal: true
-gem 'puma'
+gem 'pitchfork'
 gem 'redis'
 gem 'sinatra'

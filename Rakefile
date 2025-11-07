@@ -71,7 +71,7 @@ namespace :spec do
 
     begin
       ENV['MESSAGE_BUS_BACKEND'] = 'memory'
-      pid = spawn("bundle exec puma -p 9292 spec/fixtures/test/config.ru")
+      pid = spawn("bundle exec pitchfork -p 9292 spec/fixtures/test/config.ru")
       sleep 1 while port_available?(9292)
       Rake::TestTask.new(:integration) do |t|
         t.test_files = INTEGRATION_FILES
