@@ -82,19 +82,19 @@ class MessageBus::Rack::Middleware
     return [404, {}, ["not found"]] unless client_id
 
     headers = {}
+    extra_headers = {}
     headers["Cache-Control"] = "must-revalidate, private, max-age=0"
     headers["Content-Type"] = "application/json; charset=utf-8"
     headers["Pragma"] = "no-cache"
     headers["Expires"] = "0"
 
     if @bus.extra_response_headers_lookup
-      @bus.extra_response_headers_lookup.call(env).each do |k, v|
-        headers[k] = v
-      end
+      extra_headers = @bus.extra_response_headers_lookup.call(env)
+      headers.merge!(extra_headers)
     end
 
     if env["REQUEST_METHOD"] == "OPTIONS"
-      return [200, headers, ["OK"]]
+      return [200, extra_headers.merge({ "Content-Type" => "text/html" }), ["OK"]]
     end
 
     user_id = @bus.user_id_lookup.call(env) if @bus.user_id_lookup
