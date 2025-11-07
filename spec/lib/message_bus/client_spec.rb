@@ -67,7 +67,7 @@ describe MessageBus::Client do
 
       status, headers, chunks = http_parse(lines)
 
-      headers["content-type"].must_equal "text/plain; charset=utf-8"
+      headers["Content-Type"].must_equal "text/plain; charset=utf-8"
       status.must_equal "200"
       chunks.length.must_equal 2
 
