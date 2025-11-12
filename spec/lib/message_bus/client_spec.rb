@@ -59,7 +59,7 @@ describe MessageBus::Client do
       @client.use_chunked = true
       r, w = IO.pipe
       @client.io = w
-      @client.headers = { "Content-Type" => "application/json; charset=utf-8" }
+      @client.headers = { "content-type" => "application/json; charset=utf-8" }
       @client << MessageBus::Message.new(1, 1, '/test', 'test')
       @client << MessageBus::Message.new(2, 2, '/test', "a|\r\n|\r\n|b")
 
