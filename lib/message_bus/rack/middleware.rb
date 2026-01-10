@@ -131,7 +131,7 @@ class MessageBus::Rack::Middleware
                    env['QUERY_STRING'] !~ /dlp=t/ &&
                    @connection_manager.client_count < @bus.max_active_clients
 
-    allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
+    allow_chunked = env['SERVER_PROTOCOL'] == 'HTTP/1.1' || env['HTTP_VERSION'] == 'HTTP/1.1'
     allow_chunked &&= !env['HTTP_DONT_CHUNK']
     allow_chunked &&= @bus.chunked_encoding_enabled?
 
