@@ -16,7 +16,7 @@ Gem::Specification.new do |gem|
   gem.version       = MessageBus::VERSION
   gem.required_ruby_version = ">= 2.6.0"
 
-  gem.add_runtime_dependency 'rack', '~> 3'
+  gem.add_runtime_dependency 'rack', '> 2', '< 4'
 
   # Optional runtime dependencies
   gem.add_development_dependency 'redis'
