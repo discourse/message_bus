@@ -21,7 +21,7 @@ describe MessageBus::Rack::Middleware do
       use FakeAsyncMiddleware, message_bus: bus
       use e_m if e_m
       use MessageBus::Rack::Middleware, message_bus: bus
-      run lambda { |_env| [500, { 'Content-Type' => 'text/html' }, 'should not be called'] }
+      run lambda { |_env| [500, { 'content-type' => 'text/html' }, 'should not be called'] }
     }
 
     @async_middleware = builder.to_app

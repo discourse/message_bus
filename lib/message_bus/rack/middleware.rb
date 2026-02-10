@@ -75,7 +75,7 @@ class MessageBus::Rack::Middleware
     if @bus.allow_broadcast? && env['PATH_INFO'] == @broadcast_route
       parsed = Rack::Request.new(env)
       @bus.publish parsed["channel"], parsed["data"]
-      return [200, { "Content-Type" => "text/html" }, ["sent"]]
+      return [200, { "content-type" => "text/html" }, ["sent"]]
     end
 
     client_id = env['PATH_INFO'][@base_route_length..-1].split("/")[0]
@@ -169,9 +169,9 @@ class MessageBus::Rack::Middleware
       end
 
       if allow_chunked
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Transfer-Encoding"] = "chunked"
-        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        response.headers["x-content-type-options"] = "nosniff"
+        response.headers["transfer-encoding"] = "chunked"
+        response.headers["content-type"] = "text/plain; charset=utf-8"
       end
 
       response.status = 200
