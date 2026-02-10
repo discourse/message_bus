@@ -1,6 +1,9 @@
-Unreleased
+10-02-2026
 
-- Support chunked encoding for Puma 7 on Rack 3.1
+- Version 4.5.0
+
+  - Support chunked encoding for Puma 7 on Rack 3.1
+  - FIX: Prune empty subscriptions in `ConnectionManager#remove_client`
 
 20-03-2025
 
