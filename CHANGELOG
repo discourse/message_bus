@@ -1,3 +1,7 @@
+Unreleased
+
+- Support chunked encoding for Puma 7 on Rack 3.1
+
 20-03-2025
 
 - Version 4.4.1
