@@ -33,6 +33,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'pitchfork'
   gem.add_development_dependency 'm'
   gem.add_development_dependency 'byebug'
+  gem.add_development_dependency 'method_source'
   gem.add_development_dependency 'oj'
   gem.add_development_dependency 'yard'
 
