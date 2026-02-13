@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.name          = "message_bus"
   gem.require_paths = ["lib"]
   gem.version       = MessageBus::VERSION
-  gem.required_ruby_version = ">= 2.6.0"
+  gem.required_ruby_version = ">= 3.2.0"
 
   gem.add_runtime_dependency 'rack', '> 2', '< 4'
 
@@ -37,7 +37,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'oj'
   gem.add_development_dependency 'yard'
 
-  if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.7.0')
-    gem.add_development_dependency 'rubocop-discourse', '3.8.1'
-  end
+  gem.add_development_dependency 'rubocop-discourse', '3.8.1'
 end

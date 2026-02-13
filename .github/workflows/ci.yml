@@ -38,10 +38,11 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }})
+    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }}, ${{ matrix.rack }})
     timeout-minutes: 10
 
     env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.rack }}.gemfile
       PGHOST: localhost
       PGPASSWORD: postgres
       PGUSER: postgres
@@ -50,7 +51,8 @@ jobs:
       fail-fast: false
       matrix:
         ruby: ["3.2", "3.3", "3.4"]
-        redis: ["redis:5", "redis:6", "valkey/valkey"]
+        rack: ["rack2", "rack3"]
+        redis: ["redis:7.4", "valkey/valkey"]
 
     services:
       postgres:
