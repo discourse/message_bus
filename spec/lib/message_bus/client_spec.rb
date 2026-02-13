@@ -32,6 +32,8 @@ describe MessageBus::Client do
         break if line == ""
 
         name, val = line.split(": ")
+        name = name.downcase
+        raise "duplicate header: #{name}" if headers.key?(name)
         headers[name] = val
       end
 
