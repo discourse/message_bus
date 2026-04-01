@@ -12,7 +12,7 @@ class MessageBus::Message < Struct.new(:global_id, :message_id, :channel, :data)
     global_id  = encoded.to_i
     message_id = encoded.byteslice(s1 + 1, s2 - s1 - 1).to_i
     channel    = encoded.byteslice(s2 + 1, s3 - s2 - 1)
-    channel.gsub!("$$123$$", "|")
+    channel.gsub!("$$123$$", "|") if channel.include?("$$123$$")
     data = encoded.byteslice(s3 + 1, encoded.bytesize - s3 - 1)
 
     MessageBus::Message.new(global_id, message_id, channel, data)
