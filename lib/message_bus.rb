@@ -625,6 +625,7 @@ module MessageBus::Implementation
   private
 
   ENCODE_SITE_TOKEN = "$|$"
+  ENCODE_SITE_TOKEN_SIZE = ENCODE_SITE_TOKEN.bytesize
 
   # encode channel name to include site
   def encode_channel_name(channel, site_id = nil)
@@ -638,7 +639,14 @@ module MessageBus::Implementation
   end
 
   def decode_channel_name(channel)
-    channel.split(ENCODE_SITE_TOKEN)
+    if (idx = channel.byteindex(ENCODE_SITE_TOKEN))
+      [
+        channel.byteslice(0, idx),
+        channel.byteslice(idx + ENCODE_SITE_TOKEN_SIZE, channel.bytesize - idx - ENCODE_SITE_TOKEN_SIZE)
+      ]
+    else
+      [channel, nil]
+    end
   end
 
   def global?(channel)
