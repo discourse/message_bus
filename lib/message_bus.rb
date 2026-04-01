@@ -638,7 +638,11 @@ module MessageBus::Implementation
   end
 
   def decode_channel_name(channel)
-    channel.split(ENCODE_SITE_TOKEN)
+    if (idx = channel.byteindex(ENCODE_SITE_TOKEN))
+      [channel.byteslice(0, idx), channel.byteslice(idx + 3, channel.bytesize - idx - 3)]
+    else
+      [channel, nil]
+    end
   end
 
   def global?(channel)
