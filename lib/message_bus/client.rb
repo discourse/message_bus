@@ -144,9 +144,7 @@ class MessageBus::Client
     end
 
     if has_groups
-      group_allowed = (
-        msg.group_ids - (self.group_ids || [])
-      ).length < msg.group_ids.length
+      group_allowed = msg.group_ids.intersect?(self.group_ids || [])
     end
 
     has_permission = client_allowed && (user_allowed || group_allowed || (!has_users && !has_groups))
