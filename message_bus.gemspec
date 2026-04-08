@@ -17,6 +17,7 @@ Gem::Specification.new do |gem|
   gem.required_ruby_version = ">= 3.2.0"
 
   gem.add_runtime_dependency 'rack', '> 2', '< 4'
+  gem.add_runtime_dependency 'logger'
 
   # Optional runtime dependencies
   gem.add_development_dependency 'redis'
