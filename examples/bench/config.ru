@@ -30,4 +30,4 @@ end
 MessageBus.long_polling_interval = 1000 * 2
 MessageBus.max_active_clients = 10000
 use MessageBus::Rack::Middleware
-run lambda { |_env| [200, { "Content-Type" => "text/html" }, ["Howdy"]] }
+run lambda { |_env| [200, { "content-type" => "text/html" }, ["Howdy"]] }

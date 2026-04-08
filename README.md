@@ -4,7 +4,7 @@ A reliable, robust messaging bus for Ruby processes and web clients.
 
 MessageBus implements a Server to Server channel based protocol and Server to Web Client protocol (using polling, long-polling or long-polling + streaming)
 
-Since long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web servers (Thin, Puma, Unicorn, Passenger) can run MessageBus and handle a large number of concurrent connections that wait on messages.
+Since long-polling is implemented using Rack Hijack and Thin::Async, all common Ruby web servers (Pitchfork/Unicorn, Puma, Thin, Passenger) can run MessageBus and handle a large number of concurrent connections that wait on messages.
 
 MessageBus is implemented as Rack middleware and can be used by any Rails / Sinatra or pure Rack application.
 
@@ -504,7 +504,7 @@ on_worker_boot do
 end
 ```
 
-#### Unicorn
+#### Pitchfork/Unicorn
 
 ```ruby
 # path/to/your/config/unicorn.rb

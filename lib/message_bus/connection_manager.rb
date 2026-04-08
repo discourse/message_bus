@@ -76,8 +76,13 @@ class MessageBus::ConnectionManager
   def remove_client(c)
     synchronize do
       @clients.delete c.client_id
-      @subscriptions[c.site_id].each do |_k, set|
-        set.delete c.client_id
+      site_subs = @subscriptions[c.site_id]
+      if site_subs
+        site_subs.delete_if do |_k, set|
+          set.delete c.client_id
+          set.empty?
+        end
+        @subscriptions.delete(c.site_id) if site_subs.empty?
       end
       if c.cleanup_timer
         # concurrency may cause this to fail

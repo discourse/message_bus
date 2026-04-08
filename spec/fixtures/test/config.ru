@@ -14,5 +14,5 @@ run ->(env) do
     end
   end
 
-  [200, { "Content-Type" => "text/html" }, ["Howdy"]]
+  [200, { "content-type" => "text/html" }, ["Howdy"]]
 end

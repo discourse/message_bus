@@ -1,3 +1,23 @@
+13-02-2026
+
+- Version 4.5.2
+
+  - FIX: Use consistent casing for headers
+  - DEV: Test against both Rack 2 and Rack 3 in CI
+
+10-02-2026
+
+- Version 4.5.1
+
+  - DEV: Allow 2.x rack dependency
+
+10-02-2026
+
+- Version 4.5.0
+
+  - Support chunked encoding for Puma 7 on Rack 3.1
+  - FIX: Prune empty subscriptions in `ConnectionManager#remove_client`
+
 20-03-2025
 
 - Version 4.4.1

@@ -228,18 +228,18 @@ class MessageBus::Client
   NEWLINE = "\r\n".freeze
   COLON_SPACE = ": ".freeze
   HTTP_11 = "HTTP/1.1 200 OK\r\n".freeze
-  CONTENT_LENGTH = "Content-Length: ".freeze
-  CONNECTION_CLOSE = "Connection: close\r\n".freeze
-  CHUNKED_ENCODING = "Transfer-Encoding: chunked\r\n".freeze
-  NO_SNIFF = "X-Content-Type-Options: nosniff\r\n".freeze
+  CONTENT_LENGTH = "content-length: ".freeze
+  CONNECTION_CLOSE = "connection: close\r\n".freeze
+  CHUNKED_ENCODING = "transfer-encoding: chunked\r\n".freeze
+  NO_SNIFF = "x-content-type-options: nosniff\r\n".freeze
 
-  TYPE_TEXT = "Content-Type: text/plain; charset=utf-8\r\n".freeze
-  TYPE_JSON = "Content-Type: application/json; charset=utf-8\r\n".freeze
+  TYPE_TEXT = "content-type: text/plain; charset=utf-8\r\n".freeze
+  TYPE_JSON = "content-type: application/json; charset=utf-8\r\n".freeze
 
   def write_headers
     @io.write(HTTP_11)
     @headers.each do |k, v|
-      next if k == "Content-Type"
+      next if k == "content-type"
 
       @io.write(k)
       @io.write(COLON_SPACE)

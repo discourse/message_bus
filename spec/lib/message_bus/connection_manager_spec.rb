@@ -90,6 +90,29 @@ describe MessageBus::ConnectionManager do
     @manager.notify_clients(m)
     assert_nil @resp.sent
   end
+
+  it "should prune empty channel and site_id entries from subscriptions after removing clients" do
+    client1 = MessageBus::Client.new(client_id: "abc", user_id: 1, site_id: 20)
+    client1.subscribe('test', -1)
+    @manager.add_client(client1)
+
+    client2 = MessageBus::Client.new(client_id: "def", user_id: 2, site_id: 20)
+    client2.subscribe('test', -1)
+    @manager.add_client(client2)
+
+    @manager.remove_client(client1)
+
+    subscriptions = @manager.instance_variable_get(:@subscriptions)
+    assert subscriptions[client1.site_id].key?('test')
+    assert subscriptions[client1.site_id]['test'].include?(client2.client_id)
+    refute subscriptions[client1.site_id]['test'].include?(client1.client_id)
+
+    @manager.remove_client(client2)
+
+    subscriptions = @manager.instance_variable_get(:@subscriptions)
+    assert_nil subscriptions.dig(client1.site_id, 'test')
+    assert_nil subscriptions[client1.site_id]
+  end
 end
 
 describe MessageBus::ConnectionManager, "notifying and subscribing concurrently" do

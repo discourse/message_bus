@@ -19,27 +19,30 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup npm
-        run: npm install
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Pnpm install
+        run: pnpm install
 
       - name: Rubocop
         run: bundle exec rubocop
 
       - name: ESLint
-        run: npx eslint .
+        if: ${{ !cancelled() }}
+        run: pnpm lint
 
   test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }})
+    name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }}, ${{ matrix.rack }})
     timeout-minutes: 10
 
     env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.rack }}.gemfile
       PGHOST: localhost
       PGPASSWORD: postgres
       PGUSER: postgres
@@ -48,7 +51,8 @@ jobs:
       fail-fast: false
       matrix:
         ruby: ["3.2", "3.3", "3.4"]
-        redis: ["redis:5", "redis:6", "valkey/valkey"]
+        rack: ["rack2", "rack3"]
+        redis: ["redis:7.4", "valkey/valkey"]
 
     services:
       postgres:
@@ -77,6 +81,16 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Pnpm install
+        run: pnpm install
+
       - name: Tests
         env:
           TESTOPTS: --verbose
@@ -86,6 +100,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [lint, test]
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -108,8 +126,13 @@ jobs:
           git add package.json
           git commit -m 'bump'
 
-      - name: Publish package
-        uses: JS-DevTools/npm-publish@v3
-        if: steps.publish-gem.outputs.new_version == 'true'
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
         with:
-          token: ${{ secrets.NPM_TOKEN }}
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Publish package
+        if: steps.publish-gem.outputs.new_version == 'true'
+        run: pnpm publish -r

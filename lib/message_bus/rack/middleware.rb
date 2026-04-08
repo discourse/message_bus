@@ -75,17 +75,17 @@ class MessageBus::Rack::Middleware
     if @bus.allow_broadcast? && env['PATH_INFO'] == @broadcast_route
       parsed = Rack::Request.new(env)
       @bus.publish parsed["channel"], parsed["data"]
-      return [200, { "Content-Type" => "text/html" }, ["sent"]]
+      return [200, { "content-type" => "text/html" }, ["sent"]]
     end
 
     client_id = env['PATH_INFO'][@base_route_length..-1].split("/")[0]
     return [404, {}, ["not found"]] unless client_id
 
     headers = {}
-    headers["Cache-Control"] = "must-revalidate, private, max-age=0"
-    headers["Content-Type"] = "application/json; charset=utf-8"
-    headers["Pragma"] = "no-cache"
-    headers["Expires"] = "0"
+    headers["cache-control"] = "must-revalidate, private, max-age=0"
+    headers["content-type"] = "application/json; charset=utf-8"
+    headers["pragma"] = "no-cache"
+    headers["expires"] = "0"
 
     if @bus.extra_response_headers_lookup
       @bus.extra_response_headers_lookup.call(env).each do |k, v|
@@ -131,7 +131,7 @@ class MessageBus::Rack::Middleware
                    env['QUERY_STRING'] !~ /dlp=t/ &&
                    @connection_manager.client_count < @bus.max_active_clients
 
-    allow_chunked = env['HTTP_VERSION'] == 'HTTP/1.1'
+    allow_chunked = env['SERVER_PROTOCOL'] == 'HTTP/1.1' || env['HTTP_VERSION'] == 'HTTP/1.1'
     allow_chunked &&= !env['HTTP_DONT_CHUNK']
     allow_chunked &&= @bus.chunked_encoding_enabled?
 
@@ -169,9 +169,9 @@ class MessageBus::Rack::Middleware
       end
 
       if allow_chunked
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Transfer-Encoding"] = "chunked"
-        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        response.headers["x-content-type-options"] = "nosniff"
+        response.headers["transfer-encoding"] = "chunked"
+        response.headers["content-type"] = "text/plain; charset=utf-8"
       end
 
       response.status = 200
