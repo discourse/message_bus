@@ -752,9 +752,20 @@ module MessageBus::Implementation
         publish("/__mb_keepalive__/", Process.pid, user_ids: [-1])
         if (Time.now - (@last_message || Time.now)) > keepalive_interval * 3
           logger.warn "Global messages on #{Process.pid} timed out, message bus is no longer functioning correctly"
+          # The subscriber thread is stuck (half-open TCP connection or similar network issue)
+          # and is no longer receiving messages. Kill it and let ensure_subscriber_thread
+          # create a fresh one with a new Redis connection.
+          @mutex.synchronize do
+            if @subscriber_thread == thread
+              thread.kill
+              @subscriber_thread = nil
+            end
+          end
+          ensure_subscriber_thread
+          # The new thread sets up its own keepalive blk stop re-queuing this one.
+        else
+          timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
         end
-
-        timer.queue(keepalive_interval, &blk) if keepalive_interval > MIN_KEEPALIVE
       end
     end
 
