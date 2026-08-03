@@ -1,3 +1,9 @@
+03-08-2026
+
+- Version 4.6.0
+
+  - DEV: Export the JavaScript client as a CommonJS/ES module so it can be imported directly by bundlers and ESM projects, while still assigning the `MessageBus` global for existing consumers
+
 13-02-2026
 
 - Version 4.5.2

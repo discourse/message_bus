@@ -1,4 +1,4 @@
-/*global define, jQuery*/
+/*global define, jQuery, module*/
 
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -9,6 +9,11 @@
       // a global even when an AMD loader is in use.
       return (root.MessageBus = factory());
     });
+  } else if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+    if (typeof self !== "undefined") {
+      self.MessageBus = module.exports;
+    }
   } else {
     // Browser globals
     root.MessageBus = factory();

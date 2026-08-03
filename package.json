@@ -10,8 +10,6 @@
   "files": [
     "assets/message-bus.js"
   ],
-  "jsnext:main": "assets/message-bus.js",
-  "module": "assets/message-bus.js",
   "repository": "https://github.com/discourse/message_bus",
   "author": "Sam Saffron, Robin Ward",
   "license": "MIT",
