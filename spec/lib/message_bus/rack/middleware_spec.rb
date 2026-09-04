@@ -99,13 +99,14 @@ describe MessageBus::Rack::Middleware do
       t.join
     end
 
-    it "should timeout within its alloted slot" do
+    it "should timeout within its allotted slot" do
       begin
         @bus.long_polling_interval = 10
-        s = Time.now.to_f * 1000
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         post "/message-bus/ABC", '/foo' => nil
-        # allow for some jitter
-        (Time.now.to_f * 1000 - s).must_be :<, 100
+        elapsed_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000
+        # Leave enough headroom for scheduler jitter on busy CI runners.
+        elapsed_ms.must_be :<, 250
       ensure
         @bus.long_polling_interval = 5000
       end

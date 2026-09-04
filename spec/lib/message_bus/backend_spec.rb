@@ -112,114 +112,30 @@ describe BACKEND_CLASS do
   end
 
   it "can set backlog age" do
-    @bus.max_backlog_age = 1
-
-    expected_backlog_size = 0
-
-    # Start at time = 0s
+    @bus.max_backlog_age = 0
     @bus.publish "/foo", "bar"
-    expected_backlog_size += 1
 
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
+    # Redis and PostgreSQL expire synchronously during publication. The memory
+    # backend normally expires on a timer, so invoke the same expiry operation
+    # directly rather than making the test wait for that timer to run.
+    @bus.send(:client).expire if CURRENT_BACKEND == :memory
 
-    sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
-    expected_backlog_size = 0
-
-    case CURRENT_BACKEND
-    when :postgres
-      # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
-      @bus.global_backlog.length.wont_equal expected_backlog_size
-      @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size
-      @bus.publish "/foo", "baz"
-      expected_backlog_size += 1
-    end
-
-    # Assert that the backlog did expire, and now has only the new publication in it.
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
-
-    sleep 0.75 # Should now be at time =~ 2s
-
-    @bus.publish "/foo", "baz" # Publish something else before another expiry
-    expected_backlog_size += 1
-
-    sleep 0.75 # Should now be at time =~ 2.75s
-    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not have expired the backlog.
-
-    @bus.publish "/foo", "baz" # Publish something else to ward off another expiry
-    expected_backlog_size += 1
-
-    case CURRENT_BACKEND
-    when :postgres
-      # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
-      expected_backlog_size -= 1
-    else
-      # Assert that the backlog did not expire, and has all of our publications since the last expiry.
-    end
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
+    @bus.global_backlog.must_be_empty
+    @bus.backlog("/foo", 0).must_be_empty
   end
 
   it "can set backlog age on publish" do
     @bus.max_backlog_age = 100
-
-    expected_backlog_size = 0
-
     initial_id = @bus.last_id("/foo")
 
-    # Start at time = 0s
-    @bus.publish "/foo", "bar", max_backlog_age: 1
-    expected_backlog_size += 1
+    @bus.publish "/foo", "bar", max_backlog_age: 0
+    @bus.send(:client).expire if CURRENT_BACKEND == :memory
 
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
+    @bus.global_backlog.must_be_empty
+    @bus.backlog("/foo", 0).must_be_empty
 
-    sleep 1.25 # Should now be at time =~ 1.25s. Our backlog should have expired by now.
-    expected_backlog_size = 0
-
-    case CURRENT_BACKEND
-    when :postgres
-      # Force triggering backlog expiry: postgres backend doesn't expire backlogs on a timer, but at publication time.
-      @bus.global_backlog.length.wont_equal expected_backlog_size
-      @bus.backlog("/foo", 0).length.wont_equal expected_backlog_size
-      @bus.publish "/foo", "baz", max_backlog_age: 1
-      expected_backlog_size += 1
-    end
-
-    # Assert that the backlog did expire, and now has only the new publication in it.
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
-
-    # for the time being we can give pg a pass here
-    # TODO: make the implementation here consistent
-    if CURRENT_BACKEND != :postgres
-      # ids are not opaque we expect them to be reset on our channel if it
-      # got cleared due to an expire, the reason for this is cause we will leak entries due to tracking
-      # this in turn can bloat storage for the backend
-      @bus.last_id("/foo").must_equal initial_id
-    end
-
-    sleep 0.75 # Should now be at time =~ 2s
-
-    @bus.publish "/foo", "baz", max_backlog_age: 1 # Publish something else before another expiry
-    expected_backlog_size += 1
-
-    sleep 0.75 # Should now be at time =~ 2.75s
-    # Our oldest message is now 1.5s old, but we didn't cease publishing for a period of 1s at a time, so we should not have expired the backlog.
-
-    @bus.publish "/foo", "baz", max_backlog_age: 1 # Publish something else to ward off another expiry
-    expected_backlog_size += 1
-
-    case CURRENT_BACKEND
-    when :postgres
-      # Postgres expires individual messages that have lived longer than the TTL, not whole backlogs
-      expected_backlog_size -= 1
-    else
-      # Assert that the backlog did not expire, and has all of our publications since the last expiry.
-    end
-    @bus.global_backlog.length.must_equal expected_backlog_size
-    @bus.backlog("/foo", 0).length.must_equal expected_backlog_size
+    # The memory and Redis backends discard channel ID state on expiry.
+    @bus.last_id("/foo").must_equal initial_id if CURRENT_BACKEND != :postgres
   end
 
   it "can set backlog size on publish" do

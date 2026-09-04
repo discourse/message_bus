@@ -5,6 +5,7 @@
   - BREAKING: Drop support for EOL Ruby 3.2; Ruby 3.3 or newer is now required
   - DEV: Test against all maintained Ruby versions: 3.3, 3.4, and 4.0, plus Ruby head as a non-blocking compatibility check
   - DEV: Keep the Rack 2 test suite compatible with Ruby 4.0
+  - DEV: Stabilize time-sensitive backlog expiry and long-polling tests on busy CI runners
   - FIX: Recover Redis and PostgreSQL backend subscribers from half-open connections without restarting the process
   - FIX: Keep the keepalive watchdog active if a subscriber reconnect request fails
   - FIX: Replay missed global messages after Redis and PostgreSQL subscriber reconnects without delivering duplicates

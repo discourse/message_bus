@@ -41,7 +41,6 @@ jobs:
     name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }}, ${{ matrix.rack }})
     timeout-minutes: 10
 
-    continue-on-error: ${{ matrix.experimental }}
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.rack }}.gemfile
       PGHOST: localhost
@@ -84,6 +83,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ruby/setup-ruby@v1
+        continue-on-error: ${{ matrix.experimental }}
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
@@ -99,6 +99,7 @@ jobs:
         run: pnpm install
 
       - name: Tests
+        continue-on-error: ${{ matrix.experimental }}
         env:
           TESTOPTS: --verbose
         run: bundle exec rake
