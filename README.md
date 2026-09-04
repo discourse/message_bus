@@ -12,7 +12,7 @@ Read the generated docs: <https://www.rubydoc.info/gems/message_bus>
 
 ## Ruby version support
 
-MessageBus only support officially supported versions of Ruby; as of [2025-03-14](https://www.ruby-lang.org/en/downloads/branches/) this means we only support Ruby version 3.2 and up.
+MessageBus only supports Ruby versions currently maintained by the Ruby core team. As of [2026-09-04](https://www.ruby-lang.org/en/downloads/branches/), the supported versions are Ruby 3.3, 3.4, and 4.0; the minimum required version is Ruby 3.3.
 
 ## Can you handle concurrent requests?
 

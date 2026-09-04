@@ -1,8 +1,23 @@
+04-09-2026
+
+- Version 5.0.0
+
+  - BREAKING: Drop support for EOL Ruby 3.2; Ruby 3.3 or newer is now required
+  - DEV: Test against all maintained Ruby versions: 3.3, 3.4, and 4.0, plus Ruby head as a non-blocking compatibility check
+  - DEV: Keep the Rack 2 test suite compatible with Ruby 4.0
+  - FIX: Recover Redis and PostgreSQL backend subscribers from half-open connections without restarting the process
+  - FIX: Keep the keepalive watchdog active if a subscriber reconnect request fails
+  - FIX: Replay missed global messages after Redis and PostgreSQL subscriber reconnects without delivering duplicates
+  - FIX: Request PostgreSQL reconnects on the subscriber thread to respect libpq thread ownership
+
 03-08-2026
 
 - Version 4.6.0
 
   - DEV: Export the JavaScript client as a CommonJS/ES module so it can be imported directly by bundlers and ESM projects, while still assigning the `MessageBus` global for existing consumers
+  - DEV: Add `logger` as a runtime dependency
+  - DEV: Make `MessageBus::Message` a regular class instead of a `Struct`
+  - PERF: Use `Set#intersect?` when checking allowed groups
 
 13-02-2026
 

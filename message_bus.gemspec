@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.name          = "message_bus"
   gem.require_paths = ["lib"]
   gem.version       = MessageBus::VERSION
-  gem.required_ruby_version = ">= 3.2.0"
+  gem.required_ruby_version = ">= 3.3.0"
 
   gem.add_runtime_dependency 'rack', '> 2', '< 4'
   gem.add_runtime_dependency 'logger'
@@ -24,9 +24,10 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'pg'
   gem.add_development_dependency 'concurrent-ruby' # for distributed-cache
 
-  gem.add_development_dependency 'minitest'
+  gem.add_development_dependency 'minitest', '< 6'
   gem.add_development_dependency 'minitest-hooks'
   gem.add_development_dependency 'minitest-global_expectations'
+  gem.add_development_dependency 'cgi' # Rack 2 tests on Ruby 4+
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'http_parser.rb'
   gem.add_development_dependency 'thin'

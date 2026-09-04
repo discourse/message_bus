@@ -41,6 +41,7 @@ jobs:
     name: Ruby ${{ matrix.ruby }} (${{ matrix.redis }}, ${{ matrix.rack }})
     timeout-minutes: 10
 
+    continue-on-error: ${{ matrix.experimental }}
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.rack }}.gemfile
       PGHOST: localhost
@@ -50,9 +51,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.2", "3.3", "3.4"]
+        ruby: ["3.3", "3.4", "4.0"]
         rack: ["rack2", "rack3"]
         redis: ["redis:7.4", "valkey/valkey"]
+        experimental: [false]
+        include:
+          - ruby: ruby-head
+            rack: rack3
+            redis: redis:7.4
+            experimental: true
 
     services:
       postgres:
