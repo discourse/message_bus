@@ -84,8 +84,23 @@ describe BACKEND_CLASS do
     @bus.backlog("/foo").length.must_equal 100
   end
 
-  it "should be able to encode and decode messages properly" do
+  it "should escape pipes in channel names when encoding and decoding" do
     m = MessageBus::Message.new 1, 2, '||', '||'
+    MessageBus::Message.decode(m.encode).must_equal m
+  end
+
+  it "should encode and decode messages with plain channels and large ids" do
+    m = MessageBus::Message.new 1234567890, 987654321, '/test/channel', '{"hello":"world","nums":[1,2,3]}'
+    MessageBus::Message.decode(m.encode).must_equal m
+  end
+
+  it "should encode and decode messages with empty data" do
+    m = MessageBus::Message.new 1, 2, '/foo', ''
+    MessageBus::Message.decode(m.encode).must_equal m
+  end
+
+  it "should encode and decode messages with multi-byte channels and data" do
+    m = MessageBus::Message.new 1, 2, '/日本|語/ü|', '{"msg":"héllo|🌍"}'
     MessageBus::Message.decode(m.encode).must_equal m
   end
 
