@@ -117,8 +117,13 @@ module MessageBus
         end
 
         # use with extreme care, will nuke all of the data
-        def expire_all_backlogs!
-          reset!
+        def expire_all_backlogs!(site_id: nil)
+          if site_id
+            hold { |conn| exec_prepared(conn, 'expire_site_backlogs', ["#{MessageBus::Implementation::ENCODE_SITE_TOKEN}#{site_id}"]) }
+            nil
+          else
+            reset!
+          end
         end
 
         def max_id(channel = nil)
@@ -269,6 +274,7 @@ module MessageBus
           conn.exec 'PREPARE channel_backlog AS SELECT id, value FROM message_bus WHERE ((channel = $1) AND (id > $2)) ORDER BY id'
           conn.exec 'PREPARE global_backlog AS SELECT id, channel, value FROM message_bus WHERE (id > $1) ORDER BY id'
           conn.exec "PREPARE expire AS DELETE FROM message_bus WHERE added_at < CURRENT_TIMESTAMP - ($1::text || ' seconds')::interval"
+          conn.exec 'PREPARE expire_site_backlogs AS DELETE FROM message_bus WHERE right(channel, length($1)) = $1'
           conn.exec 'PREPARE get_message AS SELECT value FROM message_bus WHERE ((channel = $1) AND (id = $2))'
           conn.exec 'PREPARE max_channel_id AS SELECT max(id) FROM message_bus WHERE (channel = $1)'
           conn.exec 'PREPARE max_channel_ids AS SELECT channel, max(id) FROM message_bus WHERE (channel = ANY($1)) GROUP BY channel'
@@ -324,8 +330,8 @@ module MessageBus
       end
 
       # (see Base#expire_all_backlogs!)
-      def expire_all_backlogs!
-        client.expire_all_backlogs!
+      def expire_all_backlogs!(site_id: nil)
+        client.expire_all_backlogs!(site_id: site_id)
       end
 
       # (see Base#publish)

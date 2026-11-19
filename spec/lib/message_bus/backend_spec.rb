@@ -33,6 +33,32 @@ describe BACKEND_CLASS do
     ]
   end
 
+  it "can expire all backlogs" do
+    @bus.publish "/foo", "aa"
+    @bus.publish "/foo$|$one", "bb"
+
+    @bus.expire_all_backlogs!
+
+    @bus.backlog("/foo", 0).to_a.must_equal []
+    @bus.backlog("/foo$|$one", 0).to_a.must_equal []
+    @bus.global_backlog(0).to_a.must_equal []
+  end
+
+  it "can expire the backlogs of a single site" do
+    @bus.publish "/foo$|$one", "aa"
+    @bus.publish "/foo$|$two", "bb"
+    @bus.publish "/foo$|$*", "cc"
+    @bus.publish "/foo", "dd"
+
+    @bus.expire_all_backlogs!(site_id: "one")
+    @bus.expire_all_backlogs!(site_id: "t*")
+
+    @bus.backlog("/foo$|$one", 0).to_a.must_equal []
+    @bus.backlog("/foo$|$two", 0).map(&:data).must_equal ["bb"]
+    @bus.backlog("/foo$|$*", 0).map(&:data).must_equal ["cc"]
+    @bus.backlog("/foo", 0).map(&:data).must_equal ["dd"]
+  end
+
   it "should initialize with max_backlog_size" do
     BACKEND_CLASS.new({}, 2000).max_backlog_size.must_equal 2000
   end

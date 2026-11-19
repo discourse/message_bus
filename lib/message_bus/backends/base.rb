@@ -89,8 +89,9 @@ module MessageBus
       end
 
       # Deletes all backlogs and their data. Does not delete non-backlog data that message_bus may persist, depending on the concrete backend implementation. Use with extreme caution.
+      # @param [String] site_id if given, only the backlogs of that site's channels are deleted
       # @abstract
-      def expire_all_backlogs!
+      def expire_all_backlogs!(site_id: nil)
         raise ConcreteClassMustImplementError
       end
 

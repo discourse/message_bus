@@ -130,9 +130,14 @@ module MessageBus
         end
 
         # use with extreme care, will nuke all of the data
-        def expire_all_backlogs!
+        def expire_all_backlogs!(site_id: nil)
           sync do
-            @channels = {}
+            if site_id
+              site_suffix = "#{MessageBus::Implementation::ENCODE_SITE_TOKEN}#{site_id}"
+              @channels.delete_if { |name, _| name.end_with?(site_suffix) }
+            else
+              @channels = {}
+            end
           end
         end
 
@@ -219,8 +224,8 @@ module MessageBus
       end
 
       # (see Base#expire_all_backlogs!)
-      def expire_all_backlogs!
-        client.expire_all_backlogs!
+      def expire_all_backlogs!(site_id: nil)
+        client.expire_all_backlogs!(site_id: site_id)
       end
 
       # (see Base#publish)
