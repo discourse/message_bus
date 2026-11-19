@@ -83,8 +83,10 @@ module MessageBus
 
       # Deletes all backlogs and their data. Does not delete ID pointers, so new publications will get IDs that continue from the last publication before the expiry. Use with extreme caution.
       # @see Base#expire_all_backlogs!
-      def expire_all_backlogs!
-        pub_redis.keys("__mb_*backlog_n").each { |k| pub_redis.del k }
+      def expire_all_backlogs!(site_id: nil)
+        site_suffix = escape_glob("#{MessageBus::Implementation::ENCODE_SITE_TOKEN}#{site_id}") if site_id
+        pub_redis.scan_each(match: "#{backlog_key("*")}#{site_suffix}") { |k| pub_redis.del k }
+        pub_redis.del(global_backlog_key) if !site_id
       end
 
       # Note, the script takes care of all expiry of keys, however
@@ -357,6 +359,10 @@ LUA
       def redis_channel_name
         db = @redis_config[:db] || 0
         "_message_bus_#{db}"
+      end
+
+      def escape_glob(str)
+        str.gsub(/[*?\[\]\\]/) { |c| "\\#{c}" }
       end
 
       def backlog_key(channel)

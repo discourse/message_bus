@@ -1,3 +1,10 @@
+19-11-2026
+
+- Version 5.1.0
+
+  - FEATURE: `expire_all_backlogs!` accepts an optional `site_id:` to expire the backlogs of a single site
+  - FIX: `expire_all_backlogs!` on the Redis backend now expires per-channel backlogs, not only the global backlog
+
 04-09-2026
 
 - Version 5.0.0
