@@ -3,6 +3,8 @@
 module MessageBus
   module Codec
     class Base
+      ConcreteClassMustImplementError = Class.new(StandardError)
+
       def encode(hash)
         raise ConcreteClassMustImplementError
       end
